@@ -57,7 +57,7 @@ Method `DELETE` stoped host and remove hosts items from file system (log file, d
             * [/rs/{id}/secondaries/random/start](#host-object-2) [PUT]  
             * [/rs/{id}/secondaries/random/stop](#host-object-2) [PUT]  
             * [/rs/{id}/secondaries/random/restart](#host-object-2) [PUT]  
-      * [/rs/{id}/secondaries/{id}](#host-object-2) [GET]  
+        * [/rs/{id}/secondaries/{id}](#host-object-2) [GET]  
             * [/rs/{id}/secondaries/{id}/start](#host-object-2) [PUT]  
             * [/rs/{id}/secondaries/{id}/stop](#host-object-2) [PUT]  
             * [/rs/{id}/secondaries/{id}/restart](#host-object-2) [PUT]  
