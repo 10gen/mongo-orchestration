@@ -26,6 +26,7 @@ Method `DELETE` stoped host and remove hosts items from file system (log file, d
 ## REST API INDEX ##
 ### Hosts ###
 + [/hs](#hosts-1) [POST]  
+
 #### Host Object ####
 + [/hs/{id}](#host-object-2) [GET, PUT, DELETE]  
   - [/hs/{id}/start](#host-object-2) [PUT]  
