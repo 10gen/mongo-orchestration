@@ -19,59 +19,59 @@ Host object is a *mongod* or *mongos* process.
 + **restart** -   restart host
 
 ##### Stop vs DELETE #####
-Command `stop` doesn't remove any items from file system.  
+Command `stop` stoped host, but doesn't remove any items from file system.  
 Method `DELETE` stoped host and remove hosts items from file system (log file, db folder, ...)
 
 
 ## REST API INDEX ##
 ### Hosts ###
-[http://localhost:8888/rest/api/latest/hs](#hosts-2) [POST]  
+[http://localhost:8888/rest/api/latest/hs](#hosts-1) [POST]  
 #### Host Object ####
-[http://localhost:8888/rest/api/latest/hs/{id}](#host-object-3) [GET, PUT, DELETE]  
-[http://localhost:8888/rest/api/latest/hs/{id}/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/hs/{id}/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/hs/{id}/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/hs/{id}](#host-object-2) [GET, PUT, DELETE]  
+[http://localhost:8888/rest/api/latest/hs/{id}/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/hs/{id}/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/hs/{id}/restart](#host-object-2) [PUT]  
 
 ### Master-Slave ###
-[http://localhost:8888/rest/api/latest/ms](#master-slave-2) [POST]  
-[http://localhost:8888/rest/api/latest/ms/{id}](#master-slave-2) [GET, PUT, DELETE]  
-[http://localhost:8888/rest/api/latest/ms/{id}/hs](#master-slave-2) [HOSTS]  
+[http://localhost:8888/rest/api/latest/ms](#master-slave-1) [POST]  
+[http://localhost:8888/rest/api/latest/ms/{id}](#master-slave-1) [GET, PUT, DELETE]  
+[http://localhost:8888/rest/api/latest/ms/{id}/hs](#master-slave-1) [HOSTS]  
 
 ### ReplicaSet ###
-[http://localhost:8888/rest/api/latest/rs](#replicaset-2) [POST]  
-[http://localhost:8888/rest/api/latest/rs/{id}](#replicaset-2) [GET, PUT, DELETE]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hosts](#replicaset-2) [GET]  
+[http://localhost:8888/rest/api/latest/rs](#replicaset-1) [POST]  
+[http://localhost:8888/rest/api/latest/rs/{id}](#replicaset-1) [GET, PUT, DELETE]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hosts](#replicaset-1) [GET]  
 [http://localhost:8888/rest/api/latest/rs/{id}/hs](#rs-hosts) [POST]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}](#host-object-3) [GET, PUT, DELETE]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}](#host-object-2) [GET, PUT, DELETE]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hs/{id}/restart](#host-object-2) [PUT]  
 [http://localhost:8888/rest/api/latest/rs/{id}/primary](#rs-primary) [GET, DELETE]  
 [http://localhost:8888/rest/api/latest/rs/{id}/primary/stepdown](#rs-primary) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/primary/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/primary/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/primary/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/primary/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/primary/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/primary/restart](#host-object-2) [PUT]  
 [http://localhost:8888/rest/api/latest/rs/{id}/secondaries](#rs-secondaries) [GET, DELETE]  
 [http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random](#rs-secondaries) [GET]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/restart](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/random/restart](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/secondaries/{id}/restart](#host-object-2) [PUT]  
 [http://localhost:8888/rest/api/latest/rs/{id}/arbiters](#rs-arbiters) [GET, DELETE]  
 [http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random](#rs-arbiters) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/restart](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/random/restart](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/arbiters/{id}/restart](#host-object-2) [PUT]  
 [http://localhost:8888/rest/api/latest/rs/{id}/hidden](#rs-hidden) [GET, DELETE]  
 [http://localhost:8888/rest/api/latest/rs/{id}/hidden/random](#rs-hidden) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/start](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/stop](#host-object-3) [PUT]  
-[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/restart](#host-object-3) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/start](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/stop](#host-object-2) [PUT]  
+[http://localhost:8888/rest/api/latest/rs/{id}/hidden/random/restart](#host-object-2) [PUT]  
 
 
 ## REST API RESOURCES ##
@@ -115,7 +115,7 @@ URI: `/ms/{id}/hs`
 see [HOSTS](#hosts-2) Collection
 
 URI: `/ms/{id}/hs/{id}`  
-see [HOST OBJECT](#host-object-3)  
+see [HOST OBJECT](#host-object-2)  
 
 ### ReplicaSet ###
 URI: `/rs`  
@@ -137,7 +137,7 @@ URI: `/rs/{id}/hs`
 see [HOSTS](#hosts-2) Collection
 
 URI: `/rs/{id}/hs/{id}`  
-see [HOST OBJECT](#host-object-3)  
+see [HOST OBJECT](#host-object-2)  
 
 ##### RS Primary #####
 URI: `/rs/{id}/primary`  
@@ -152,7 +152,7 @@ URI: `/rs/{id}/primary/stepdown`
 `/rs/{id}/primary/start`  
 `/rs/{id}/primary/stop`  
 `/rs/{id}/primary/restart`  
-see [HOST OBJECT](#host-object-3)  
+see [HOST OBJECT](#host-object-2)  
 
 ##### RS Secondaries #####
 URI: `/rs/{id}/secondaries`  
@@ -162,11 +162,11 @@ URI: `/rs/{id}/secondaries`
 
 URI: `/rs/{id}/secondaries/random`  
 *Methods*:  
-**GET** - return random [HOST OBJECT](#host-object-3) from secondaries  
+**GET** - return random [HOST OBJECT](#host-object-2) from secondaries  
 
 URI: `/rs/{id}/secondaries/{id}`  
 *Methods*:  
-**GET** -return [HOST OBJECT](#host-object-3) from secondaries  
+**GET** -return [HOST OBJECT](#host-object-2) from secondaries  
 
 ##### RS Arbiters #####
 URI: `/rs/{id}/arbiters`  
@@ -176,11 +176,11 @@ URI: `/rs/{id}/arbiters`
 
 URI: `/rs/{id}/arbiters/random`  
 *Methods*:  
-**GET** -return random [HOST OBJECT](#host-object-3) from arbiters  
+**GET** -return random [HOST OBJECT](#host-object-2) from arbiters  
 
 URI: `/rs/{id}/arbiters/{id}`  
 *Methods*:  
-**GET** -return [HOST OBJECT](#host-object-3) from arbiters  
+**GET** -return [HOST OBJECT](#host-object-2) from arbiters  
 
 ##### RS Hidden #####
 URI: `/rs/{id}/hidden`  
@@ -190,7 +190,7 @@ URI: `/rs/{id}/hidden`
 
 URI: `/rs/{id}/hidden/random`  
 *Methods*:  
-**GET** - return random [HOST OBJECT](#host-object-3) from hidden  
+**GET** - return random [HOST OBJECT](#host-object-2) from hidden  
 
 
 ## Notes ##
