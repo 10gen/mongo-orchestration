@@ -36,7 +36,7 @@ Method `DELETE` stoped host and remove hosts items from file system (log file, d
 ### Master-Slave ###
 + [/ms](#master-slave-1) [POST]  
   - [/ms/{id}](#master-slave-1) [GET, PUT, DELETE]  
-  - [/ms/{id}/hs](#master-slave-1) [HOSTS]  
+  - [/ms/{id}/hs](#master-slave-1) [POST]  
 
 ### ReplicaSet ###
 + [/rs](#replicaset-1) [POST]  
