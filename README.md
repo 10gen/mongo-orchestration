@@ -112,7 +112,7 @@ URI: `/ms/{id}`
 
 ##### MS Hosts #####
 URI: `/ms/{id}/hs`  
-see [HOSTS](#hosts-2) Collection
+see [HOSTS](#hosts-1) Collection
 
 URI: `/ms/{id}/hs/{id}`  
 see [HOST OBJECT](#host-object-2)  
@@ -134,7 +134,7 @@ URI: `/rs/{id}/hosts`
 **GET** - return list of ReplicaSets hosts  
 
 URI: `/rs/{id}/hs`  
-see [HOSTS](#hosts-2) Collection
+see [HOSTS](#hosts-1) Collection
 
 URI: `/rs/{id}/hs/{id}`  
 see [HOST OBJECT](#host-object-2)  
