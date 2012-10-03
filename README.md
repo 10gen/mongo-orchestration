@@ -79,8 +79,8 @@ Method `DELETE` stoped host and remove hosts items from file system (log file, d
         * [/rs/{id}/hidden/random/restart](#host-object-2) [PUT]  
 
 ### Shards ###
-+ [/sd](#shards-2) [POST]  
-    - [/sd/{id}](#shards-2) [GET, DELETE]  
++ [/sd](#shards-1) [POST]  
+    - [/sd/{id}](#shards-1) [GET, DELETE]  
     - [/sd/{id}/rs](#shard-replicaset) [GET]  
   - [/sd/{id}/configsvrs](#shard-config-servers) [GET, DELETE]  
         * [/sd/{id}/configsvrs/random](#shard-config-servers) [GET]  
@@ -445,10 +445,10 @@ Example:
 
 ##### Shard ReplicaSet #####
 URI: `/sd/{id}/rs`  
-see [ReplicaSet](#hosts-1) Collection
+see [ReplicaSet](#replicaset-1) Collection
 
 URI: `/sd/{id}/rs/{id}`  
-see [ReplicaSet Object](#host-object-2)  
+see [ReplicaSet Object](#replicaset-1)  
 
 
 ##### Shard Config Servers #####
