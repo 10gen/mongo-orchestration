@@ -85,13 +85,14 @@ Create new mongo instance
 **POST**    - create and get up new host   
 *available response representations:*  
   + 200 - Returned if create host was successful
-  + 500 - Returned if create host was fail
+  + 500 - Returned if create host was fail  
 
-    Example:
+Example:  
+
     {
-
+     
     }
-
+  
 
 ##### Host Object #####
 URI: `/hs/{id}`  
@@ -99,9 +100,10 @@ URI: `/hs/{id}`
 **GET**     - returns info about host  
 *available response representations:*  
   + 200 - application/json 
-  + 404 - Returned if the host does not exist 
+  + 404 - Returned if the host does not exist  
 
-    Example:  
+Example:  
+
     {
     "id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d",
     "uri": "192.168.1.0:2233",
@@ -111,6 +113,7 @@ URI: `/hs/{id}`
                   "gitVersion": "f5e83eae9cfbec7fb7a071321928f00d1b0c5207"},
     "procInfo": {"name": "mongod", "alive": true, params: {}}
     }
+
 **DELETE**  - remove host with all data (log file, db files, ...)  
 *available response representations:*  
   + 204 - Returned if delete was successful 
@@ -125,7 +128,8 @@ Get up existing host.
 **PUT** - get up host  
 *acceptable request representations:*  application/json  
 
-    Example:
+Example:
+
     {
       "timeout": 300
     }
@@ -141,8 +145,8 @@ Stop existing host
 *Methods*:  
 **PUT**  - stop host (data files don't remove)  
 *acceptable request representations:*  application/json  
+Example:
 
-    Example:
     {
       "timeout": 300
     }
@@ -158,8 +162,8 @@ Restart existing host
 *Methods*:  
 **PUT** - restart host  
 *acceptable request representations:*  application/json  
+Example:
 
-    Example:
     {
       "timeout": 300
     }
@@ -175,9 +179,10 @@ URI: `/ms`
 **POST** - create new Master-Slave configuration  
 *available response representations:*  
   + 200 - Returned if create Master-Slave was successful
-  + 500 - Returned if create Master-Slave was fail
+  + 500 - Returned if create Master-Slave was fail  
 
-    Example:
+Example:
+
     {
 
     }
@@ -189,7 +194,8 @@ URI: `/ms/{id}`
   + 200 - application/json 
   + 404 - Returned if the Master-Slave not exist  
 
-    Example:  
+Example:  
+
     {
     
     }
@@ -213,10 +219,11 @@ URI: `/rs`
 *Methods*:  
 **POST** - create and get up new ReplicaSet  
 *available response representations:*  
-  + 200 - Returned if create replica set was successful
-  + 500 - Returned if create replica set was fail
+  + 200 - Returned if create replica set was successful  
+  + 500 - Returned if create replica set was fail  
 
-    Example:
+Example:
+
     {
 
     }
@@ -228,7 +235,8 @@ URI: `/rs/{id}`
   + 200 - application/json 
   + 404 - Returned if the ReplicaSet not exist  
 
-    Example:  
+Example:  
+
     {
     
     }
@@ -247,9 +255,10 @@ URI: `/rs/{id}/hosts`
   + 200 - application/json 
   + 404 - Returned if the ReplicaSet not exist  
 
-    Example:  
+Example:  
+
     {
-      []
+      
     }
 
 
@@ -271,7 +280,8 @@ URI: `/rs/{id}/primary/stepdown`
 **PUT** - forces the primary of the replica set to relinquish its status as primary  
 *acceptable request representations:*  application/json  
 
-    Example:
+Example:
+
     {
       "timeout": 300
     }
@@ -293,15 +303,16 @@ URI: `/rs/{id}/secondaries`
   + 200 - application/json 
   + 404 - Returned if the ReplicaSet not exist  
 
-    Example:  
+Example:  
+
     {
       
     }
 
 **DELETE** - remove all secondaries hosts   
 *available response representations:*  
-  + 204 - Returned if delete was successful 
-  + 400 - Returned if delete was fail 
+  + 204 - Returned if delete was successful  
+  + 400 - Returned if delete was fail  
 
 
 URI: `/rs/{id}/secondaries/random`  
@@ -320,14 +331,15 @@ URI: `/rs/{id}/arbiters`
   + 200 - application/json 
   + 404 - Returned if the ReplicaSet not exist  
 
-    Example:  
+Example:  
+
     {
       
     }
 
 **DELETE** - remove all ReplicaSets arbiters   
 *available response representations:*  
-  + 204 - Returned if delete was successful 
+  + 204 - Returned if delete was successful  
   + 400 - Returned if delete was fail 
 
 
@@ -347,7 +359,8 @@ URI: `/rs/{id}/hidden`
   + 200 - application/json 
   + 404 - Returned if the ReplicaSet not exist  
 
-    Example:  
+Example:  
+
     {
       
     }
