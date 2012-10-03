@@ -4,10 +4,12 @@
 
 ### Type of Collections ###
 + **hs** - Hosts
-+ **rs** - ReplicaSet (each *rs* contains one *hs* collection)
 + **ms** - Master-Slave (each *ms* contains one *hs* collection)
++ **rs** - ReplicaSet (each *rs* contains one *hs* collection)
++ **sd** - Shard (each *sd* contains at least one *rs* collection)
 
-ReplicaSet *rs* and Master-Slave *ms* collections should contains Hosts *hs* collection
+ReplicaSet *rs*, Shard *sd* and Master-Slave *ms* collections should contains Hosts *hs* collection.  
+Shard *sd* collection should contain at least one *rs* collection.  
 
 ### Host object ###
 Most of requests return a host object as result.
@@ -76,6 +78,38 @@ Method `DELETE` stoped host and remove hosts items from file system (log file, d
         * [/rs/{id}/hidden/random/stop](#host-object-2) [PUT]  
         * [/rs/{id}/hidden/random/restart](#host-object-2) [PUT]  
 
+### Shards ###
++ [/sd](#shards-2) [POST]  
+    - [/sd/{id}](#shards-2) [GET, DELETE]  
+    - [/sd/{id}/rs](#shard-replicaset) [GET]  
+  - [/sd/{id}/configsvrs](#shard-config-servers) [GET, DELETE]  
+        * [/sd/{id}/configsvrs/random](#shard-config-servers) [GET]  
+            * [/sd/{id}/configsvrs/random/start](#host-object-2) [PUT]  
+            * [/sd/{id}/configsvrs/random/stop](#host-object-2) [PUT]  
+            * [/sd/{id}/configsvrs/random/restart](#host-object-2) [PUT]  
+        * [/sd/{id}/configsvrs/{id}](#host-object-2) [GET]  
+            * [/rs/{id}/configsvrs/{id}/start](#host-object-2) [PUT]  
+            * [/rs/{id}/configsvrs/{id}/stop](#host-object-2) [PUT]  
+            * [/rs/{id}/configsvrs/{id}/restart](#host-object-2) [PUT]  
+  - [/sd/{id}/mongos](#shard-mongos-instances) [GET, DELETE]  
+        * [/sd/{id}/mongos/random](#shard-mongos-instances) [GET]  
+            * [/sd/{id}/mongos/random/start](#host-object-2) [PUT]  
+            * [/sd/{id}/mongos/random/stop](#host-object-2) [PUT]  
+            * [/sd/{id}/mongos/random/restart](#host-object-2) [PUT]  
+        * [/sd/{id}/mongos/{id}](#host-object-2) [GET]  
+            * [/rs/{id}/mongos/{id}/start](#host-object-2) [PUT]  
+            * [/rs/{id}/mongos/{id}/stop](#host-object-2) [PUT]  
+            * [/rs/{id}/mongos/{id}/restart](#host-object-2) [PUT]  
+  - [/sd/{id}/hosts](#shard-hosts) [GET, DELETE]  
+        * [/sd/{id}/hosts/random](#shard-hosts) [GET]  
+        * [/sd/{id}/hosts/random/start](#host-object-2) [PUT]  
+        * [/sd/{id}/hosts/random/stop](#host-object-2) [PUT]  
+        * [/sd/{id}/hosts/random/restart](#host-object-2) [PUT]  
+  - [/sd/{id}/hs](#shard-hosts) [POST]  
+       * [/sd/{id}/hs/{id}](#host-object-2) [GET, DELETE]  
+       * [/sd/{id}/hs/{id}/start](#host-object-2) [PUT]  
+       * [/sd/{id}/hs/{id}/stop](#host-object-2) [PUT]  
+       * [/sd/{id}/hs/{id}/restart](#host-object-2) [PUT]  
 
 ## REST API RESOURCES ##
 ### Hosts ###
@@ -374,6 +408,110 @@ Example:
 URI: `/rs/{id}/hidden/random`  
 *Methods*:  
 **GET** - return random [Host Object](#host-object-2) from hidden  
+
+
+### Shards ###
+URI: `/sd`  
+*Methods*:  
+**POST** - create and get up new Shard Cluster  
+*available response representations:*  
+  + 200 - Returned if create shard cluster was successful  
+  + 500 - Returned if create shard cluster set was fail  
+
+Example:
+
+    {
+
+    }
+
+URI: `/sd/{id}`  
+*Methods*:  
+**GET** - return info about Shard object  
+*available response representations:*  
+  + 200 - application/json 
+  + 404 - Returned if the Shard not exist  
+
+Example:  
+
+    {
+    
+    }
+
+**DELETE** - remove Shard Cluster  
+*available response representations:*  
+  + 204 - Returned if delete was successful  
+  + 400 - Returned if delete was fail 
+
+
+##### Shard ReplicaSet #####
+URI: `/sd/{id}/rs`  
+see [ReplicaSet](#hosts-1) Collection
+
+URI: `/sd/{id}/rs/{id}`  
+see [ReplicaSet Object](#host-object-2)  
+
+
+##### Shard Config Servers #####
+URI: `/sd/{id}/configsvrs`  
+*Methods*:  
+**GET** - return list of Config Servers  
+*available response representations:*  
+  + 200 - application/json 
+  + 404 - Returned if the Shard Cluster not exist  
+
+Example:  
+
+    {
+      
+    }
+
+
+URI: `/sd/{id}/configsvrs/{id}`  
+see [Host Object](#host-object-2)  
+
+URI: `/sd/{id}/configsvrs/random`  
+see [Host Object](#host-object-2)  
+
+
+##### Shard Mongos Instances #####
+URI: `/sd/{id}/mongos`  
+*Methods*:  
+**GET** - return list of all mongos instances  
+**DELETE** - remove all mongos instances   
+see [Host Object](#host-object-2)  
+
+URI: `/sd/{id}/mongos/{id}`  
+*Methods*:  
+**GET** - return info about mongos host  
+**DELETE** - remove mongos instance   
+see [Host Object](#host-object-2)  
+
+
+`/sd/{id}/mongos/{id}/start`  
+`/sd/{id}/mongos/{id}/stop`  
+`/sd/{id}/mongos/{id}/restart`  
+see [Host Object](#host-object-2)  
+
+##### Shard Hosts #####
+URI: `/sd/{id}/hosts`  
+*Methods*:  
+**GET** - return list of Cluster hosts  
+*available response representations:*  
+  + 200 - application/json 
+  + 404 - Returned if the Cluster not exist  
+
+Example:  
+
+    {
+      
+    }
+
+
+URI: `/sd/{id}/hs`  
+see [Host](#hosts-1) Collection
+
+URI: `/sd/{id}/hs/{id}`  
+see [Host Object](#host-object-2)  
 
 
 ## Notes ##
