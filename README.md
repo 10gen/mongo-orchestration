@@ -117,6 +117,12 @@ URI: `/hs`
 Create new mongo instance  
 *Methods*:  
 **POST**    - create and get up new host   
+*Parameters:*
++ **name** [required]      - name of process (mongod, mongos)
++ **auth_key** [optional]  - authentication key
++ **timeout** [optional]   - (default: 320) specify how long, in seconds, a command can take before server times out.
++ **options** [optional]   - configuration options ([mongo docs](http://docs.mongodb.org/manual/reference/configuration-options/))
+
 *available response representations:*  
   + 200 - Returned if create host was successful
   + 500 - Returned if create host was fail  
@@ -124,7 +130,16 @@ Create new mongo instance
 Example:  
 
     {
-     
+     "name": "mongod",
+     "auth_key": "auth key",
+     "timeout": 300,
+     "options": {
+          "nojournal": true,
+          "smallfiles": true,
+          "replicaSet": "repl-one",
+          "fastsync": true,
+          "chunkSize": 20
+      }
     }
   
 
@@ -157,7 +172,7 @@ Example:
 URI: `/hs/{id}/start`  
 Get up existing host.  
 *Parameters*:  
-**timeout** - specify how long, in seconds, a command can take before server times out.  
+**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT** - get up host  
 *acceptable request representations:*  application/json  
@@ -175,7 +190,7 @@ Example:
 URI: `/hs/{id}/stop`  
 Stop existing host  
 *Parameters*:  
-**timeout** - specify how long, in seconds, a command can take before server times out.  
+**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT**  - stop host (data files don't remove)  
 *acceptable request representations:*  application/json  
@@ -192,7 +207,7 @@ Example:
 URI: `/hs/{id}/restart`  
 Restart existing host  
 *Parameters*:  
-**timeout** - specify how long, in seconds, a command can take before server times out.  
+**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT** - restart host  
 *acceptable request representations:*  application/json  
@@ -209,8 +224,15 @@ Example:
 
 ### Master-Slave ###
 URI: `/ms`  
+Create [Master-Slave](http://www.mongodb.org/display/DOCS/Master+Slave) configuration  
 *Methods*:  
 **POST** - create new Master-Slave configuration  
+*Parameters*:  
+**number** [required]       - number of members (one of those - master, others - slaves)  
+**timeout** [optional]      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
+**slavedelay** [optional]  - delay (in seconds) to be used  when applying master ops to slave  
+**autoresync** [optional]   - (*default*: true), automatically resync if slave data is stale  
+
 *available response representations:*  
   + 200 - Returned if create Master-Slave was successful
   + 500 - Returned if create Master-Slave was fail  
@@ -218,7 +240,10 @@ URI: `/ms`
 Example:
 
     {
-
+      "number": 5,
+      "timeout": 320,
+      "slavedelay": 120,
+      "autoresync": true
     }
 
 URI: `/ms/{id}`  
@@ -231,7 +256,18 @@ URI: `/ms/{id}`
 Example:  
 
     {
-    
+      "master": { "id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d",
+                  "uri": "s1133:27018"
+                  },
+      "slaves": [
+                  { "id": "cf226ed5-9a17-4469-9588-472062ec7c87",
+                    "uri": "s1733:27018"
+                  },
+                  {
+                    "id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d",
+                    "uri": "s1833:27018"
+                  }
+                ] 
     }
 
 **DELETE** - remove Master-Slave configuration  
@@ -243,6 +279,7 @@ Example:
 
 ##### MS Hosts #####
 URI: `/ms/{id}/hs`  
+Return Master-Slave's members
 see [Host](#hosts-1) Collection
 
 URI: `/ms/{id}/hs/{id}`  
@@ -250,8 +287,19 @@ see [Host Object](#host-object-2)
 
 ### ReplicaSet ###
 URI: `/rs`  
+Create [ReplicaSet](http://www.mongodb.org/display/DOCS/Replica+Sets) configuration  
 *Methods*:  
 **POST** - create and get up new ReplicaSet  
+*Parameters*:  
+**name** [required]          - name of replica set  
+**secondary** [optional]     - number of standart secondary members.  
+**secondaryOnly** [optional] - number of [Secondary-Only Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-secondary-only-members).  
+**hidden** [optional]        - number of  [Hidden Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-hidden-members).  
+**delayed** [optional]       - number of [Delayed Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-delayed-members).  
+**arbiters** [optional]      - number of [Arbiters](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-arbiters).  
+**nonVoting** [optional]      - number of [Non-Voting Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-non-voting-members).  
+**timeout** [optional]      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
+
 *available response representations:*  
   + 200 - Returned if create replica set was successful  
   + 500 - Returned if create replica set was fail  
@@ -259,8 +307,16 @@ URI: `/rs`
 Example:
 
     {
-
+      "name": "repl-1",
+      "secondary": 3,
+      "nonVoting": 1,
+      "hidden": 2,
+      "secondaryOnly": 1,
+      "timeout": 600
     }
+
+    members: 8 = 1(master) + 3(secondary) + 1(nonvoting) + 2(hidden) + 1(secondaryOnly)
+
 
 URI: `/rs/{id}`  
 *Methods*:  
@@ -272,7 +328,13 @@ URI: `/rs/{id}`
 Example:  
 
     {
-    
+      "name": "repl-1",
+      "master": {"id": "fg256ed5-9a18-4489-9590-423062ec7c87", "uri": "rsm1:2212"},
+      "secondary": [
+            {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+            {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
+          ],
+      "nonVoting": [{"id": "cf226ed5-9a18-4489-9590-423062ec7c87", "uri": "rs344:2212"}]
     }
 
 **DELETE** - remove ReplicaSet  
@@ -292,7 +354,12 @@ URI: `/rs/{id}/hosts`
 Example:  
 
     {
-      
+      "master": {"id": "fg256ed5-9a18-4489-9590-423062ec7c87", "uri": "rsm1:2212"},
+      "secondary": [
+            {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+            {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
+          ],
+      "nonVoting": [{"id": "cf226ed5-9a18-4489-9590-423062ec7c87", "uri": "rs344:2212"}]
     }
 
 
@@ -340,7 +407,8 @@ URI: `/rs/{id}/secondaries`
 Example:  
 
     {
-      
+      {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+      {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
     }
 
 **DELETE** - remove all secondaries hosts   
@@ -368,7 +436,8 @@ URI: `/rs/{id}/arbiters`
 Example:  
 
     {
-      
+      {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+      {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
     }
 
 **DELETE** - remove all ReplicaSets arbiters   
@@ -396,7 +465,8 @@ URI: `/rs/{id}/hidden`
 Example:  
 
     {
-      
+      {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+      {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
     }
 
 **DELETE** - remove all hidden hosts from ReplicaSet   
