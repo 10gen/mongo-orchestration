@@ -119,9 +119,9 @@ Create new mongo instance
 **POST**    - create and get up new host   
 *Parameters:*
 + **name** [required]      - name of process (mongod, mongos)
-+ **auth_key** [optional]  - authentication key
-+ **timeout** [optional]   - (default: 320) specify how long, in seconds, a command can take before server times out.
-+ **options** [optional]   - configuration options ([mongo docs](http://docs.mongodb.org/manual/reference/configuration-options/))
++ **auth_key** *[optional]*  - authentication key
++ **timeout** *[optional]*   - (default: 320) specify how long, in seconds, a command can take before server times out.
++ **options** *[optional]*   - configuration options ([mongo docs](http://docs.mongodb.org/manual/reference/configuration-options/))
 
 *available response representations:*  
   + 200 - Returned if create host was successful
@@ -172,7 +172,7 @@ Example:
 URI: `/hs/{id}/start`  
 Get up existing host.  
 *Parameters*:  
-**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
+**timeout** *[optional]* - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT** - get up host  
 *acceptable request representations:*  application/json  
@@ -190,7 +190,7 @@ Example:
 URI: `/hs/{id}/stop`  
 Stop existing host  
 *Parameters*:  
-**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
+**timeout** *[optional]* - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT**  - stop host (data files don't remove)  
 *acceptable request representations:*  application/json  
@@ -207,7 +207,7 @@ Example:
 URI: `/hs/{id}/restart`  
 Restart existing host  
 *Parameters*:  
-**timeout** [optional] - specify how long, in seconds, a command can take before server times out.  
+**timeout** *[optional]* - specify how long, in seconds, a command can take before server times out.  
 *Methods*:  
 **PUT** - restart host  
 *acceptable request representations:*  application/json  
@@ -229,9 +229,9 @@ Create [Master-Slave](http://www.mongodb.org/display/DOCS/Master+Slave) configur
 **POST** - create new Master-Slave configuration  
 *Parameters*:  
 **number** [required]       - number of members (one of those - master, others - slaves)  
-**timeout** [optional]      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
-**slavedelay** [optional]  - delay (in seconds) to be used  when applying master ops to slave  
-**autoresync** [optional]   - (*default*: true), automatically resync if slave data is stale  
+**timeout** *[optional]*      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
+**slavedelay** *[optional]*  - delay (in seconds) to be used  when applying master ops to slave  
+**autoresync** *[optional]*   - (*default*: true), automatically resync if slave data is stale  
 
 *available response representations:*  
   + 200 - Returned if create Master-Slave was successful
@@ -292,13 +292,13 @@ Create [ReplicaSet](http://www.mongodb.org/display/DOCS/Replica+Sets) configurat
 **POST** - create and get up new ReplicaSet  
 *Parameters*:  
 **name** [required]          - name of replica set  
-**secondary** [optional]     - number of standart secondary members.  
-**secondaryOnly** [optional] - number of [Secondary-Only Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-secondary-only-members).  
-**hidden** [optional]        - number of  [Hidden Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-hidden-members).  
-**delayed** [optional]       - number of [Delayed Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-delayed-members).  
-**arbiters** [optional]      - number of [Arbiters](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-arbiters).  
-**nonVoting** [optional]      - number of [Non-Voting Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-non-voting-members).  
-**timeout** [optional]      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
+**secondary** *[optional]*     - number of standart secondary members.  
+**secondaryOnly** *[optional]* - number of [Secondary-Only Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-secondary-only-members).  
+**hidden** *[optional]*        - number of  [Hidden Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-hidden-members).  
+**delayed** *[optional]*       - number of [Delayed Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-delayed-members).  
+**arbiters** *[optional]*      - number of [Arbiters](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-arbiters).  
+**nonVoting** *[optional]*      - number of [Non-Voting Members](http://docs.mongodb.org/manual/administration/replica-sets/#replica-set-non-voting-members).  
+**timeout** *[optional]*      - (*default*: 320), specify how long, in seconds, a command can take before server times out.  
 
 *available response representations:*  
   + 200 - Returned if create replica set was successful  
@@ -481,9 +481,16 @@ URI: `/rs/{id}/hidden/random`
 
 
 ### Shards ###
+Create Shard Cluster  
 URI: `/sd`  
 *Methods*:  
-**POST** - create and get up new Shard Cluster  
+**POST** - create and get up new ReplicaSet  
+*Parameters*:  
+**shards** [required]   - list of [replica sets](#replicaset-1)  
+**configsvr** *[optional]* - number of config servers  
+**routers** *[optional]*   - number of routers (mongos)  
+**timeout** *[optional]*      - (*default*: 1500), specify how long, in seconds, a command can take before server times out.  
+
 *available response representations:*  
   + 200 - Returned if create shard cluster was successful  
   + 500 - Returned if create shard cluster set was fail  
@@ -491,7 +498,31 @@ URI: `/sd`
 Example:
 
     {
-
+      "shards": [
+          {
+            "name": "repl-1",
+            "secondary": 3,
+            "nonVoting": 1,
+            "hidden": 2,
+            "secondaryOnly": 1,
+            "timeout": 600
+          },
+          {
+            "name": "repl-2",
+            "secondary": 2,
+            "secondaryOnly": 1,
+            "timeout": 600
+          },
+          {
+            "name": "repl-3",
+            "secondary": 5,
+            "secondaryOnly": 1,
+            "timeout": 600
+          }
+        ],
+      "configsvr": 3,
+      "mongos": 3,
+      "timeout": 1500
     }
 
 URI: `/sd/{id}`  
@@ -504,7 +535,30 @@ URI: `/sd/{id}`
 Example:  
 
     {
-    
+      "shards": [
+          {
+            "name": "repl-1",
+            "secondary": 3,
+            "nonVoting": 1,
+            "hidden": 2,
+            "secondaryOnly": 1,
+            "timeout": 600
+          },
+          {
+            "name": "repl-2",
+            "secondary": 2,
+            "secondaryOnly": 1,
+            "timeout": 600
+          },
+          {
+            "name": "repl-3",
+            "secondary": 5,
+            "secondaryOnly": 1,
+            "timeout": 600
+          }
+        ],
+      "configsvr": 3,
+      "mongos": 3,
     }
 
 **DELETE** - remove Shard Cluster  
@@ -532,7 +586,8 @@ URI: `/sd/{id}/configsvrs`
 Example:  
 
     {
-      
+      {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+      {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
     }
 
 
@@ -573,7 +628,8 @@ URI: `/sd/{id}/hosts`
 Example:  
 
     {
-      
+      {"id": "cf226ed5-9a17-4469-9588-472062ec7c87", "uri": "rs345:2212"},
+      {"id": "ad19921c-6ab9-44f7-9be9-19fd5e89561d", "uri": "rs5:2212"}
     }
 
 
