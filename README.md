@@ -1,1 +1,1 @@
-See the [wiki](wiki) for documentation.
+See the [wiki](mongo-orchestration/wiki) for documentation.
