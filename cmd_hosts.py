@@ -19,17 +19,24 @@ class CmdHosts(cmd.Cmd):
             return host_id
 
     def print_result(self, r):
+        print "========= Response data ========="
+        obj = None
         try:
             obj = json.loads(r.text)
         except Exception:
             obj = r.text
         print "result code: ", r.status_code
-        if obj:
+        if obj is not None:
             pprint.pprint(obj)
+        print "================================="
 
     def do_list(self, args):
         """list
-        print list of hosts id"""
+        print list of hosts"""
+        r = requests.get(self.api_url + "hosts")
+        self.print_result(r)
+        if r.status_code == 200:
+            self.hosts = json.loads(r.text)
         for n, item in enumerate(self.hosts, 1):
             print n, item
 
@@ -74,7 +81,7 @@ class CmdHosts(cmd.Cmd):
         if r.status_code == 204:
             self.hosts.remove(self.real_id(host_id))
 
-    def do_EOF(self, line):
+    def do_exit(self, line):
         """EXIT"""
         return True
 
