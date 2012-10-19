@@ -74,6 +74,7 @@ class Hosts(Singleton):
             host_id - host identity
         """
         host = self._storage.pop(host_id)
+        host.stop()
         host.cleanup()
 
     def h_command(self, host_id, command, *args):

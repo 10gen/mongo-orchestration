@@ -11,7 +11,7 @@ hosts.set_settings('/tmp/mongo-pids')
 def send_result(code, result=None):
     content = None
     response.content_type = None
-    if result:
+    if result is not None:
             content = json.dumps(result)
             response.content_type = "application/json"
     response.status = code
@@ -33,6 +33,16 @@ def host_create():
         print repr(e)
         return send_result(500)
     return send_result(200, result)
+
+
+@route('/hosts', method='GET')
+def host_list():
+    try:
+        data = [info for info in Hosts()]
+    except StandardError as e:
+        print repr(e)
+        return send_result(500)
+    return send_result(200, data)
 
 
 @route('/hosts/<host_id>', method='GET')
