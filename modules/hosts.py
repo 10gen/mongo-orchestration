@@ -128,7 +128,7 @@ class Host(object):
         self.name = name  # name of process
 
     def info(self):
-        """return info about host as dict"""
+        """return info about host as dict object"""
         proc_info = {"name": self.name, "params": self.cfg, "alive": process.proc_alive(self.pid),
                      "pid": self.pid, "optfile": self.config_path}
 
