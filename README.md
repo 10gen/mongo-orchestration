@@ -21,10 +21,10 @@ supported operation for members: *add*, *delete*(not master), *update*, *primary
 
 command format: `command rs_id  [member_id]  [params]`
 
-**command** - command 
-**rs_id** - replica id or replica index 
-**member_id** - member id 
-**params** - json string 
+**command** - command  
+**rs_id** - replica id or replica index  
+**member_id** - member id  
+**params** - json string  
 
 **Note: two space between args**
 
