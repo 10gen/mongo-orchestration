@@ -103,6 +103,11 @@ class Hosts(Singleton):
         result['id'] = host_id
         return result
 
+    def h_id_by_hostname(self, hostname):
+        for host_id in self._storage:
+            if self._storage[host_id].hostname == hostname:
+                return host_id
+
 
 class Host(object):
     """Class Host represents behaviour of  mongo instances """

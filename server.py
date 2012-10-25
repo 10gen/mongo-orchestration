@@ -1,11 +1,16 @@
 # coding=utf-8
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 import json
 from modules.hosts import Hosts
+from modules.rs import RS
 from bottle import route, run, request, response, abort
 
 hosts = Hosts()
 hosts.set_settings('/tmp/mongo-pids')
+rs = RS()
+rs.set_settings('/tmp/mongo-pids')
 
 
 def send_result(code, result=None):
@@ -22,6 +27,7 @@ def send_result(code, result=None):
 
 @route('/hosts', method='POST')
 def host_create():
+    logger.info("host_create request")
     data = {}
     json_data = request.body.read()
     if json_data:
@@ -37,6 +43,7 @@ def host_create():
 
 @route('/hosts', method='GET')
 def host_list():
+    logger.info("host_list request")
     try:
         data = [info for info in Hosts()]
     except StandardError as e:
@@ -47,6 +54,7 @@ def host_list():
 
 @route('/hosts/<host_id>', method='GET')
 def host_info(host_id):
+    logger.info("host_info request")
     if host_id not in Hosts():
         return send_result(404)
     try:
@@ -59,6 +67,7 @@ def host_info(host_id):
 
 @route('/hosts/<host_id>', method='DELETE')
 def host_del(host_id):
+    logger.info("host_del request")
     if host_id not in Hosts():
         return send_result(404)
     try:
@@ -71,6 +80,7 @@ def host_del(host_id):
 
 @route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
 def host_command(host_id, command):
+    logger.info("host_command request")
     if host_id not in Hosts():
         return send_result(404)
     try:
@@ -80,6 +90,155 @@ def host_command(host_id, command):
         return send_result(500)
     return send_result(200)
 
+
+
+@route('/rs', method='POST')
+def rs_create():
+    logger.info("rs_create request")
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    try:
+        rs_id = RS().rs_new(data)
+        print 'rs_id: ', rs_id
+        result = RS().rs_info(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(500)
+    return send_result(200, result)
+
+@route('/rs', method='GET')
+def rs_list():
+    logger.info("rs_list request")
+    try:
+        data = [info for info in RS()]
+    except StandardError as e:
+        print repr(e)
+        return send_result(500)
+    return send_result(200, data)
+
+
+
+@route('/rs/<rs_id>', method='GET')
+def rs_info(rs_id):
+    logger.info("rs_info request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_info(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>', method='DELETE')
+def rs_del(rs_id):
+    logger.info("rs_del request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_del(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members', method='POST')
+def rs_member_add(rs_id):
+    logger.info("member_add request")
+    if rs_id not in RS():
+        return send_result(404)
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    try:
+        result = RS().rs_member_add(rs_id, data)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members', method='GET')
+def rs_members(rs_id):
+    logger.info("member_list request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_members(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members/<member_id>', method='GET')
+def rs_member_info(rs_id, member_id):
+    logger.info("member_info request")
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_member_info(rs_id, member_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members/<member_id>', method='DELETE')
+def rs_member_del(rs_id, member_id):
+    logger.info("member_del request")
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_member_del(rs_id, member_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members/<member_id>', method='PUT')
+def rs_member_update(rs_id, member_id):
+    logger.info("member_update request")
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    try:
+        result = RS().rs_member_update(rs_id, member_id, data)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/primary', method='GET')
+def rs_member_primary(rs_id):
+    logger.info("member_primary request")
+    if rs_id not in RS():
+        return send_result(404)
+
+    try:
+        result = RS().rs_primary(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+
 import atexit
 atexit.register(hosts.cleanup)
 run(host='localhost', port=8889, debug=True, reloader=False)
+
+
