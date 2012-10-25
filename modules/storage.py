@@ -24,6 +24,11 @@ class Storage(DictMixin, object):
             self.local.conn = sqlite.connect(self.db)
         return self.local.conn
 
+    def clear(self):
+        with self.connect() as conn:
+            query = "delete from {name}".format(name=self.name)
+            conn.execute(query)
+
     def __getitem__(self, key):
         cursor = self.connect().cursor()
         cursor.execute("select value from {table} where hash = {h}".format(table=self.name, h=hash(key)))
