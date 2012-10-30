@@ -143,7 +143,7 @@ def rs_del(rs_id):
     except StandardError as e:
         print repr(e)
         return send_result(400)
-    return send_result(200, result)
+    return send_result(204, result)
 
 
 @route('/rs/<rs_id>/members', method='POST')
