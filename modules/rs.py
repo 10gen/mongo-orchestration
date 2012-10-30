@@ -305,11 +305,14 @@ class ReplicaSet(object):
         """return information about member"""
         host_info = self.hosts.h_info(self.hosts.h_id_by_hostname(self.id2host(member_id)))
         result = {'_id': member_id, 'uri': host_info['uri'], 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
-        repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
-        for key in ('votes', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
-            if key in repl:
-                result['rsInfo'][key] = repl[key]
-        result['rsInfo']['primary'] = (repl['ismaster'] == True)
+        result['rsInfo'] = {}
+        if host_info['procInfo']['alive']:
+            repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
+            for key in ('votes', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
+                if key in repl:
+                    result['rsInfo'][key] = repl[key]
+            result['rsInfo']['primary'] = (repl['ismaster'] == True)
+
         return result
 
     def member_command(self, member_id, command):
@@ -320,7 +323,7 @@ class ReplicaSet(object):
         return command's result
         """
         host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
-        return self.hosts[host_id].h_command(command)
+        return self.hosts.h_command(host_id, command)
 
     def members(self):
         """return list of members information"""

@@ -224,6 +224,21 @@ def rs_member_update(rs_id, member_id):
     return send_result(200, result)
 
 
+@route('/rs/<rs_id>/members/<member_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
+def rs_member_command(rs_id, member_id, command):
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_member_command(rs_id, member_id, command)
+        print 'command result: ', result
+        if result:
+            return send_result(200)
+        return send_result(400)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+
 @route('/rs/<rs_id>/primary', method='GET')
 def rs_member_primary(rs_id):
     logger.info("member_primary request")

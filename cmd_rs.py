@@ -107,6 +107,14 @@ class CmdRS(cmd.Cmd):
         r = requests.get(url)
         self.print_result(r)
 
+    def do_member_command(self, args):
+        args = args.split('  ')
+        rs_id = args[0]
+        member_id = args[1]
+        command = args[2]
+        url = "{url}rs/{rs_id}/members/{member_id}/{command}".format(url=self.api_url, rs_id=self.real_id(rs_id), member_id=member_id, command=command)
+        r = requests.put(url)
+        self.print_result(r)
 
     # def do_start(self, rs_id):
     #     """start id

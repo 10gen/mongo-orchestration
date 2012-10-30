@@ -167,6 +167,7 @@ def kill_mprocess(pid, sig=2):
     except OSError:
         return False
     time.sleep(1.5)  # wait while process stops
+    return True
 
 
 def cleanup_mprocess(config_path, cfg):
