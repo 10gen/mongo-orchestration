@@ -116,6 +116,11 @@ class CmdRS(cmd.Cmd):
         r = requests.put(url)
         self.print_result(r)
 
+    def do_stepdown(self, rs_id):
+        url = "{url}rs/{rs_id}/primary/stepdown".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.put(url)
+        self.print_result(r)
+
     # def do_start(self, rs_id):
     #     """start id
     #     start replica set by id, where id is rs_id or item number in list command"""

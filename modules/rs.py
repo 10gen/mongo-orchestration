@@ -87,6 +87,10 @@ class RS(Singleton):
         primary = repl.primary()
         return repl.member_info(repl.host2id(primary))
 
+    def rs_primary_stepdown(self, repl_id, timeout=60):
+        repl = self[repl_id]
+        return repl.stepdown(timeout)
+
     def rs_del(self, repl_id):
         logger.info("remove replica set {repl_id}".format(**locals()))
         """remove replica set with kill members
@@ -331,6 +335,14 @@ class ReplicaSet(object):
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
             result.append({"_id": member['_id'], "host": member["name"]})
         return result
+
+    def stepdown(self, timeout=60):
+        try:
+            self.run_command("replSetStepDown", is_eval=False)
+        except (pymongo.errors.AutoReconnect):
+            pass
+        time.sleep(2)
+        return self.connection() and True
 
     def primary(self):
         """return primary hostname of replica set"""

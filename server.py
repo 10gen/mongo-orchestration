@@ -253,6 +253,24 @@ def rs_member_primary(rs_id):
     return send_result(200, result)
 
 
+@route('/rs/<rs_id>/primary/stepdown', method='PUT')
+def rs_primary_stepdown(rs_id):
+    logger.info("primary stepdown request")
+    if rs_id not in RS():
+        return send_result(404)
+
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    try:
+        RS().rs_primary_stepdown(rs_id, data.get('timeout', 60))
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200)
+
+
 
 import atexit
 atexit.register(hosts.cleanup)
