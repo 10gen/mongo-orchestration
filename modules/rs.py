@@ -232,6 +232,7 @@ class ReplicaSet(object):
             self.update_host_map(config)
         except pymongo.errors.AutoReconnect:
             pass
+        self.waiting_config_state()
         return self.connection() and True
 
     def repl_info(self):
@@ -366,6 +367,8 @@ class ReplicaSet(object):
         return True
 
     def check_config_state(self):
+        "check is real state equal config"
+        # TODO: fix issue hidden=true -> hidden=false
         config = self.config
         for member in config['members']:
             member.pop('host')

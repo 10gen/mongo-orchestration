@@ -216,7 +216,8 @@ def rs_member_update(rs_id, member_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        result = RS().rs_member_update(rs_id, member_id, data)
+        RS().rs_member_update(rs_id, member_id, data)
+        result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
