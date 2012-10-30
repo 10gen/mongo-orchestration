@@ -91,7 +91,6 @@ def host_command(host_id, command):
     return send_result(200)
 
 
-
 @route('/rs', method='POST')
 def rs_create():
     logger.info("rs_create request")
@@ -108,6 +107,7 @@ def rs_create():
         return send_result(500)
     return send_result(200, result)
 
+
 @route('/rs', method='GET')
 def rs_list():
     logger.info("rs_list request")
@@ -117,7 +117,6 @@ def rs_list():
         print repr(e)
         return send_result(500)
     return send_result(200, data)
-
 
 
 @route('/rs/<rs_id>', method='GET')
@@ -188,6 +187,7 @@ def rs_secondaries(rs_id):
         print repr(e)
         return send_result(400)
     return send_result(200, result)
+
 
 @route('/rs/<rs_id>/arbiters', method='GET')
 def rs_arbiters(rs_id):
@@ -277,6 +277,7 @@ def rs_member_command(rs_id, member_id, command):
         print repr(e)
         return send_result(400)
 
+
 @route('/rs/<rs_id>/primary', method='GET')
 def rs_member_primary(rs_id):
     logger.info("member_primary request")
@@ -309,9 +310,6 @@ def rs_primary_stepdown(rs_id):
     return send_result(200)
 
 
-
 import atexit
 atexit.register(hosts.cleanup)
 run(host='localhost', port=8889, debug=True, reloader=False)
-
-

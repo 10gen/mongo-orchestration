@@ -48,7 +48,6 @@ class RS(Singleton):
         return len(self._storage)
 
     def cleanup(self):
-        logger.info("cleanup replica set collection")
         """remove all hosts with their data"""
         self._storage.clear()
 
@@ -56,11 +55,7 @@ class RS(Singleton):
         """create new replica set
         Args:
            rs_params - replica set configuration
-           members - list of members params
-           auth_key - authorization key
-           timeout -  specify how long, in seconds, a command can take before times out.
-        Return repl_id
-           where repl_id - id which can use to take the replica set
+        Return repl_id which can use to take the replica set
         """
         repl_id = rs_params.get('id', None)
         if repl_id is not None and repl_id in self:
@@ -70,7 +65,6 @@ class RS(Singleton):
         return repl.repl_id
 
     def repl_info(self, repl_id):
-        logger.info("get info about replica {repl_id}".format(**locals()))
         """return information about replica set
         Args:
             repl_id - replica set identity
@@ -78,7 +72,6 @@ class RS(Singleton):
         return self[repl_id].repl_info()
 
     def rs_primary(self, repl_id):
-        logger.info("find primary member for replica {repl_id}".format(**locals()))
         """find and return primary hostname
         Args:
             repl_id - replica set identity
@@ -88,34 +81,42 @@ class RS(Singleton):
         return repl.member_info(repl.host2id(primary))
 
     def rs_primary_stepdown(self, repl_id, timeout=60):
+        """stepdown primary node
+        Args:
+            repld_id - replica set identity
+            timeout - number of seconds to avoid election to primary
+        return True if operation success otherwise False
+        """
         repl = self[repl_id]
         return repl.stepdown(timeout)
 
     def rs_del(self, repl_id):
-        logger.info("remove replica set {repl_id}".format(**locals()))
         """remove replica set with kill members
         Args:
             repl_id - replica set identity
+        return True if operation success otherwise False
         """
         repl = self._storage.pop(repl_id)
         repl.cleanup()
         del(repl)
 
     def rs_members(self, repl_id):
-        logger.info("get members for replica {repl_id}".format(**locals()))
-        """return list of replica set members
+        """return list [{"_id": member_id, "host": hostname}] of replica set members
         Args:
             repl_id - replica set identity
         """
         return self[repl_id].members()
 
     def rs_secondaries(self, repl_id):
+        """return list of secondaries members"""
         return self[repl_id].secondaries()
 
     def rs_arbiters(self, repl_id):
+        """return list of arbiters"""
         return self[repl_id].arbiters()
 
     def rs_hidden(self, repl_id):
+        """return list of hidden members"""
         return self[repl_id].hidden()
 
     def rs_member_info(self, repl_id, member_id):
@@ -124,7 +125,6 @@ class RS(Singleton):
             repl_id - replica set identity
             member_id - member index
         """
-        logger.info("get info about member '{member_id}', repl: {repl_id}".format(**locals()))
         return self[repl_id].member_info(member_id)
 
     def rs_member_del(self, repl_id, member_id):
@@ -133,7 +133,6 @@ class RS(Singleton):
             repl_id - replica set identity
             member_id - member index
         """
-        logger.info("remove member '{member_id} from replica set {repl_id}".format(**locals()))
         repl = self[repl_id]
         result = repl.member_del(member_id)
         self[repl_id] = repl
@@ -144,8 +143,9 @@ class RS(Singleton):
         Args:
             repl_id - replica set identity
             params - member params
+
+        return True if operation success otherwise False
         """
-        logger.info("create and add new member to replica set {repl_id}".format(**locals()))
         repl = self[repl_id]
         result = repl.repl_member_add(params)
         self[repl_id] = repl
@@ -157,9 +157,9 @@ class RS(Singleton):
             repl_id - replica set identity
             member_id - member index
             command - command: start, stop, restart
-        return command result as bool
+
+        return True if operation success otherwise False
         """
-        logger.info("member '{member_id}' execute command '{command}'".format(**locals()))
         repl = self[repl_id]
         result = repl.member_command(member_id, command)
         self[repl_id] = repl
@@ -171,9 +171,9 @@ class RS(Singleton):
             repl_id - replica set identity
             member_id - member index
             params - new member's params
-        return bool result of command
+
+        return True if operation success otherwise False
         """
-        logger.info("update member '{member_id} , params: '{params}'".format(**locals()))
         repl = self[repl_id]
         result = repl.member_update(member_id, params)
         self[repl_id] = repl
@@ -183,20 +183,21 @@ class RS(Singleton):
 class ReplicaSet(object):
     """class represents ReplicaSet"""
 
-    hosts = Hosts()
+    hosts = Hosts()  # singleton to manage hosts instances
 
     def __init__(self, rs_params):
         """create replica set according members config
         Args:
-            members : list of members config
-            auth_key: authorisation key
+            rs_params - replica set configuration
         """
         self.host_map = {}
         self.auth_key = rs_params.get('auth_key', None)
         self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
+
         config = {"_id": self.repl_id, "members": [
             self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
         ]}
+
         if not self.repl_init(config):
             self.cleanup()
             raise errors.ReplicaSetError("replica can't started")
@@ -238,11 +239,12 @@ class ReplicaSet(object):
 
     def repl_update(self, config):
         """reconfig replica set
-        return True if reconfig successfuly, else False"""
+        return True if operation success otherwise False
+        """
         config['version'] += 1
         try:
             self.run_command("replSetReconfig", config)
-            self.update_host_map(config)
+            self.update_host_map(config)  # use new host_map
         except pymongo.errors.AutoReconnect:
             pass
         self.waiting_config_state()
@@ -253,7 +255,11 @@ class ReplicaSet(object):
         return {"id": self.repl_id, "auth_key": self.auth_key, "members": self.members()}
 
     def repl_member_add(self, params):
-        """create new mongod instances and add it to the replica set."""
+        """create new mongod instances and add it to the replica set.
+        Args:
+            params - mongod params
+        return True if operation success otherwise False
+        """
         repl_config = self.config
         member_config = self.member_create(params, len(repl_config['members']))
         repl_config['members'].append(member_config)
@@ -261,12 +267,16 @@ class ReplicaSet(object):
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
         """run command on replica set
+        if member_id is specified command will be execute on this host
+        if member_id is not specified command will be execute on the primary
+
         Args:
             command - command string
             arg - command argument
             is_eval - if True execute command as eval
             member_id - member id
-        return command result
+
+        return True if operation success otherwise False
         """
         mode = is_eval and 'eval' or 'command'
         return getattr(self.connection(member_id=member_id).admin, mode)(command, arg)
@@ -281,7 +291,8 @@ class ReplicaSet(object):
         Args:
             params - member params
             member_id - member index
-        return member config as dict
+
+        return member config
         """
         member_config = params.get('rsParams', {})
         proc_params = {'replSet': self.repl_id}
@@ -294,7 +305,9 @@ class ReplicaSet(object):
         """remove member from replica set
         Args:
             member_id - member index
-            reconfig - is need reconfig
+            reconfig - is need reconfig replica
+
+        return True if operation success otherwise False
         """
         host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
         if reconfig:
@@ -309,10 +322,12 @@ class ReplicaSet(object):
         Args:
             member_id - member index
             params - updates member params
+
+        return True if operation success otherwise False
         """
         config = self.config
         config['members'][member_id].update(params.get("rsParams", {}))
-        self.repl_update(config)
+        return self.repl_update(config)
 
     def member_info(self, member_id):
         """return information about member"""
@@ -333,7 +348,8 @@ class ReplicaSet(object):
         Args:
             member_id - member index
             command - string command (start/stop/restart)
-        return command's result
+
+        return True if operation success otherwise False
         """
         host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
         return self.hosts.h_command(host_id, command)
@@ -346,6 +362,12 @@ class ReplicaSet(object):
         return result
 
     def stepdown(self, timeout=60):
+        """stepdown primary host
+        Args:
+            timeout - number of seconds to avoid election to primary.
+
+        return True if operation success otherwise False
+        """
         try:
             self.run_command("replSetStepDown", is_eval=False)
         except (pymongo.errors.AutoReconnect):
@@ -364,7 +386,13 @@ class ReplicaSet(object):
         return [member['name'] for member in members if member['state'] == state]
 
     def connection(self, member_id=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return ReplicaSetConnection object"""
+        """return ReplicaSetConnection object if member_id specified
+        return Connection object if member_id doesn't specified
+        Args:
+            member_id - member index
+            read_preference - default PRIMARY
+            timeout - specify how long, in seconds, a command can take before server times out.
+        """
         t_start = time.time()
         hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
         while True:
@@ -383,16 +411,25 @@ class ReplicaSet(object):
                 time.sleep(20)
 
     def secondaries(self):
+        """return list of secondaries members"""
         return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(2)]
 
     def arbiters(self):
+        """return list of arbiters"""
         return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(7)]
 
     def hidden(self):
+        """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
         return [{"_id": member['_id'], "host": member['uri']} for member in members if member['rsInfo'].get('hidden', False)]
 
     def waiting_config_state(self, timeout=300):
+        """waiting while real state equal config state
+        Args:
+            timeout - specify how long, in seconds, a command can take before server times out.
+
+        return True if operation success otherwise False
+        """
         t_start = time.time()
         while not self.check_config_state():
             if time.time() - t_start > timeout:
@@ -401,7 +438,7 @@ class ReplicaSet(object):
         return True
 
     def check_config_state(self):
-        "check is real state equal config"
+        "return True if real state equal config state otherwise False"
         # TODO: fix issue hidden=true -> hidden=false
         config = self.config
         for member in config['members']:
