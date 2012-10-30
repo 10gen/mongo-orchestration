@@ -91,7 +91,6 @@ def host_command(host_id, command):
     return send_result(200)
 
 
-
 @route('/rs', method='POST')
 def rs_create():
     logger.info("rs_create request")
@@ -102,11 +101,12 @@ def rs_create():
     try:
         rs_id = RS().rs_new(data)
         print 'rs_id: ', rs_id
-        result = RS().rs_info(rs_id)
+        result = RS().repl_info(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(500)
     return send_result(200, result)
+
 
 @route('/rs', method='GET')
 def rs_list():
@@ -119,14 +119,13 @@ def rs_list():
     return send_result(200, data)
 
 
-
 @route('/rs/<rs_id>', method='GET')
 def rs_info(rs_id):
-    logger.info("rs_info request")
+    logger.info("repl_info request")
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_info(rs_id)
+        result = RS().repl_info(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
@@ -143,7 +142,7 @@ def rs_del(rs_id):
     except StandardError as e:
         print repr(e)
         return send_result(400)
-    return send_result(200, result)
+    return send_result(204, result)
 
 
 @route('/rs/<rs_id>/members', method='POST')
@@ -156,7 +155,8 @@ def rs_member_add(rs_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        result = RS().rs_member_add(rs_id, data)
+        if RS().rs_member_add(rs_id, data):
+            result = RS().rs_members(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
@@ -170,6 +170,45 @@ def rs_members(rs_id):
         return send_result(404)
     try:
         result = RS().rs_members(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/secondaries', method='GET')
+def rs_secondaries(rs_id):
+    logger.info("secondaries request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_secondaries(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/arbiters', method='GET')
+def rs_arbiters(rs_id):
+    logger.info("arbiters request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_arbiters(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/hidden', method='GET')
+def rs_hidden(rs_id):
+    logger.info("hidden request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_hidden(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
@@ -215,11 +254,28 @@ def rs_member_update(rs_id, member_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        result = RS().rs_member_update(rs_id, member_id, data)
+        RS().rs_member_update(rs_id, member_id, data)
+        result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
     return send_result(200, result)
+
+
+@route('/rs/<rs_id>/members/<member_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
+def rs_member_command(rs_id, member_id, command):
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_member_command(rs_id, member_id, command)
+        print 'command result: ', result
+        if result:
+            return send_result(200)
+        return send_result(400)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
 
 
 @route('/rs/<rs_id>/primary', method='GET')
@@ -236,9 +292,24 @@ def rs_member_primary(rs_id):
     return send_result(200, result)
 
 
+@route('/rs/<rs_id>/primary/stepdown', method='PUT')
+def rs_primary_stepdown(rs_id):
+    logger.info("primary stepdown request")
+    if rs_id not in RS():
+        return send_result(404)
+
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    try:
+        RS().rs_primary_stepdown(rs_id, data.get('timeout', 60))
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200)
+
 
 import atexit
 atexit.register(hosts.cleanup)
 run(host='localhost', port=8889, debug=True, reloader=False)
-
-

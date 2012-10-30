@@ -107,25 +107,34 @@ class CmdRS(cmd.Cmd):
         r = requests.get(url)
         self.print_result(r)
 
+    def do_member_command(self, args):
+        args = args.split('  ')
+        rs_id = args[0]
+        member_id = args[1]
+        command = args[2]
+        url = "{url}rs/{rs_id}/members/{member_id}/{command}".format(url=self.api_url, rs_id=self.real_id(rs_id), member_id=member_id, command=command)
+        r = requests.put(url)
+        self.print_result(r)
 
-    # def do_start(self, rs_id):
-    #     """start id
-    #     start replica set by id, where id is rs_id or item number in list command"""
-    #     r = requests.put(self.api_url + "rs/" + self.real_id(rs_id) + "/start")
-    #     print r.status_code, r.text
+    def do_stepdown(self, rs_id):
+        url = "{url}rs/{rs_id}/primary/stepdown".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.put(url)
+        self.print_result(r)
 
-    # def do_stop(self, rs_id):
-    #     """stop id
-    #     stop replica set by id, where id is rs_id or item number in list command"""
-    #     r = requests.put(self.api_url + "rs/" + self.real_id(rs_id) + "/stop")
-    #     self.print_result(r)
+    def do_secondaries(self, rs_id):
+        url = "{url}rs/{rs_id}/secondaries".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
 
-    # def do_restart(self, rs_id):
-    #     """restart id
-    #     restart replica set by id, where id is rs_id or item number in list command"""
-    #     r = requests.put(self.api_url + "rs/" + self.real_id(rs_id) + "/restart")
-    #     self.print_result(r)
+    def do_arbiters(self, rs_id):
+        url = "{url}rs/{rs_id}/arbiters".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
 
+    def do_hidden(self, rs_id):
+        url = "{url}rs/{rs_id}/hidden".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
 
     def do_exit(self, line):
         """EXIT"""

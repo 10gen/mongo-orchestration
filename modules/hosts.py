@@ -162,7 +162,7 @@ class Host(object):
 
     def stop(self):
         """stop host"""
-        process.kill_mprocess(self.pid)
+        return process.kill_mprocess(self.pid)
 
     def restart(self, timeout=300):
         """restart host: stop() and start()
