@@ -52,19 +52,20 @@ class RS(Singleton):
         """remove all hosts with their data"""
         self._storage.clear()
 
-    def rs_new(self, members, auth_key=None, timeout=300):
+    def rs_new(self, rs_params):
         """create new replica set
         Args:
+           rs_params - replica set configuration
            members - list of members params
            auth_key - authorization key
            timeout -  specify how long, in seconds, a command can take before times out.
         Return repl_id
            where repl_id - id which can use to take the replica set
         """
-        logger.info("create new replica set")
-        print locals()
-        logger.info("members: {members}, auth_key={auth_key}, timeout={timeout}".format(**locals()))
-        repl = ReplicaSet(members, auth_key)
+        repl_id = rs_params.get('id', None)
+        if repl_id is not None and repl_id in self:
+            raise errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
+        repl = ReplicaSet(rs_params)
         self[repl.repl_id] = repl
         return repl.repl_id
 
@@ -171,18 +172,17 @@ class ReplicaSet(object):
 
     hosts = Hosts()
 
-    def __init__(self, members, auth_key=None):
+    def __init__(self, rs_params):
         """create replica set according members config
         Args:
             members : list of members config
             auth_key: authorisation key
         """
-        logger.info("init new replica set".format(**locals()))
         self.host_map = {}
-        self.auth_key = auth_key
-        self.repl_id = "rs-" + str(uuid4())
+        self.auth_key = rs_params.get('auth_key', None)
+        self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
         config = {"_id": self.repl_id, "members": [
-            self.member_create(member, index) for index, member in enumerate(members)
+            self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
         ]}
         if not self.repl_init(config):
             self.cleanup()
