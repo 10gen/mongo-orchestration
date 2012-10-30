@@ -102,7 +102,7 @@ def rs_create():
     try:
         rs_id = RS().rs_new(data)
         print 'rs_id: ', rs_id
-        result = RS().rs_info(rs_id)
+        result = RS().repl_info(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(500)
@@ -122,11 +122,11 @@ def rs_list():
 
 @route('/rs/<rs_id>', method='GET')
 def rs_info(rs_id):
-    logger.info("rs_info request")
+    logger.info("repl_info request")
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_info(rs_id)
+        result = RS().repl_info(rs_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
