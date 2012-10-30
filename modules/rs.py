@@ -109,6 +109,9 @@ class RS(Singleton):
         """
         return self[repl_id].members()
 
+    def rs_secondaries(self, repl_id):
+        return self[repl_id].secondaries()
+
     def rs_member_info(self, repl_id, member_id):
         """return information about member
         Args:
@@ -372,6 +375,9 @@ class ReplicaSet(object):
                 if time.time() - t_start > timeout:
                     return False
                 time.sleep(20)
+
+    def secondaries(self):
+        return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(2)]
 
     def waiting_config_state(self, timeout=300):
         t_start = time.time()
