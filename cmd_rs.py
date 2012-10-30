@@ -131,6 +131,11 @@ class CmdRS(cmd.Cmd):
         r = requests.get(url)
         self.print_result(r)
 
+    def do_hidden(self, rs_id):
+        url = "{url}rs/{rs_id}/hidden".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
+
     def do_exit(self, line):
         """EXIT"""
         return True

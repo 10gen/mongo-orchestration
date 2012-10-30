@@ -115,6 +115,9 @@ class RS(Singleton):
     def rs_arbiters(self, repl_id):
         return self[repl_id].arbiters()
 
+    def rs_hidden(self, repl_id):
+        return self[repl_id].hidden()
+
     def rs_member_info(self, repl_id, member_id):
         """return information about member
         Args:
@@ -384,6 +387,10 @@ class ReplicaSet(object):
 
     def arbiters(self):
         return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(7)]
+
+    def hidden(self):
+        members = [self.member_info(item["_id"]) for item in self.members()]
+        return [{"_id": member['_id'], "host": member['uri']} for member in members if member['rsInfo'].get('hidden', False)]
 
     def waiting_config_state(self, timeout=300):
         t_start = time.time()

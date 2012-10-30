@@ -202,6 +202,19 @@ def rs_arbiters(rs_id):
     return send_result(200, result)
 
 
+@route('/rs/<rs_id>/hidden', method='GET')
+def rs_hidden(rs_id):
+    logger.info("hidden request")
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().rs_hidden(rs_id)
+    except StandardError as e:
+        print repr(e)
+        return send_result(400)
+    return send_result(200, result)
+
+
 @route('/rs/<rs_id>/members/<member_id>', method='GET')
 def rs_member_info(rs_id, member_id):
     logger.info("member_info request")
