@@ -102,7 +102,7 @@ class CmdRS(cmd.Cmd):
         r = requests.delete(url)
         self.print_result(r)
 
-    def do_member_primary(self, rs_id):
+    def do_primary(self, rs_id):
         url = "{url}rs/{rs_id}/primary".format(url=self.api_url, rs_id=self.real_id(rs_id))
         r = requests.get(url)
         self.print_result(r)
