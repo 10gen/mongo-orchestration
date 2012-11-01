@@ -7,10 +7,16 @@ from modules.hosts import Hosts
 from modules.rs import RS
 from bottle import route, run, request, response, abort
 
+import os
+print os.getcwd()
+db = os.path.join(os.getcwd(), 'mongo-pids')
+
 hosts = Hosts()
-hosts.set_settings('/tmp/mongo-pids')
+# hosts.set_settings('/tmp/mongo-pids')
+hosts.set_settings(db)
 rs = RS()
-rs.set_settings('/tmp/mongo-pids')
+# rs.set_settings('/tmp/mongo-pids')
+rs.set_settings(db)
 
 
 def send_result(code, result=None):

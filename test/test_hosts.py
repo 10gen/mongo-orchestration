@@ -6,26 +6,40 @@ import unittest
 from modules.hosts import Host, Hosts
 import socket
 import os
+import tempfile
+import time
+import stat
 
 
 class HostsTestCase(unittest.TestCase):
     def setUp(self):
+        self.path = tempfile.mktemp(prefix="test-storage")
         self.hosts = Hosts()
-        self.hosts.set_settings('/tmp/mongo-pids')
+        self.hosts.set_settings(self.path)
+
+    def remove_path(self, path):
+        onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+            except OSError:
+                time.sleep(2)
+                onerror(os.remove, path, None)
+
 
     def tearDown(self):
-        if self.hosts:
-            self.hosts.cleanup()
+        self.hosts.cleanup()
+        self.hosts._storage.disconnect()
+        self.remove_path(self.path)
 
     def test_singleton(self):
         self.assertEqual(id(self.hosts), id(Hosts()))
 
     def test_set_settings(self):
-        self.hosts.h_new('mongod', {}, autostart=False)
-        self.assertEqual(1, len(self.hosts))
-        self.hosts.set_settings('/tmp/mongo-pids')
-        self.assertEqual(0, len(self.hosts))
-        self.assertEqual('/tmp/mongo-pids', self.hosts.pids_file)
+        path = tempfile.mktemp(prefix="test-set-settings-")
+        self.hosts.set_settings(path)
+        self.assertEqual(path, self.hosts.pids_file)
+        self.remove_path(path)
 
     def test_new_host(self):
         host_id = self.hosts.h_new('mongod', {}, autostart=False)
@@ -52,7 +66,7 @@ class HostsTestCase(unittest.TestCase):
     def test_hcommand(self):
         h_id = self.hosts.h_new('mongod', {}, autostart=False)
         self.assertTrue(self.hosts.h_command(h_id, 'start'))
-        self.assertEqual(None, self.hosts.h_command(h_id, 'stop'))
+        self.assertTrue(self.hosts.h_command(h_id, 'stop'))
         self.assertTrue(self.hosts.h_command(h_id, 'start'))
         self.assertTrue(self.hosts.h_command(h_id, 'restart'))
         with self.assertRaises(ValueError):
@@ -87,6 +101,7 @@ class HostTestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'host'):
+            self.host.stop()
             self.host.cleanup()
 
     def test_host(self):
@@ -109,10 +124,12 @@ class HostTestCase(unittest.TestCase):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = self.host.hostname.split(':')[0]
         s.connect((host, self.host.cfg['port']))
+        s.shutdown(0)
         s.close()
         self.assertTrue(self.host.restart(80))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, self.host.cfg['port']))
+        s.shutdown(0)
         s.close()
 
     def test_cleanup(self):
