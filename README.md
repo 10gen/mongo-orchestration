@@ -21,8 +21,8 @@ command format: `command host_id  [params]`
 commands:
 + **create {host params}** - create new host  
 Example: `create {"name": "mongod"}`  
-```
-========= Response data =========
+
+    ========= Response data =========
 result code:  200
 {u'id': u'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
  u'procInfo': {u'alive': True,
@@ -46,7 +46,7 @@ result code:  200
  u'statuses': {u'locked': False, u'mongos': False, u'primary': True},
  u'uri': u'EPBYMINW0164T1:1035'}
 =================================
-```
+
 + **info [host-id]**  - show information about host
 Example: `info 1`  
 ```
