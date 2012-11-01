@@ -240,10 +240,8 @@ class ReplicaSet(object):
         c = pymongo.Connection(init_host)
         logger.info("created connection")
         logger.info("exec command 'replSetInitiate' with config {config}".format(**locals()))
-        # result = c.admin.command("replSetInitiate", config)
-        result = c.admin.eval("rs.initiate()", config)
-        print 'result:', repr(result)
-        logger.info("command result: {result}".format(**locals()))
+        result = c.admin.command("replSetInitiate", config)
+        logger.info("command result: {result}".format(result=result))
         logger.info("waiting_config_state()")
         # wait while real state equals config
         return self.waiting_config_state()

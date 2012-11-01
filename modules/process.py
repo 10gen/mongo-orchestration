@@ -19,7 +19,7 @@ HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 
 class PortPool(Singleton):
 
-    def __init__(self, min_port=1025, max_port=65535, port_sequence=None):
+    def __init__(self, min_port=1025, max_port=2000, port_sequence=None):
         """
         Args:
             min_port - min port number  (ignoring if 'port_sequence' is not None)
@@ -30,7 +30,7 @@ class PortPool(Singleton):
             self.__init_range(min_port, max_port, port_sequence)
             self.refresh()
 
-    def __init_range(self, min_port=1025, max_port=65535, port_sequence=None):
+    def __init_range(self, min_port=1025, max_port=2000, port_sequence=None):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
@@ -89,7 +89,7 @@ class PortPool(Singleton):
             self.__ports = set(filter(self.__check_port, ports))
             self.__closed = ports.difference(self.__ports)
 
-    def change_range(self, min_port=1025, max_port=65535, port_sequence=None):
+    def change_range(self, min_port=1025, max_port=2000, port_sequence=None):
         """change Pool port range"""
         self.__init_range(min_port, max_port, port_sequence)
         self.refresh()
@@ -131,7 +131,7 @@ def mprocess(name, config_path, port, timeout=180):
     return tuple (pid, host) if process started, return (None, None) if not
     """
     port = port or PortPool().port(check=True)
-    cmd = [name, "-f", config_path]
+    cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
     try:
         proc = subprocess.Popen(cmd,

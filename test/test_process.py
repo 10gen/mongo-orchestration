@@ -15,7 +15,7 @@ class ProcessTestCase(unittest.TestCase):
         self.hostname = process.HOSTNAME
         self.s = None
         self.executable = sys.executable
-        self.pp = process.PortPool(min_port=1025, max_port=65535)
+        self.pp = process.PortPool(min_port=1025, max_port=2000)
 
     def tearDown(self):
         self.s and self.s.close()
