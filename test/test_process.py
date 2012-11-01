@@ -7,7 +7,6 @@ import modules.process as process
 import socket
 import sys
 import subprocess
-import time
 import os
 
 
@@ -16,7 +15,7 @@ class ProcessTestCase(unittest.TestCase):
         self.hostname = process.HOSTNAME
         self.s = None
         self.executable = sys.executable
-        self.pp = process.PortPool(min_port=1025, max_port=65535)
+        self.pp = process.PortPool(min_port=1025, max_port=2000)
 
     def tearDown(self):
         self.s and self.s.close()
@@ -43,7 +42,8 @@ class ProcessTestCase(unittest.TestCase):
         self.s.bind((self.hostname, port))
         self.s.listen(1)
         self.assertTrue(process.wait_for(port, 1))
-        self.s.shutdown(0)
+        # self.s.shutdown(0)
+        self.s.close()
         self.assertFalse(process.wait_for(port, 1))
 
     def test_mprocess(self):
@@ -56,16 +56,19 @@ class ProcessTestCase(unittest.TestCase):
         pid, host = process.mprocess(self.executable, '', port=port, timeout=2)
         self.assertGreater(pid, 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
-        self.s.shutdown(0)
+        try:
+            self.s.shutdown(0)
+        except socket.error:
+            pass
+        self.s.close()
         with self.assertRaises(OSError):
             process.mprocess(self.executable, '', port=port, timeout=2)
 
     def test_kill_mprocess(self):
-        test_module = """import signal, time, sys\n\ndef signal_usr1(signum, frame):\n    print signum\n\n    sys.stdout.flush()\nsignal.signal(2, signal_usr1)\ntime.sleep(3)\n"""
-        p = subprocess.Popen([self.executable, '-c', test_module], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
-        time.sleep(1)
-        process.kill_mprocess(p.pid, 2)
-        self.assertEqual([line for line in p.stdout][-1].strip(), '2')
+        p = subprocess.Popen([self.executable])
+        pid = p.pid
+        process.kill_mprocess(pid)
+        self.assertFalse(process.proc_alive(pid))
 
     def test_port_pool(self):
         pp = process.PortPool()
@@ -99,6 +102,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue('port=27017' in config_data)
         self.assertTrue('objcheck=true' in config_data)
         self.assertTrue('dbpath={dbpath}'.format(dbpath=cfg['dbpath']) in config_data)
+        process.cleanup_mprocess(config_path, cfg)
 
     def test_cleanup(self):
         config_path, cfg = process.write_config({'port': 27017, 'objcheck': 'true'}, auth_key="secret")
@@ -107,7 +111,6 @@ class ProcessTestCase(unittest.TestCase):
         process.cleanup_mprocess(config_path, cfg)
         for key in ('dbpath', 'keyFile'):
             self.assertFalse(os.path.exists(cfg[key]))
-
 
 
 if __name__ == '__main__':

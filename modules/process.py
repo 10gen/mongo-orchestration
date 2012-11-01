@@ -4,14 +4,13 @@ import socket
 import subprocess
 import time
 import os
-import signal
 import errno
-import sys
 from singleton import Singleton
 import tempfile
 import shutil
 import stat
 import json
+import psutil
 
 
 HOME = os.environ.get('HOME')
@@ -20,7 +19,7 @@ HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 
 class PortPool(Singleton):
 
-    def __init__(self, min_port=1025, max_port=65535, port_sequence=None):
+    def __init__(self, min_port=1025, max_port=2000, port_sequence=None):
         """
         Args:
             min_port - min port number  (ignoring if 'port_sequence' is not None)
@@ -31,7 +30,7 @@ class PortPool(Singleton):
             self.__init_range(min_port, max_port, port_sequence)
             self.refresh()
 
-    def __init_range(self, min_port=1025, max_port=65535, port_sequence=None):
+    def __init_range(self, min_port=1025, max_port=2000, port_sequence=None):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
@@ -90,7 +89,7 @@ class PortPool(Singleton):
             self.__ports = set(filter(self.__check_port, ports))
             self.__closed = ports.difference(self.__ports)
 
-    def change_range(self, min_port=1025, max_port=65535, port_sequence=None):
+    def change_range(self, min_port=1025, max_port=2000, port_sequence=None):
         """change Pool port range"""
         self.__init_range(min_port, max_port, port_sequence)
         self.refresh()
@@ -132,7 +131,7 @@ def mprocess(name, config_path, port, timeout=180):
     return tuple (pid, host) if process started, return (None, None) if not
     """
     port = port or PortPool().port(check=True)
-    cmd = [name, "-f", config_path]
+    cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
     try:
         proc = subprocess.Popen(cmd,
@@ -149,25 +148,17 @@ def mprocess(name, config_path, port, timeout=180):
     return (proc.pid, host)
 
 
-def kill_mprocess(pid, sig=2):
-    """send a signal to terminate process
-    for 'win32' used CTRL_C_EVENT signal
+def kill_mprocess(pid, timeout=10):
+    """kill process
     Args:
         pid - process pid
-        sig - signal
     """
-    if not proc_alive(pid):
-        return False
-    try:
-        # Not sure if cygwin makes sense here...
-        if sys.platform in ('win32', 'cygwin'):
-            os.kill(pid, signal.CTRL_C_EVENT)
-        else:
-            os.kill(pid, sig)
-    except OSError:
-        return False
-    time.sleep(1.5)  # wait while process stops
-    return True
+    if pid and proc_alive(pid):
+        psutil.Process(pid).terminate()
+        t_start = time.time()
+        while proc_alive(pid) and time.time() - t_start < timeout:
+            time.sleep(1.5)
+    return not proc_alive(pid)
 
 
 def cleanup_mprocess(config_path, cfg):
@@ -176,7 +167,7 @@ def cleanup_mprocess(config_path, cfg):
        config_path - process's options file
        cfg - process's config
     """
-    for key in ('dbpath', 'keyFile', 'logPath'):
+    for key in ('keyFile', 'logPath', 'dbpath'):
         remove_path(cfg.get(key, None))
     remove_path(config_path)
 
@@ -184,12 +175,20 @@ def cleanup_mprocess(config_path, cfg):
 def remove_path(path):
     """remove path from file system
     If path is None - do nothing"""
+
+    onerror = lambda func, filepath, exc_info: (time.sleep(2),os.chmod(filepath,stat.S_IWUSR), func(filepath))
     if path is None or not os.path.exists(path):
         return
     if os.path.isdir(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=onerror)
     if os.path.isfile(path):
-        shutil.os.remove(path)
+        try:
+            shutil.os.remove(path)
+        except OSError:
+            time.sleep(2)
+            onerror(shutil.os.remove, path, None)
+            # os.chmod(path,stat.S_IWUSR)
+            # shutil.os.remove(path)
 
 
 def write_config(params, auth_key=None, log=False):
@@ -228,11 +227,9 @@ def write_config(params, auth_key=None, log=False):
 def proc_alive(pid):
     """check if process with pid is alive
     Return True or False"""
-    # TODO: need test
-    if not (pid and os.path.exists("/proc/%d/status" % pid)):
+    try:
+        p = psutil.Process(pid)
+    except (psutil.NoSuchProcess, TypeError):
         return False
-    for line in open("/proc/%d/status" % pid).readlines():
-        if line.startswith("State:"):
-            if line.split(":", 1)[1].strip().split(' ')[0] == 'Z':
-                return False
-            return True
+    return p.status in (psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING, psutil.STATUS_LOCKED)
+

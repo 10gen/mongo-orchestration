@@ -227,13 +227,22 @@ class ReplicaSet(object):
     def repl_init(self, config):
         """create replica set by config
         return True if replica set created successfuly, else False"""
+        logger.info("repl_init({config})".format(**locals()))
+        logger.info("old host_map: {self.host_map}".format(**locals()))
         self.update_host_map(config)
+        logger.info("new host_map: {self.host_map}".format(**locals()))
         # init_host - host which can init replica set
         init_host = [member['host'] for member in config['members']
                      if not (member.get('arbiterOnly', False)
                              or member.get('priority', 1) == 0)][0]
+        logger.info("init_host: {init_host}".format(**locals()))
+        logger.info("creating connection")
         c = pymongo.Connection(init_host)
-        c.admin.command("replSetInitiate", config)
+        logger.info("created connection")
+        logger.info("exec command 'replSetInitiate' with config {config}".format(**locals()))
+        result = c.admin.command("replSetInitiate", config)
+        logger.info("command result: {result}".format(result=result))
+        logger.info("waiting_config_state()")
         # wait while real state equals config
         return self.waiting_config_state()
 
@@ -278,13 +287,19 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
+        logger.info("run_command({command}, {arg}, {is_eval}, {member_id})".format(**locals()))
         mode = is_eval and 'eval' or 'command'
-        return getattr(self.connection(member_id=member_id).admin, mode)(command, arg)
+        result = getattr(self.connection(member_id=member_id).admin, mode)(command, arg)
+        logger.info("command result: {result}".format(**locals()))
+        return result
 
     @property
     def config(self):
         """return replica set config, use rs.conf() command"""
-        return self.run_command("rs.conf()", is_eval=True)
+        logger.info("get replica config")
+        config = self.run_command("rs.conf()", is_eval=True)
+        logger.info("config: {config}".format(**locals()))
+        return config
 
     def member_create(self, params, member_id):
         """start new mongod instances as part of replica set
@@ -294,11 +309,14 @@ class ReplicaSet(object):
 
         return member config
         """
+        logger.info("member_create(params, member_id)".format(**locals()))
         member_config = params.get('rsParams', {})
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
         host_id = self.hosts.h_new('mongod', proc_params, self.auth_key)
+        logger.info("host_id: {host_id}".format(**locals()))
         member_config.update({"_id": member_id, "host": self.hosts.h_info(host_id)['uri']})
+        logger.info("return member_config: {member_config}".format(**locals()))
         return member_config
 
     def member_del(self, member_id, reconfig=True):
@@ -331,11 +349,15 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
+        logger.info("member_info({member_id})".format(**locals()))
         host_info = self.hosts.h_info(self.hosts.h_id_by_hostname(self.id2host(member_id)))
+        logger.info("host_info: {host_info}".format(**locals()))
+        logger.info("proc_info: {proc_info}".format(proc_info=host_info['procInfo']))
         result = {'_id': member_id, 'uri': host_info['uri'], 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
+            logger.info("repl_info: {repl}".format(**locals()))
             for key in ('votes', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
@@ -393,22 +415,33 @@ class ReplicaSet(object):
             read_preference - default PRIMARY
             timeout - specify how long, in seconds, a command can take before server times out.
         """
+        logger.info("get connection")
+        logger.info("member_id={member_id}, read_preference={read_preference}, timeout={timeout}".format(**locals()))
         t_start = time.time()
         hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
+        logger.info("hosts: {hosts}".format(**locals()))
         while True:
             try:
                 if member_id is None:
-                    c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference)
+                    logger.info("try get ReplicaSetConnection")
+                    c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20)
+                    logger.info("created ReplicaSetConnection")
                     if c.primary:
+                        logger.info('return ReplicaSetConnection')
                         return c
+                    logger.info("No replica set primary available")
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
-                    c = pymongo.Connection(hosts, read_preference=read_preference)
+                    logger.info("get Connection")
+                    c = pymongo.Connection(hosts, read_preference=read_preference, network_timeout=20)
+                    logger.info("return Connection object")
                     return c
-            except (pymongo.errors.PyMongoError):
+            except (pymongo.errors.PyMongoError) as err:
+                logger.info("connection error: {error}".format(error=repr(err)))
                 if time.time() - t_start > timeout:
                     return False
-                time.sleep(20)
+                logger.info("sleep 10 second before next attempt")
+                time.sleep(10)
 
     def secondaries(self):
         """return list of secondaries members"""
@@ -430,23 +463,33 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
+        logger.info("waiting_config_state")
         t_start = time.time()
         while not self.check_config_state():
             if time.time() - t_start > timeout:
+                logger.info("timeout, return False")
                 return False
+            logger.info("sleep 20 seconds")
             time.sleep(20)
+        logger.info("waiting_config_state return True")
         return True
 
     def check_config_state(self):
         "return True if real state equal config state otherwise False"
         # TODO: fix issue hidden=true -> hidden=false
+        logger.info("check_config_state")
         config = self.config
+        logger.info("config: %s", repr(config))
         for member in config['members']:
             member.pop('host')
             'priority' in member and member.pop('priority')
             real_info = {"_id": member["_id"]}
             real_info.update(self.member_info(member["_id"])['rsInfo'])
+            logger.info("member_info: {member}".format(**locals()))
+            logger.info("real_info: {real_info}".format(**locals()))
             for key in member:
                 if member[key] != real_info.get(key, None):
+                    logger.info("{key}: {value1} != {value2}".format(key=key, value1=member[key], value2=real_info.get(key, None)))
                     return False
+        logger.info("real state equal config")
         return True
