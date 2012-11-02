@@ -147,9 +147,9 @@ class RS(Singleton):
         return True if operation success otherwise False
         """
         repl = self[repl_id]
-        result = repl.repl_member_add(params)
+        member_id = repl.repl_member_add(params)
         self[repl_id] = repl
-        return result
+        return member_id
 
     def rs_member_command(self, repl_id, member_id, command):
         """apply command(start, stop, restart) to the member of replica set
@@ -184,6 +184,8 @@ class ReplicaSet(object):
     """class represents ReplicaSet"""
 
     hosts = Hosts()  # singleton to manage hosts instances
+    # replica set's default parameters
+    default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
 
     def __init__(self, rs_params):
         """create replica set according members config
@@ -270,9 +272,13 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         repl_config = self.config
-        member_config = self.member_create(params, len(repl_config['members']))
+        member_id = max([member['_id'] for member in repl_config['members']]) + 1
+        member_config = self.member_create(params, member_id)
         repl_config['members'].append(member_config)
-        return self.repl_update(repl_config)
+        if not self.repl_update(repl_config):
+            self.member_del(member_id, reconfig=True)
+            raise errors.MongoOrchestrationError()
+        return member_id
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
         """run command on replica set
@@ -328,7 +334,7 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
-        if reconfig:
+        if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
             self.repl_update(config)
@@ -391,7 +397,7 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         try:
-            self.run_command("replSetStepDown", is_eval=False)
+            self.run_command("replSetStepDown", timeout, is_eval=False)
         except (pymongo.errors.AutoReconnect):
             pass
         time.sleep(2)
@@ -476,20 +482,28 @@ class ReplicaSet(object):
 
     def check_config_state(self):
         "return True if real state equal config state otherwise False"
-        # TODO: fix issue hidden=true -> hidden=false
         logger.info("check_config_state")
         config = self.config
         logger.info("config: %s", repr(config))
         for member in config['members']:
-            member.pop('host')
-            'priority' in member and member.pop('priority')
-            real_info = {"_id": member["_id"]}
-            real_info.update(self.member_info(member["_id"])['rsInfo'])
-            logger.info("member_info: {member}".format(**locals()))
-            logger.info("real_info: {real_info}".format(**locals()))
-            for key in member:
-                if member[key] != real_info.get(key, None):
-                    logger.info("{key}: {value1} != {value2}".format(key=key, value1=member[key], value2=real_info.get(key, None)))
+            print "member: {member}".format(member=repr(member))
+            cfg_member_info = self.default_params.copy()
+            cfg_member_info.update(member)
+            'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value
+            cfg_member_info['host'] = cfg_member_info['host'].lower()
+
+            real_member_info = self.default_params.copy()
+            info = self.member_info(member["_id"])
+            real_member_info["_id"] = info['_id']
+            real_member_info["host"] = info["uri"].lower()
+            real_member_info.update(info['rsInfo'])
+
+            logger.info("member_info: {cfg_member_info}".format(**locals()))
+            logger.info("real_member_info: {real_member_info}".format(**locals()))
+
+            for key in cfg_member_info:
+                if cfg_member_info[key] != real_member_info.get(key, None):
+                    logger.info("{key}: {value1} != {value2}".format(key=key, value1=cfg_member_info[key], value2=real_member_info.get(key, None)))
                     return False
         logger.info("real state equal config")
         return True
