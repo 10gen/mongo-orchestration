@@ -147,9 +147,9 @@ class RS(Singleton):
         return True if operation success otherwise False
         """
         repl = self[repl_id]
-        result = repl.repl_member_add(params)
+        member_id = repl.repl_member_add(params)
         self[repl_id] = repl
-        return result
+        return member_id
 
     def rs_member_command(self, repl_id, member_id, command):
         """apply command(start, stop, restart) to the member of replica set
@@ -270,9 +270,13 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         repl_config = self.config
-        member_config = self.member_create(params, len(repl_config['members']))
+        member_id = max([member['_id'] for member in repl_config['members']]) + 1
+        member_config = self.member_create(params, member_id)
         repl_config['members'].append(member_config)
-        return self.repl_update(repl_config)
+        if not self.repl_update(repl_config):
+            self.member_del(member_id, reconfig=True)
+            raise errors.MongoOrchestrationError()
+        return member_id
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
         """run command on replica set
@@ -328,7 +332,7 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
-        if reconfig:
+        if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
             self.repl_update(config)

@@ -159,8 +159,8 @@ def rs_member_add(rs_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        if RS().rs_member_add(rs_id, data):
-            result = RS().rs_members(rs_id)
+        member_id =  RS().rs_member_add(rs_id, data)
+        result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
         print repr(e)
         return send_result(400)
