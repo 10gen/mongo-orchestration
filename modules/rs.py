@@ -184,6 +184,8 @@ class ReplicaSet(object):
     """class represents ReplicaSet"""
 
     hosts = Hosts()  # singleton to manage hosts instances
+    # replica set's default parameters
+    default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
 
     def __init__(self, rs_params):
         """create replica set according members config
@@ -480,20 +482,28 @@ class ReplicaSet(object):
 
     def check_config_state(self):
         "return True if real state equal config state otherwise False"
-        # TODO: fix issue hidden=true -> hidden=false
         logger.info("check_config_state")
         config = self.config
         logger.info("config: %s", repr(config))
         for member in config['members']:
-            member.pop('host')
-            'priority' in member and member.pop('priority')
-            real_info = {"_id": member["_id"]}
-            real_info.update(self.member_info(member["_id"])['rsInfo'])
-            logger.info("member_info: {member}".format(**locals()))
-            logger.info("real_info: {real_info}".format(**locals()))
-            for key in member:
-                if member[key] != real_info.get(key, None):
-                    logger.info("{key}: {value1} != {value2}".format(key=key, value1=member[key], value2=real_info.get(key, None)))
+            print "member: {member}".format(member=repr(member))
+            cfg_member_info = self.default_params.copy()
+            cfg_member_info.update(member)
+            cfg_member_info.has_key('priority') and cfg_member_info.pop('priority')  # no way to check 'priority' value
+            cfg_member_info['host'] = cfg_member_info['host'].lower()
+
+            real_member_info = self.default_params.copy()
+            info = self.member_info(member["_id"])
+            real_member_info["_id"] = info['_id']
+            real_member_info["host"] = info["uri"].lower()
+            real_member_info.update(info['rsInfo'])
+
+            logger.info("member_info: {cfg_member_info}".format(**locals()))
+            logger.info("real_member_info: {real_member_info}".format(**locals()))
+
+            for key in cfg_member_info:
+                if cfg_member_info[key] != real_member_info.get(key, None):
+                    logger.info("{key}: {value1} != {value2}".format(key=key, value1=cfg_member_info[key], value2=real_member_info.get(key, None)))
                     return False
         logger.info("real state equal config")
         return True
