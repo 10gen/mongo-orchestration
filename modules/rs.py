@@ -397,7 +397,7 @@ class ReplicaSet(object):
         return True if operation success otherwise False
         """
         try:
-            self.run_command("replSetStepDown", is_eval=False)
+            self.run_command("replSetStepDown", timeout, is_eval=False)
         except (pymongo.errors.AutoReconnect):
             pass
         time.sleep(2)
@@ -489,7 +489,7 @@ class ReplicaSet(object):
             print "member: {member}".format(member=repr(member))
             cfg_member_info = self.default_params.copy()
             cfg_member_info.update(member)
-            cfg_member_info.has_key('priority') and cfg_member_info.pop('priority')  # no way to check 'priority' value
+            'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value
             cfg_member_info['host'] = cfg_member_info['host'].lower()
 
             real_member_info = self.default_params.copy()

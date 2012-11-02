@@ -116,9 +116,14 @@ class CmdRS(cmd.Cmd):
         r = requests.put(url)
         self.print_result(r)
 
-    def do_stepdown(self, rs_id):
+    def do_stepdown(self, args):
+        args = map(lambda item: item.strip(' '), args.split('  '))
+        rs_id = args[0]
+        params = "{}"
+        if len(args) > 1:
+            params = args[1]
         url = "{url}rs/{rs_id}/primary/stepdown".format(url=self.api_url, rs_id=self.real_id(rs_id))
-        r = requests.put(url)
+        r = requests.put(url, params)
         self.print_result(r)
 
     def do_secondaries(self, rs_id):
