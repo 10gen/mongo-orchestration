@@ -12,7 +12,7 @@ default port: 8889
 
 ##Notes
 + tested on Ubuntu 12.04 and OS X 10.8.2
-+ does not support Window
++ does not support Windows (restart host issue)
 + authorization does not implemented
 
 ## Command line scripts
