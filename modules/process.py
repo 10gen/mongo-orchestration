@@ -133,6 +133,7 @@ def mprocess(name, config_path, port, timeout=180):
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
+    print repr(cmd)
     try:
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -176,7 +177,7 @@ def remove_path(path):
     """remove path from file system
     If path is None - do nothing"""
 
-    onerror = lambda func, filepath, exc_info: (time.sleep(2),os.chmod(filepath,stat.S_IWUSR), func(filepath))
+    onerror = lambda func, filepath, exc_info: (time.sleep(2), os.chmod(filepath, stat.S_IWUSR), func(filepath))
     if path is None or not os.path.exists(path):
         return
     if os.path.isdir(path):
@@ -232,4 +233,3 @@ def proc_alive(pid):
     except (psutil.NoSuchProcess, TypeError):
         return False
     return p.status in (psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING, psutil.STATUS_LOCKED)
-

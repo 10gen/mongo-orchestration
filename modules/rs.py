@@ -9,16 +9,19 @@ from hosts import Hosts
 import time
 import errors
 
+Hosts()
+
 
 class RS(Singleton):
     """ RS is a dict-like collection for replica set"""
     _storage = None
 
-    def set_settings(self, pids_file):
+    def set_settings(self, pids_file, bin_path=''):
         """set path to storage"""
         self._storage = Storage(pids_file, 'rs')
         self.pids_file = pids_file
-        Hosts().set_settings(pids_file)
+        self.bin_path = bin_path
+        Hosts().set_settings(pids_file, bin_path)
         self.cleanup()
 
     def __getitem__(self, key):
@@ -49,7 +52,8 @@ class RS(Singleton):
 
     def cleanup(self):
         """remove all hosts with their data"""
-        self._storage.clear()
+        Hosts().cleanup()
+        self._storage and self._storage.clear()
 
     def rs_new(self, rs_params):
         """create new replica set

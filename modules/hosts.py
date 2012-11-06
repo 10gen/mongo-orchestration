@@ -4,16 +4,18 @@ from uuid import uuid4
 from singleton import Singleton
 from storage import Storage
 import pymongo
+import os
 
 
 class Hosts(Singleton):
     """ Hosts is a dict-like collection for Host objects"""
     _storage = None
 
-    def set_settings(self, pids_file):
+    def set_settings(self, pids_file, bin_path=None):
         """set path to storage"""
         self._storage = Storage(pids_file, 'hosts')
         self.pids_file = pids_file
+        self.bin_path = bin_path or ''
         self.cleanup()
 
     def __getitem__(self, key):
@@ -44,8 +46,9 @@ class Hosts(Singleton):
 
     def cleanup(self):
         """remove all hosts with their data"""
-        for host_id in self._storage:
-            self.h_del(host_id)
+        if self._storage:
+            for host_id in self._storage:
+                self.h_del(host_id)
 
     def h_new(self, name, params, auth_key=None, timeout=300, autostart=True):
         """create new host
@@ -58,8 +61,10 @@ class Hosts(Singleton):
         Return host_id
            where host_id - id which can use to take the host from hosts collection
         """
+        name = os.path.split(name)[1]
+        print 'bin_path:', self.bin_path
         try:
-            host_id, host = str(uuid4()), Host(name, params, auth_key)
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
             if autostart:
                 if not host.start(timeout):
                     raise OSError
