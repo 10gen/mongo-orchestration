@@ -17,7 +17,7 @@ import apps.rs
 app = default_app.pop()
 
 import atexit
-
+DEFAULT_PORT = 8889
 pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
 
 
@@ -80,6 +80,7 @@ def read_env():
     parser.add_argument('-e', '--env', action='store', type=str, dest='env', default='default')
     parser.add_argument(action='store', type=str, dest='command', default='start', choices=('start', 'stop', 'restart'))
     parser.add_argument('--no-fork', action='store_true', dest='no_fork', default=False)
+    parser.add_argument('-p', '--port', action='store', dest='port', default=DEFAULT_PORT)
     args = parser.parse_args()
 
     try:
@@ -109,4 +110,4 @@ args = read_env()
 setup(args.release_path)
 atexit.register(delete_pid)
 getattr(Daemon(args.no_fork), args.command)()
-run(app, host='localhost', port=8889, debug=True, reloader=False)
+run(app, host='localhost', port=args.port, debug=True, reloader=False)
