@@ -202,7 +202,7 @@ def write_config(params, auth_key=None, log=False):
     where config_path - path to mongo's options file
           cfg - all options as dictionary
     """
-    cfg = {'dbpath': tempfile.mkdtemp(prefix="mongo-")}
+    cfg = {'dbpath': params.get('dbpath', tempfile.mkdtemp(prefix="mongo-"))}
     if auth_key:
         key_file = os.path.join(os.path.join(cfg['dbpath'], 'key'))
         open(key_file, 'w').write(auth_key)
