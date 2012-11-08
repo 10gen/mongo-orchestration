@@ -19,6 +19,25 @@ app = default_app.pop()
 import atexit
 DEFAULT_PORT = 8889
 pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
+log_file = os.path.join(os.path.split(__file__)[0], 'server.log')
+
+
+class LogOutput():
+    def __init__(self, logfile):
+        self.stdout = sys.stdout
+        self.log = open(logfile, 'w')
+
+    def write(self, text):
+        self.stdout.write(text)
+        self.log.write(text)
+        self.log.flush()
+
+    def close(self):
+        self.stdout.close()
+        self.log.close()
+
+
+sys.stdout = LogOutput(log_file)
 
 
 class Daemon(object):
