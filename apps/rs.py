@@ -6,7 +6,7 @@ import json
 import sys
 
 sys.path.insert(0, '..')
-from modules.rs import RS
+from lib.rs import RS
 from bottle import route, request, response, abort, run
 
 

@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, '../')
 import unittest
-from modules.singleton import Singleton
+from lib.singleton import Singleton
 
 
 class SingletonTestCase(unittest.TestCase):

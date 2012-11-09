@@ -6,7 +6,7 @@ import json
 import sys
 
 sys.path.insert(0, '..')
-from modules.hosts import Hosts
+from lib.hosts import Hosts
 from bottle import route, request, response, abort, run
 
 

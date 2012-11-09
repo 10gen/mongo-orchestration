@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 import argparse
 import json
 
-from modules.rs import RS
+from lib.rs import RS
 from bottle import run, default_app
 import os
 import sys

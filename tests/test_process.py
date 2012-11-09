@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, '../')
 import unittest
-import modules.process as process
+import lib.process as process
 import socket
 import sys
 import subprocess

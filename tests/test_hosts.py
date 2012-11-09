@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, '../')
 import unittest
-from modules.hosts import Host, Hosts
+from lib.hosts import Host, Hosts
 import socket
 import os
 import tempfile
@@ -25,7 +25,6 @@ class HostsTestCase(unittest.TestCase):
             except OSError:
                 time.sleep(2)
                 onerror(os.remove, path, None)
-
 
     def tearDown(self):
         self.hosts.cleanup()
