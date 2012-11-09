@@ -19,6 +19,10 @@ HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 
 class PortPool(Singleton):
 
+    __ports = set()
+    __closed = set()
+    __id = None
+
     def __init__(self, min_port=1025, max_port=2000, port_sequence=None):
         """
         Args:
@@ -26,16 +30,17 @@ class PortPool(Singleton):
             max_port - max port number  (ignoring if 'port_sequence' is not None)
             port_sequence - iterate sequence which contains numbers of ports
         """
-        if not hasattr(self, '_PortPool__ports'):  # magic singleton checker
+        if not self.__id:  # singleton checker
+            self.__id = id(self)
             self.__init_range(min_port, max_port, port_sequence)
-            self.refresh()
 
     def __init_range(self, min_port=1025, max_port=2000, port_sequence=None):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
-            self.__ports = set(xrange(min_port, max_port))
+            self.__ports = set(xrange(min_port, max_port + 1))
         self.__closed = set()
+        self.refresh()
 
     def __check_port(self, port):
         """check port status
@@ -61,7 +66,7 @@ class PortPool(Singleton):
         Args:
           check - check is port realy free
         """
-        if len(self.__ports) == 0:  # refresh ports if sequence is empty
+        if not self.__ports:  # refresh ports if sequence is empty
             self.refresh()
 
         try:
@@ -89,10 +94,9 @@ class PortPool(Singleton):
             self.__ports = set(filter(self.__check_port, ports))
             self.__closed = ports.difference(self.__ports)
 
-    def change_range(self, min_port=1025, max_port=2000, port_sequence=None):
+    def change_range(self, min_port, max_port, port_sequence=None):
         """change Pool port range"""
         self.__init_range(min_port, max_port, port_sequence)
-        self.refresh()
 
 
 def wait_for(port_num, timeout):
