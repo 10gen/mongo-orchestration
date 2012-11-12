@@ -94,7 +94,7 @@ class PortPool(Singleton):
             self.__ports = set(filter(self.__check_port, ports))
             self.__closed = ports.difference(self.__ports)
 
-    def change_range(self, min_port, max_port, port_sequence=None):
+    def change_range(self, min_port=1025, max_port=2000, port_sequence=None):
         """change Pool port range"""
         self.__init_range(min_port, max_port, port_sequence)
 
@@ -124,12 +124,12 @@ def wait_for(port_num, timeout):
     return False
 
 
-def mprocess(name, config_path, port, timeout=180):
+def mprocess(name, config_path, port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
         name - process name or path
         config_path - path to file where should be stored configuration
-        params - specific process configuration
+        port - process's port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (pid, host) if process started, return (None, None) if not
@@ -137,7 +137,6 @@ def mprocess(name, config_path, port, timeout=180):
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
-    print repr(cmd)
     try:
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -148,7 +147,7 @@ def mprocess(name, config_path, port, timeout=180):
         return (proc.pid, host)
     elif timeout > 0:
         proc.terminate()
-        time.sleep(3)  # wait while process stoped
+        proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
         raise OSError(errno.ETIMEDOUT, "could not connect to process during {timeout} seconds".format(timeout=timeout))
     return (proc.pid, host)
 
@@ -192,16 +191,13 @@ def remove_path(path):
         except OSError:
             time.sleep(2)
             onerror(shutil.os.remove, path, None)
-            # os.chmod(path,stat.S_IWUSR)
-            # shutil.os.remove(path)
 
 
-def write_config(params, auth_key=None, log=False):
+def write_config(params, auth_key=None):
     """write mongo's config file
     Args:
        params - options wich file contains
        auth_key - authorization key ()
-       log - use logPath option with generation path if True
     Return config_path, cfg
     where config_path - path to mongo's options file
           cfg - all options as dictionary
