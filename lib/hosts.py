@@ -62,7 +62,6 @@ class Hosts(Singleton):
            where host_id - id which can use to take the host from hosts collection
         """
         name = os.path.split(name)[1]
-        print 'bin_path:', self.bin_path
         try:
             host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
             if autostart:
