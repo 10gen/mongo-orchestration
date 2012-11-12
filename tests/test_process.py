@@ -79,8 +79,11 @@ class PortPoolTestCase(unittest.TestCase):
         for port in ports:
             if port != test_port:
                 sockets.append(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
-                sockets[-1].bind((self.hostname, port))
-                sockets[-1].listen(0)
+                try:
+                    sockets[-1].bind((self.hostname, port))
+                    sockets[-1].listen(0)
+                except (socket.error):
+                    pass
 
         self.pp.refresh()
         self.assertTrue(len(self.pp._PortPool__ports) == 1)
@@ -207,7 +210,7 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([self.executable])
         pid = p.pid
         self.assertTrue(process.proc_alive(pid))
-        p.terminate() and time.sleep(3)
+        p.kill(), time.sleep(3)
         self.assertFalse(process.proc_alive(pid))
 
 
