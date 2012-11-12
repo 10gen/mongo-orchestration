@@ -5,6 +5,7 @@ from singleton import Singleton
 from storage import Storage
 import pymongo
 import os
+import operator
 
 
 class Hosts(Singleton):
@@ -28,7 +29,8 @@ class Hosts(Singleton):
             raise ValueError
 
     def __delitem__(self, key):
-        host = self._storage.popitem(key)
+        host = self._storage[key]
+        operator.delitem(self._storage, key)
         del(host)
 
     def __del__(self):

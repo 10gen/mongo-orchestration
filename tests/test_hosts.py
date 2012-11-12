@@ -9,89 +9,110 @@ import os
 import tempfile
 import time
 import stat
+import operator
 
 
-# class HostsTestCase(unittest.TestCase):
-#     def setUp(self):
-#         self.path = tempfile.mktemp(prefix="test-storage")
-#         self.hosts = Hosts()
-#         self.hosts.set_settings(self.path)
+class HostsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.path = tempfile.mktemp(prefix="test-storage")
+        self.hosts = Hosts()
+        self.hosts.set_settings(self.path)
 
-#     def remove_path(self, path):
-#         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
-#         if os.path.isfile(path):
-#             try:
-#                 os.remove(path)
-#             except OSError:
-#                 time.sleep(2)
-#                 onerror(os.remove, path, None)
+    def remove_path(self, path):
+        onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+            except OSError:
+                time.sleep(2)
+                onerror(os.remove, path, None)
 
-#     def tearDown(self):
-#         self.hosts.cleanup()
-#         self.hosts._storage.disconnect()
-#         self.remove_path(self.path)
+    def tearDown(self):
+        self.hosts.cleanup()
+        self.hosts._storage.disconnect()
+        self.remove_path(self.path)
 
-#     def test_singleton(self):
-#         self.assertEqual(id(self.hosts), id(Hosts()))
+    def test_singleton(self):
+        self.assertEqual(id(self.hosts), id(Hosts()))
 
-#     def test_set_settings(self):
-#         path = tempfile.mktemp(prefix="test-set-settings-")
-#         self.hosts.set_settings(path)
-#         self.assertEqual(path, self.hosts.pids_file)
-#         self.remove_path(path)
+    def test_set_settings(self):
+        path = tempfile.mktemp(prefix="test-set-settings-")
+        self.hosts.set_settings(path)
+        self.assertEqual(path, self.hosts.pids_file)
+        self.remove_path(path)
 
-#     def test_new_host(self):
-#         host_id = self.hosts.h_new('mongod', {}, autostart=False)
-#         info = self.hosts.h_info(host_id)
-#         self.assertTrue(len(host_id) > 0)
-#         self.assertEqual(info['procInfo']['pid'], None)
-#         host_id2 = self.hosts.h_new('mongod', {}, autostart=True)
-#         info = self.hosts.h_info(host_id2)
-#         self.assertTrue(info['procInfo']['pid'] > 0)
+    def test_operations(self):
+        host_id = self.hosts.h_new('mongod', {}, autostart=False)
+        self.assertTrue(len(self.hosts) == 1)
+        self.assertTrue(host_id in self.hosts)
+        host_id2, host2 = 'host-id2', Host('mongod', {}, None)
+        host2.start(20)
+        host2_pid = host2.info()['procInfo']['pid']
+        self.hosts[host_id2] = host2
+        self.assertTrue(self.hosts[host_id2]['procInfo']['pid'] == host2_pid)
+        self.assertTrue(host_id2 in self.hosts)
+        for h_id in self.hosts:
+            self.assertTrue(h_id in (host_id, host_id2))
 
-#     def test_hdel(self):
-#         self.assertEqual(len(self.hosts), 0)
-#         h_id = self.hosts.h_new('mongod', {}, autostart=True)
-#         self.assertEqual(len(self.hosts), 1)
-#         h_info = self.hosts.h_info(h_id)['procInfo']
-#         self.assertTrue(os.path.exists(h_info['params']['dbpath']))
-#         self.assertTrue(os.path.exists(h_info['optfile']))
-#         self.hosts.h_del(h_id)
-#         self.assertEqual(len(self.hosts), 0)  # check length
-#         # check cleanup
-#         self.assertFalse(os.path.exists(h_info['params']['dbpath']))
-#         self.assertFalse(os.path.exists(h_info['optfile']))
+        operator.delitem(self.hosts, host_id2)
+        self.assertFalse(host_id2 in self.hosts)
+        host2.stop(), host2.cleanup()
 
-#     def test_hcommand(self):
-#         h_id = self.hosts.h_new('mongod', {}, autostart=False)
-#         self.assertTrue(self.hosts.h_command(h_id, 'start'))
-#         self.assertTrue(self.hosts.h_command(h_id, 'stop'))
-#         self.assertTrue(self.hosts.h_command(h_id, 'start'))
-#         self.assertTrue(self.hosts.h_command(h_id, 'restart'))
-#         with self.assertRaises(ValueError):
-#             self.hosts.h_command(h_id, 'fake')
+    def test_cleanup(self):
+        self.hosts.h_new('mongod', {}, autostart=False)
+        self.hosts.h_new('mongod', {}, autostart=True)
+        self.assertTrue(len(self.hosts) == 2)
+        self.hosts.cleanup()
+        self.assertTrue(len(self.hosts) == 0)
 
-#     def test_hinfo(self):
-#         h_id = self.hosts.h_new('mongod', {}, autostart=False)
-#         info = self.hosts.h_info(h_id)
-#         self.assertEqual(info['id'], h_id)
-#         self.assertEqual(info['procInfo']['pid'], None)
-#         self.assertEqual(info['statuses'], {})
-#         self.assertEqual(info['serverInfo'], {})
+    def test_new_host(self):
+        self.assertTrue(len(self.hosts) == 0)
+        host_id = self.hosts.h_new('mongod', {}, autostart=False)
+        info = self.hosts.h_info(host_id)
+        self.assertTrue(len(self.hosts) == 1)
+        self.assertEqual(info['procInfo']['pid'], None)
+        host_id2 = self.hosts.h_new('mongod', {}, autostart=True)
+        info = self.hosts.h_info(host_id2)
+        self.assertTrue(info['procInfo']['pid'] > 0)
 
-#     def test_hosts(self):
-#         self.assertEqual(len(self.hosts), 0)
-#         h_id = self.hosts.h_new('mongod', {}, autostart=False)
-#         self.assertEqual(len(self.hosts), 1)
-#         h2_id = self.hosts.h_new('mongod', {}, autostart=False)
-#         for host in self.hosts:
-#             self.assertTrue(host in (h_id, h2_id))
-#         self.assertTrue(h_id in self.hosts)
-#         self.assertTrue(h2_id in self.hosts)
+        self.assertRaises(OSError, self.hosts.h_new, 'fake_process_', {})
 
-#         self.hosts.h_del(h2_id)
-#         self.assertEqual(len(self.hosts), 1)
-#         self.assertFalse(h2_id in self.hosts)
+    def test_hdel(self):
+        self.assertEqual(len(self.hosts), 0)
+        h_id = self.hosts.h_new('mongod', {}, autostart=True)
+        self.assertEqual(len(self.hosts), 1)
+        h_info = self.hosts.h_info(h_id)['procInfo']
+        self.assertTrue(os.path.exists(h_info['params']['dbpath']))
+        self.assertTrue(os.path.exists(h_info['optfile']))
+        self.hosts.h_del(h_id)
+        self.assertEqual(len(self.hosts), 0)  # check length
+        # check cleanup
+        self.assertFalse(os.path.exists(h_info['params']['dbpath']))
+        self.assertFalse(os.path.exists(h_info['optfile']))
+
+    def test_hcommand(self):
+        h_id = self.hosts.h_new('mongod', {}, autostart=False)
+        self.assertTrue(self.hosts.h_command(h_id, 'start'))
+        self.assertTrue(self.hosts.h_command(h_id, 'stop'))
+        self.assertTrue(self.hosts.h_command(h_id, 'start'))
+        self.assertTrue(self.hosts.h_command(h_id, 'restart'))
+        self.assertRaises(ValueError, self.hosts.h_command, h_id, 'fake')
+
+    def test_hinfo(self):
+        h_id = self.hosts.h_new('mongod', {}, autostart=False)
+        info = self.hosts.h_info(h_id)
+        self.assertEqual(info['id'], h_id)
+        self.assertEqual(info['procInfo']['pid'], None)
+        self.assertEqual(info['statuses'], {})
+        self.assertEqual(info['serverInfo'], {})
+
+    def test_h_id_by_hostname(self):
+        h_id = self.hosts.h_new('mongod', {}, autostart=True)
+        h_uri = self.hosts.h_info(h_id)['uri']
+        h2_id = self.hosts.h_new('mongod', {}, autostart=True)
+        h2_uri = self.hosts.h_info(h2_id)['uri']
+        self.assertTrue(self.hosts.h_id_by_hostname(h_uri) == h_id)
+        self.assertTrue(self.hosts.h_id_by_hostname(h2_uri) == h2_id)
 
 
 class HostTestCase(unittest.TestCase):
