@@ -202,6 +202,8 @@ def write_config(params, auth_key=None):
           cfg - all options as dictionary
     """
     cfg = {'dbpath': params.get('dbpath', None) or tempfile.mkdtemp(prefix="mongo-")}
+    if not os.path.exists(cfg['dbpath']):
+        os.mkdir(cfg['dbpath'])
     if auth_key:
         key_file = os.path.join(os.path.join(cfg['dbpath'], 'key'))
         open(key_file, 'w').write(auth_key)
