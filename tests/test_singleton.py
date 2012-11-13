@@ -12,6 +12,8 @@ class SingletonTestCase(unittest.TestCase):
         a = Singleton()
         b = Singleton()
         self.assertEqual(id(a), id(b))
+        c = Singleton()
+        self.assertEqual(id(c), id(b))
 
 
 if __name__ == '__main__':

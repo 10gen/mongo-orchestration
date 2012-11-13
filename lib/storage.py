@@ -36,7 +36,10 @@ class Storage(DictMixin, object):
         cursor = self.connect().cursor()
         cursor.execute("select value from {table} where hash = {h}".format(table=self.name, h=hash(key)))
         try:
-            return loads(cursor.fetchone()[0])
+            value = cursor.fetchone()[0]
+            if isinstance(value, unicode):
+                value = value.encode()
+            return loads(value)
         except (TypeError, IndexError):
             raise KeyError(key)
 
@@ -65,4 +68,7 @@ class Storage(DictMixin, object):
         cursor = self.connect().cursor()
         cursor.execute("select key from {table}".format(table=self.name))
         for row in cursor.fetchall():
-            yield loads(row[0])
+            value = row[0]
+            if isinstance(value, unicode):
+                value = value.encode()
+            yield loads(value)

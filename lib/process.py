@@ -19,6 +19,10 @@ HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 
 class PortPool(Singleton):
 
+    __ports = set()
+    __closed = set()
+    __id = None
+
     def __init__(self, min_port=1025, max_port=2000, port_sequence=None):
         """
         Args:
@@ -26,16 +30,17 @@ class PortPool(Singleton):
             max_port - max port number  (ignoring if 'port_sequence' is not None)
             port_sequence - iterate sequence which contains numbers of ports
         """
-        if not hasattr(self, '_PortPool__ports'):  # magic singleton checker
+        if not self.__id:  # singleton checker
+            self.__id = id(self)
             self.__init_range(min_port, max_port, port_sequence)
-            self.refresh()
 
     def __init_range(self, min_port=1025, max_port=2000, port_sequence=None):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
-            self.__ports = set(xrange(min_port, max_port))
+            self.__ports = set(xrange(min_port, max_port + 1))
         self.__closed = set()
+        self.refresh()
 
     def __check_port(self, port):
         """check port status
@@ -61,7 +66,7 @@ class PortPool(Singleton):
         Args:
           check - check is port realy free
         """
-        if len(self.__ports) == 0:  # refresh ports if sequence is empty
+        if not self.__ports:  # refresh ports if sequence is empty
             self.refresh()
 
         try:
@@ -92,7 +97,6 @@ class PortPool(Singleton):
     def change_range(self, min_port=1025, max_port=2000, port_sequence=None):
         """change Pool port range"""
         self.__init_range(min_port, max_port, port_sequence)
-        self.refresh()
 
 
 def wait_for(port_num, timeout):
@@ -120,12 +124,12 @@ def wait_for(port_num, timeout):
     return False
 
 
-def mprocess(name, config_path, port, timeout=180):
+def mprocess(name, config_path, port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
         name - process name or path
         config_path - path to file where should be stored configuration
-        params - specific process configuration
+        port - process's port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (pid, host) if process started, return (None, None) if not
@@ -133,7 +137,6 @@ def mprocess(name, config_path, port, timeout=180):
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
-    print repr(cmd)
     try:
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -144,7 +147,7 @@ def mprocess(name, config_path, port, timeout=180):
         return (proc.pid, host)
     elif timeout > 0:
         proc.terminate()
-        time.sleep(3)  # wait while process stoped
+        proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
         raise OSError(errno.ETIMEDOUT, "could not connect to process during {timeout} seconds".format(timeout=timeout))
     return (proc.pid, host)
 
@@ -176,7 +179,6 @@ def cleanup_mprocess(config_path, cfg):
 def remove_path(path):
     """remove path from file system
     If path is None - do nothing"""
-
     onerror = lambda func, filepath, exc_info: (time.sleep(2), os.chmod(filepath, stat.S_IWUSR), func(filepath))
     if path is None or not os.path.exists(path):
         return
@@ -188,21 +190,18 @@ def remove_path(path):
         except OSError:
             time.sleep(2)
             onerror(shutil.os.remove, path, None)
-            # os.chmod(path,stat.S_IWUSR)
-            # shutil.os.remove(path)
 
 
-def write_config(params, auth_key=None, log=False):
+def write_config(params, auth_key=None):
     """write mongo's config file
     Args:
        params - options wich file contains
-       auth_key - authorization key ()
-       log - use logPath option with generation path if True
+       auth_key - authorization key
     Return config_path, cfg
     where config_path - path to mongo's options file
           cfg - all options as dictionary
     """
-    cfg = {'dbpath': params.get('dbpath', tempfile.mkdtemp(prefix="mongo-"))}
+    cfg = {'dbpath': params.get('dbpath', None) or tempfile.mkdtemp(prefix="mongo-")}
     if auth_key:
         key_file = os.path.join(os.path.join(cfg['dbpath'], 'key'))
         open(key_file, 'w').write(auth_key)
@@ -213,6 +212,7 @@ def write_config(params, auth_key=None, log=False):
         cfg['port'] = PortPool().port(check=True)
     config_path = tempfile.mktemp(prefix="mongo-")
 
+    cfg_orig = cfg.copy()
     # fix boolean value
     for key, value in cfg.items():
         if isinstance(value, bool):
@@ -222,7 +222,7 @@ def write_config(params, auth_key=None, log=False):
         data = reduce(lambda s, item: "{s}\n{key}={value}".format(s=s, key=item[0], value=item[1]), cfg.items(), '')
         fd.write(data)
 
-    return config_path, cfg
+    return config_path, cfg_orig
 
 
 def proc_alive(pid):
