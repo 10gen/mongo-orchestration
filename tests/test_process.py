@@ -206,12 +206,16 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue('dbpath={dbpath}'.format(dbpath=cfg['dbpath']) in config_data)
         process.cleanup_mprocess(config_path, cfg)
 
-    def test_write_config_dbpath_not_exists(self):
+    def test_write_config_path_not_exists(self):
         dbpath = tempfile.mkdtemp()
+        fd, log_path = tempfile.mkstemp(dir=dbpath)
+        os.remove(log_path)
         os.removedirs(dbpath)
         self.assertFalse(os.path.exists(dbpath))
-        config_path, cfg = process.write_config({'port': 27017, 'objcheck': 'true', 'dbpath': dbpath})
+        self.assertFalse(os.path.exists(os.path.dirname(log_path)))
+        config_path, cfg = process.write_config({'port': 27017, 'objcheck': 'true', 'dbpath': dbpath, 'logpath': log_path})
         self.assertTrue(os.path.exists(dbpath))
+        self.assertTrue(os.path.exists(os.path.dirname(log_path)))
 
     def test_proc_alive(self):
         p = subprocess.Popen([self.executable])
