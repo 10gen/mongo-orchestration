@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 HOME = os.environ.get('HOME')
 HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
+HOSTNAME = socket.gethostbyname_ex(HOSTNAME)[2][0]
 
 
 class PortPool(Singleton):

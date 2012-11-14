@@ -11,7 +11,7 @@ from bottle import route, request, response, abort, run
 
 
 def send_result(code, result=None):
-    logger.debug("send_result({code}, {result}".format(**locals()))
+    logger.debug("send_result({code}, {result})".format(**locals()))
     content = None
     response.content_type = None
     if result is not None:
