@@ -36,6 +36,9 @@ def rs_create():
     except StandardError as e:
         logger.error("Exception {e} while rs_create".format(**locals()))
         return send_result(500)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -46,6 +49,9 @@ def rs_list():
         data = [info for info in RS()]
     except StandardError as e:
         logger.error("Exception {e} while rs_list".format(**locals()))
+        return send_result(500)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
         return send_result(500)
     return send_result(200, data)
 
@@ -60,6 +66,9 @@ def rs_info(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_info".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -73,6 +82,9 @@ def rs_del(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_del".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(204, result)
 
 
@@ -91,6 +103,9 @@ def rs_member_add(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_add".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -104,6 +119,9 @@ def rs_members(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_members".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -117,6 +135,9 @@ def rs_secondaries(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_secondaries".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -130,6 +151,9 @@ def rs_arbiters(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_arbiters".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -143,6 +167,9 @@ def rs_hidden(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_hidden".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -157,6 +184,9 @@ def rs_member_info(rs_id, member_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_info".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -171,6 +201,9 @@ def rs_member_del(rs_id, member_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_del".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -190,6 +223,9 @@ def rs_member_update(rs_id, member_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_update".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -207,6 +243,9 @@ def rs_member_command(rs_id, member_id, command):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_command".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
 
 
 @route('/rs/<rs_id>/primary', method='GET')
@@ -220,6 +259,9 @@ def rs_member_primary(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_member_primary".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -238,6 +280,9 @@ def rs_primary_stepdown(rs_id):
     except StandardError as e:
         logger.error("Exception {e} while rs_primary_stepdown".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200)
 
 

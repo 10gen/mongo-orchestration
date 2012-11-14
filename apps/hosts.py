@@ -36,6 +36,9 @@ def host_create():
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -46,6 +49,9 @@ def host_list():
         data = [info for info in Hosts()]
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        return send_result(500)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
         return send_result(500)
     return send_result(200, data)
 
@@ -60,6 +66,9 @@ def host_info(host_id):
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(200, result)
 
 
@@ -73,6 +82,9 @@ def host_del(host_id):
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
     return send_result(204)
 
 
@@ -85,6 +97,9 @@ def host_command(host_id, command):
         Hosts().h_command(host_id, command)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        return send_result(500)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
         return send_result(500)
     return send_result(200)
 
