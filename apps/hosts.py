@@ -11,11 +11,12 @@ from bottle import route, request, response, abort, run
 
 
 def send_result(code, result=None):
+    logger.debug("send_result({code}, {result}".format(**locals()))
     content = None
     response.content_type = None
     if result is not None:
-            content = json.dumps(result)
-            response.content_type = "application/json"
+        content = json.dumps(result)
+        response.content_type = "application/json"
     response.status = code
     if code > 399:
         return abort(code, content)
@@ -24,7 +25,7 @@ def send_result(code, result=None):
 
 @route('/hosts', method='POST')
 def host_create():
-    logger.info("host_create request")
+    logger.debug("host_create()")
     data = {}
     json_data = request.body.read()
     if json_data:
@@ -33,52 +34,57 @@ def host_create():
         host_id = Hosts().h_new(data['name'], data.get('params', {}))
         result = Hosts().h_info(host_id)
     except StandardError as e:
+        logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)
     return send_result(200, result)
 
 
 @route('/hosts', method='GET')
 def host_list():
-    logger.info("host_list request")
+    logger.debug("host_list()")
     try:
         data = [info for info in Hosts()]
     except StandardError as e:
+        logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)
     return send_result(200, data)
 
 
 @route('/hosts/<host_id>', method='GET')
 def host_info(host_id):
-    logger.info("host_info request")
+    logger.debug("host_info({host_id})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
     try:
         result = Hosts().h_info(host_id)
     except StandardError as e:
+        logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)
     return send_result(200, result)
 
 
 @route('/hosts/<host_id>', method='DELETE')
 def host_del(host_id):
-    logger.info("host_del request")
+    logger.debug("host_del({host_id})")
     if host_id not in Hosts():
         return send_result(404)
     try:
         Hosts().h_del(host_id)
     except StandardError as e:
+        logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)
     return send_result(204)
 
 
 @route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
 def host_command(host_id, command):
-    logger.info("host_command request")
+    logger.debug("host_command({host_id}, {command})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
     try:
         Hosts().h_command(host_id, command)
     except StandardError as e:
+        logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)
     return send_result(200)
 

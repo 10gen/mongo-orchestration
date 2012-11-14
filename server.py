@@ -82,6 +82,7 @@ class Daemon(object):
 
 
 def read_env():
+    logging.debug("read_env()")
     parser = argparse.ArgumentParser(description='mongo-orchestration server')
     parser.add_argument('-f', '--config', action='store', default="mongo-orchestration.config", type=str, dest='config')
     parser.add_argument('-e', '--env', action='store', type=str, dest='env', default='default')
@@ -103,6 +104,7 @@ def read_env():
 
 
 def setup(release_path):
+    logging.debug("setup({release_path}".format(**locals()))
     rs = RS()
     db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
     rs.set_settings(db, release_path)
@@ -110,7 +112,9 @@ def setup(release_path):
 
 
 def delete_pid():
+    logging.debug("delete_pid()")
     if args.no_fork and os.path.exists(pid_file):
+        logging.debug("remove pid file {pid_file}".format(**locals()))
         os.remove(pid_file)
 
 args = read_env()

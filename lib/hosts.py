@@ -1,4 +1,7 @@
 # coding=utf-8
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 import process
 from uuid import uuid4
 from singleton import Singleton
