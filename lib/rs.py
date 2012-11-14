@@ -490,7 +490,6 @@ class ReplicaSet(object):
         config = self.config
         logger.info("config: %s", repr(config))
         for member in config['members']:
-            print "member: {member}".format(member=repr(member))
             cfg_member_info = self.default_params.copy()
             cfg_member_info.update(member)
             'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value

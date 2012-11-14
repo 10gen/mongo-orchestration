@@ -31,10 +31,8 @@ def rs_create():
         data = json.loads(json_data)
     try:
         rs_id = RS().rs_new(data)
-        print 'rs_id: ', rs_id
         result = RS().repl_info(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(500)
     return send_result(200, result)
 
@@ -45,7 +43,6 @@ def rs_list():
     try:
         data = [info for info in RS()]
     except StandardError as e:
-        print repr(e)
         return send_result(500)
     return send_result(200, data)
 
@@ -58,7 +55,6 @@ def rs_info(rs_id):
     try:
         result = RS().repl_info(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -71,7 +67,6 @@ def rs_del(rs_id):
     try:
         result = RS().rs_del(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(204, result)
 
@@ -89,7 +84,6 @@ def rs_member_add(rs_id):
         member_id = RS().rs_member_add(rs_id, data)
         result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -102,7 +96,6 @@ def rs_members(rs_id):
     try:
         result = RS().rs_members(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -115,7 +108,6 @@ def rs_secondaries(rs_id):
     try:
         result = RS().rs_secondaries(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -128,7 +120,6 @@ def rs_arbiters(rs_id):
     try:
         result = RS().rs_arbiters(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -141,7 +132,6 @@ def rs_hidden(rs_id):
     try:
         result = RS().rs_hidden(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -155,7 +145,6 @@ def rs_member_info(rs_id, member_id):
     try:
         result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -169,7 +158,6 @@ def rs_member_del(rs_id, member_id):
     try:
         result = RS().rs_member_del(rs_id, member_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -188,7 +176,6 @@ def rs_member_update(rs_id, member_id):
         RS().rs_member_update(rs_id, member_id, data)
         result = RS().rs_member_info(rs_id, member_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -200,12 +187,10 @@ def rs_member_command(rs_id, member_id, command):
         return send_result(404)
     try:
         result = RS().rs_member_command(rs_id, member_id, command)
-        print 'command result: ', result
         if result:
             return send_result(200)
         return send_result(400)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
 
 
@@ -218,7 +203,6 @@ def rs_member_primary(rs_id):
     try:
         result = RS().rs_primary(rs_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -236,7 +220,6 @@ def rs_primary_stepdown(rs_id):
     try:
         RS().rs_primary_stepdown(rs_id, data.get('timeout', 60))
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200)
 

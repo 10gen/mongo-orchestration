@@ -1,43 +1,30 @@
 # coding=utf-8
+import os
+
+pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
+log_file = os.path.join(os.path.split(__file__)[0], 'server.log')
+
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, filename=log_file)
 logger = logging.getLogger(__name__)
+
 import argparse
 import json
-
-from lib.rs import RS
-from bottle import run, default_app
-import os
 import sys
 import psutil
+
+from bottle import run, default_app
+
+from lib.rs import RS
 
 default_app.push()
 import apps.hosts
 import apps.rs
 app = default_app.pop()
 
+import StringIO
 import atexit
 DEFAULT_PORT = 8889
-pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
-log_file = os.path.join(os.path.split(__file__)[0], 'server.log')
-
-
-class LogOutput():
-    def __init__(self, logfile):
-        self.stdout = sys.stdout
-        self.log = open(logfile, 'w')
-
-    def write(self, text):
-        self.stdout.write(text)
-        self.log.write(text)
-        self.log.flush()
-
-    def close(self):
-        self.stdout.close()
-        self.log.close()
-
-
-sys.stdout = LogOutput(log_file)
 
 
 class Daemon(object):
@@ -69,7 +56,8 @@ class Daemon(object):
             except OSError, e:
                 sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
                 sys.exit(1)
-
+            sys.stdout = StringIO.StringIO()
+            sys.stderr = sys.stdout
             open(self.pid_path, 'w').write(str(os.getpid()))
 
     def stop(self, exit=True):
@@ -129,4 +117,4 @@ args = read_env()
 setup(args.release_path)
 atexit.register(delete_pid)
 getattr(Daemon(args.no_fork), args.command)()
-run(app, host='localhost', port=args.port, debug=True, reloader=False)
+run(app, host='localhost', port=args.port, debug=False, reloader=False)

@@ -33,7 +33,6 @@ def host_create():
         host_id = Hosts().h_new(data['name'], data.get('params', {}))
         result = Hosts().h_info(host_id)
     except StandardError as e:
-        print repr(e)
         return send_result(500)
     return send_result(200, result)
 
@@ -44,7 +43,6 @@ def host_list():
     try:
         data = [info for info in Hosts()]
     except StandardError as e:
-        print repr(e)
         return send_result(500)
     return send_result(200, data)
 
@@ -57,7 +55,6 @@ def host_info(host_id):
     try:
         result = Hosts().h_info(host_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(200, result)
 
@@ -70,7 +67,6 @@ def host_del(host_id):
     try:
         Hosts().h_del(host_id)
     except StandardError as e:
-        print repr(e)
         return send_result(400)
     return send_result(204)
 
@@ -83,7 +79,6 @@ def host_command(host_id, command):
     try:
         Hosts().h_command(host_id, command)
     except StandardError as e:
-        print repr(e)
         return send_result(500)
     return send_result(200)
 
