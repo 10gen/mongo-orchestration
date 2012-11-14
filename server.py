@@ -104,17 +104,25 @@ def read_env():
 
 
 def setup(release_path):
-    logging.debug("setup({release_path}".format(**locals()))
-    rs = RS()
-    db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
-    rs.set_settings(db, release_path)
-    atexit.register(rs.cleanup)
+    try:
+        logger.debug("setup({release_path}".format(**locals()))
+        rs = RS()
+        logger.debug("init RS()")
+        db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
+        logger.debug("db path: {db}".format(**locals()))
+        logger.debug("rs.set_settings")
+        rs.set_settings(db, release_path)
+        logger.debug("rs.set_settings done")
+        atexit.register(rs.cleanup)
+    except Exception as e:
+        logger.critical("Unknown exception {e} while setup".format(**locals()))
+        raise
 
 
 def delete_pid():
-    logging.debug("delete_pid()")
+    logger.debug("delete_pid()")
     if args.no_fork and os.path.exists(pid_file):
-        logging.debug("remove pid file {pid_file}".format(**locals()))
+        logger.debug("remove pid file {pid_file}".format(**locals()))
         os.remove(pid_file)
 
 args = read_env()
