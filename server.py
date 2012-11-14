@@ -104,19 +104,15 @@ def read_env():
 
 
 def setup(release_path):
-    try:
-        logger.debug("setup({release_path}".format(**locals()))
-        rs = RS()
-        logger.debug("init RS()")
-        db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
-        logger.debug("db path: {db}".format(**locals()))
-        logger.debug("rs.set_settings")
-        rs.set_settings(db, release_path)
-        logger.debug("rs.set_settings done")
-        atexit.register(rs.cleanup)
-    except Exception as e:
-        logger.critical("Unknown exception {e} while setup".format(**locals()))
-        raise
+    logger.debug("setup({release_path})".format(**locals()))
+    rs = RS()
+    logger.debug("init RS()")
+    db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
+    logger.debug("db path: {db}".format(**locals()))
+    logger.debug("rs.set_settings")
+    rs.set_settings(db, release_path)
+    logger.debug("rs.set_settings done")
+    atexit.register(rs.cleanup)
 
 
 def delete_pid():
