@@ -242,7 +242,7 @@ class ReplicaSet(object):
                             if not (member.get('arbiterOnly', False)
                                     or member.get('priority', 1) == 0)
                             ], key=lambda member: member.get('priority', 1)
-                           )[0]['host']
+                           )[-1]['host']
         logger.info("init_host: {init_host}".format(**locals()))
         logger.info("creating connection")
         c = pymongo.Connection(init_host)
