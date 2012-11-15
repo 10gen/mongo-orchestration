@@ -238,9 +238,11 @@ class ReplicaSet(object):
         self.update_host_map(config)
         logger.info("new host_map: {self.host_map}".format(**locals()))
         # init_host - host which can init replica set
-        init_host = [member['host'] for member in config['members']
-                     if not (member.get('arbiterOnly', False)
-                             or member.get('priority', 1) == 0)][0]
+        init_host = sorted([member for member in config['members']
+                            if not (member.get('arbiterOnly', False)
+                                    or member.get('priority', 1) == 0)
+                            ], key=lambda member: member.get('priority', 1)
+                           )[0]['host']
         logger.info("init_host: {init_host}".format(**locals()))
         logger.info("creating connection")
         c = pymongo.Connection(init_host)
