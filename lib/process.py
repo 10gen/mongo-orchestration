@@ -78,8 +78,9 @@ class PortPool(Singleton):
                 while not self.__check_port(port):
                     self.release_port(port)
                     port = self.__ports.pop()
-        except IndexError:
-            raise IndexError("Could not find a free port")
+        except (IndexError, KeyError):
+            closed = self.__closed
+            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(**locals()))
         self.__closed.add(port)
         return port
 

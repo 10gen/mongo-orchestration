@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 import unittest
 from lib.rs import RS, ReplicaSet
 from lib.hosts import Hosts
+from lib.process import PortPool
 import lib.errors as errors
 import socket
 import tempfile
@@ -23,6 +24,7 @@ import operator
 
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
+        PortPool().change_range()
         fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
         self.hosts = Hosts()
         self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
