@@ -25,7 +25,7 @@ class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
         self.hosts = Hosts()
-        self.hosts.set_settings(self.db_path)
+        self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'members': [{}, {}, {}, {'rsParams': {'arbiterOnly': True}}]}
         self.repl = ReplicaSet(self.repl_cfg)
 

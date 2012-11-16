@@ -16,7 +16,7 @@ class HostsTestCase(unittest.TestCase):
     def setUp(self):
         self.path = tempfile.mktemp(prefix="test-storage")
         self.hosts = Hosts()
-        self.hosts.set_settings(self.path)
+        self.hosts.set_settings(self.path, os.environ.get('MONGOBIN', ""))
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
@@ -117,7 +117,8 @@ class HostsTestCase(unittest.TestCase):
 
 class HostTestCase(unittest.TestCase):
     def setUp(self):
-        self.host = Host('mongod', {}, None)
+        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.host = Host(mongod, {}, None)
 
     def tearDown(self):
         if hasattr(self, 'host'):
