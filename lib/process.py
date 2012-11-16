@@ -78,8 +78,9 @@ class PortPool(Singleton):
                 while not self.__check_port(port):
                     self.release_port(port)
                     port = self.__ports.pop()
-        except IndexError:
-            raise IndexError("Could not find a free port")
+        except (IndexError, KeyError):
+            closed = self.__closed
+            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(**locals()))
         self.__closed.add(port)
         return port
 
@@ -137,32 +138,21 @@ def mprocess(name, config_path, port=None, timeout=180):
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (pid, host) if process started, return (None, None) if not
     """
-    logger.info("mprocess({name}, {config_path}, {port}, {timeout}".format(**locals()))
     port = port or PortPool().port(check=True)
-    logger.info("use port: {port}".format(**locals()))
     cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
     try:
-        logger.info("execute {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
     except (OSError, TypeError) as err:
-        logger.critical("command {cmd} failed by {err}".format(**locals()))
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
-        logger.info("command started succesfuly")
-        logger.info("mprocess returning ({proc.pid}, {host})".format(**locals()))
         return (proc.pid, host)
     elif timeout > 0:
-        logger.info("command didn't start while timeout")
-        logger.info("terminate process")
         proc.terminate()
         proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
-        logger.info("raise OSError ETIMEDOUT exception")
         raise OSError(errno.ETIMEDOUT, "could not connect to process during {timeout} seconds".format(timeout=timeout))
-    logger.info("command started succesfuly")
-    logger.info("mprocess returning ({proc.pid}, {host})".format(**locals()))
     return (proc.pid, host)
 
 

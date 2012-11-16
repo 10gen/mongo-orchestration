@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, '../')
 import unittest
 from lib.hosts import Host, Hosts
+from lib.process import PortPool
 import socket
 import os
 import tempfile
@@ -14,9 +15,10 @@ import operator
 
 class HostsTestCase(unittest.TestCase):
     def setUp(self):
+        PortPool().change_range()
         self.path = tempfile.mktemp(prefix="test-storage")
         self.hosts = Hosts()
-        self.hosts.set_settings(self.path)
+        self.hosts.set_settings(self.path, os.environ.get('MONGOBIN', ""))
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
@@ -117,7 +119,9 @@ class HostsTestCase(unittest.TestCase):
 
 class HostTestCase(unittest.TestCase):
     def setUp(self):
-        self.host = Host('mongod', {}, None)
+        PortPool().change_range()
+        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.host = Host(mongod, {}, None)
 
     def tearDown(self):
         if hasattr(self, 'host'):
