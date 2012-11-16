@@ -1,3 +1,6 @@
+[![Build Status](https://jenkins.10gen.com/job/mongo-orchestration/badge/icon)](https://jenkins.10gen.com/job/mongo-orchestration/)
+
+
 See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for documentation.
 
 **mongo-orchestration** - http server which provide rest api to management mongo's configurations
