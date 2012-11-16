@@ -25,7 +25,6 @@ setup(
     setup_requires=[
         'pymongo==2.3',
         'nose>=1.2',
-        'nose-benchmark>=0.9',
         'psutil==0.6.1'
     ] + requiredPacks
 )
