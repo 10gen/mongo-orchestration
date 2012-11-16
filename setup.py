@@ -25,6 +25,7 @@ setup(
     setup_requires=[
         'pymongo>=2.3',
         'nose-benchmark>=0.9',
+        'psutil>=0.6.1'
     ] + requiredPacks,
     dependency_links=[
         'http://github.com/mongodb/mongo-python-driver/tarball/master#egg=pymongo-2.3rc1',
