@@ -103,7 +103,6 @@ class RSTestCase(unittest.TestCase):
     def test_rs_primary_stepdown(self):
         repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.rs_primary(repl_id)['uri']
-        print 'primary', primary
         self.rs.rs_primary_stepdown(repl_id, timeout=30)
         time.sleep(5)
         self.assertNotEqual(primary, self.rs.rs_primary(repl_id)['uri'])
