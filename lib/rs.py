@@ -34,7 +34,7 @@ class RS(Singleton):
             raise ValueError
 
     def __delitem__(self, key):
-        rs = self._storage.popitem(key)
+        rs = self._storage.pop(key)
         del(rs)
 
     def __del__(self):
