@@ -34,7 +34,7 @@ class RS(Singleton):
             raise ValueError
 
     def __delitem__(self, key):
-        rs = self._storage.popitem(key)
+        rs = self._storage.pop(key)
         del(rs)
 
     def __del__(self):
@@ -201,9 +201,8 @@ class ReplicaSet(object):
         self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
 
         config = {"_id": self.repl_id, "members": [
-            self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
-        ]}
-
+                  self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
+                  ]}
         if not self.repl_init(config):
             self.cleanup()
             raise errors.ReplicaSetError("replica can't started")
@@ -456,12 +455,15 @@ class ReplicaSet(object):
 
     def check_config_state(self):
         "return True if real state equal config state otherwise False"
+        if len(filter(lambda item: item['state'] in (3, 4, 5, 6, 9), self.run_command("rs.status()", is_eval=True)['members'])) > 0:
+            return False
         config = self.config
         self.update_host_map(config)
         for member in config['members']:
             cfg_member_info = self.default_params.copy()
             cfg_member_info.update(member)
             'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value
+            'votes' in cfg_member_info and cfg_member_info.pop('votes')  # no way to check 'votes' value
             cfg_member_info['host'] = cfg_member_info['host'].lower()
 
             real_member_info = self.default_params.copy()
