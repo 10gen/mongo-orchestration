@@ -450,7 +450,7 @@ class ReplicaSet(object):
         while not self.check_config_state():
             if time.time() - t_start > timeout:
                 return False
-            time.sleep(20)
+            time.sleep(8)
         return True
 
     def check_config_state(self):
