@@ -104,9 +104,9 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.rs_primary(repl_id)['uri']
         self.rs.rs_primary_stepdown(repl_id, timeout=30)
-        time.sleep(5)
+        time.sleep(15)
         self.assertNotEqual(primary, self.rs.rs_primary(repl_id)['uri'])
-        time.sleep(35)
+        time.sleep(25)
         self.assertEqual(primary, self.rs.rs_primary(repl_id)['uri'])
 
     def test_rs_del(self):
