@@ -34,6 +34,14 @@ class RSTestCase(unittest.TestCase):
         if os.path.exists(self.path):
             os.remove(self.path)
 
+    def waiting(self, fn, timeout=300, sleep=10):
+        t_start = time.time()
+        while not fn():
+            if time.time() - t_start > timeout:
+                return False
+            time.sleep(sleep)
+        return True
+
     def test_singleton(self):
         self.assertEqual(id(self.rs), id(RS()))
 
@@ -101,12 +109,12 @@ class RSTestCase(unittest.TestCase):
         c.close()
 
     def test_rs_primary_stepdown(self):
-        repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {"rsParams": {"priority": 1.4}}]})
+        repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.rs_primary(repl_id)['uri']
-        self.rs.rs_primary_stepdown(repl_id, timeout=30)
-        time.sleep(15)
+        self.rs.rs_primary_stepdown(repl_id, timeout=60)
+        self.waiting(timeout=60, sleep=10, fn=lambda: primary != self.rs.rs_primary(repl_id)['uri'])
         self.assertNotEqual(primary, self.rs.rs_primary(repl_id)['uri'])
-        time.sleep(25)
+        self.waiting(timeout=60, sleep=10, fn=lambda: primary == self.rs.rs_primary(repl_id)['uri'])
         self.assertEqual(primary, self.rs.rs_primary(repl_id)['uri'])
 
     def test_rs_del(self):
