@@ -51,7 +51,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertRaises(IndexError, self.pp.port)
 
     def test_port_check(self):
-        ports = set([random.randint(2000, 2080) for i in xrange(5)])
+        ports = [random.randint(2000, 2080) for i in xrange(5)]
         self.pp.change_range(port_sequence=ports)
         ports_opened = self.pp._PortPool__ports.copy()
         test_port = ports_opened.pop()
