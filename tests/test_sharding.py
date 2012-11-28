@@ -32,6 +32,7 @@ class ShardsTestCase(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
+        self.sh.cleanup()
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(Shards()))
@@ -94,7 +95,6 @@ class ShardsTestCase(unittest.TestCase):
         for shard in result['shards']:
             shard['_id'] in ('sh01', 'sh02', 'sh-rs-01')
         c.close()
-        self.sh.cleanup()
 
     def test_sh_del(self):
         sh1_id = self.sh.sh_new({})
@@ -104,7 +104,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(self.sh), 1)
         self.sh.sh_del(sh2_id)
         self.assertEqual(len(self.sh), 0)
-        self.sh.cleanup()
 
     def test_sh_info(self):
         config = {
@@ -122,8 +121,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(info['configsvrs']), 3)
         self.assertEqual(len(info['routers']), 3)
 
-        self.sh.cleanup()
-
     def test_sh_configservers(self):
         config = {}
         sh_id = self.sh.sh_new(config)
@@ -133,7 +130,6 @@ class ShardsTestCase(unittest.TestCase):
         config = {'configsvrs': [{}, {}, {}]}
         sh_id = self.sh.sh_new(config)
         self.assertEqual(len(self.sh.sh_configservers(sh_id)), 3)
-        self.sh.cleanup()
 
     def test_sh_routers(self):
         config = {}
@@ -144,7 +140,6 @@ class ShardsTestCase(unittest.TestCase):
         config = {'routers': [{}, {}, {}]}
         sh_id = self.sh.sh_new(config)
         self.assertEqual(len(self.sh.sh_routers(sh_id)), 3)
-        self.sh.cleanup()
 
     def test_sh_router_add(self):
         config = {}
@@ -168,8 +163,6 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.sh_new(config)
         self.assertEqual(len(self.sh.sh_members(sh_id)), 3)
 
-        self.sh.cleanup()
-
     def test_sh_member_info(self):
         config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.sh_new(config)
@@ -180,8 +173,6 @@ class ShardsTestCase(unittest.TestCase):
         info = self.sh.sh_member_info(sh_id, 'sh-rs-01')
         self.assertEqual(info['id'], 'sh-rs-01')
         self.assertTrue(info['isReplicaSet'])
-
-        self.sh.cleanup()
 
     def test_sh_member_del(self):
         port = PortPool().port(check=True)
@@ -216,8 +207,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(c.admin.command("listShards")['shards']), 1)
         self.assertEqual(result['shard'], 'sh-rs-01')
 
-        self.sh.cleanup()
-
     def test_sh_member_add(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}]}
@@ -237,8 +226,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue(result.get('isReplicaSet', False))
         self.assertEqual(result['id'], 'test2')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
-
-        self.sh.cleanup()
 
 
 class ShardTestCase(unittest.TestCase):
