@@ -196,33 +196,16 @@ def remove_path(path):
             onerror(shutil.os.remove, path, None)
 
 
-def write_config(params, auth_key=None):
+def write_config(params):
     """write mongo's config file
     Args:
        params - options wich file contains
-       auth_key - authorization key
     Return config_path, cfg
     where config_path - path to mongo's options file
-          cfg - all options as dictionary
     """
-    cfg = {'dbpath': params.get('dbpath', None) or tempfile.mkdtemp(prefix="mongo-")}
-    if not os.path.exists(cfg['dbpath']):
-        os.makedirs(cfg['dbpath'])
-    if auth_key:
-        key_file = os.path.join(os.path.join(cfg['dbpath'], 'key'))
-        open(key_file, 'w').write(auth_key)
-        os.chmod(key_file, stat.S_IRUSR)
-        cfg['keyFile'] = key_file
-    cfg.update(params)
-    log_path = cfg.get('logpath', None)
-    if log_path and not os.path.exists(os.path.dirname(log_path)):
-        os.makedirs(log_path)
-
-    if 'port' not in cfg:
-        cfg['port'] = PortPool().port(check=True)
     config_path = tempfile.mktemp(prefix="mongo-")
 
-    cfg_orig = cfg.copy()
+    cfg = params.copy()
     # fix boolean value
     for key, value in cfg.items():
         if isinstance(value, bool):
@@ -231,7 +214,7 @@ def write_config(params, auth_key=None):
     with open(config_path, 'w') as fd:
         data = reduce(lambda s, item: "{s}\n{key}={value}".format(s=s, key=item[0], value=item[1]), cfg.items(), '')
         fd.write(data)
-    return config_path, cfg_orig
+    return config_path
 
 
 def proc_alive(pid):
