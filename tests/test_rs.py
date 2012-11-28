@@ -109,13 +109,11 @@ class RSTestCase(unittest.TestCase):
         c.close()
 
     def test_rs_primary_stepdown(self):
-        repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
+        repl_id = self.rs.rs_new({'id': 'test-rs-stepdown', 'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.rs_primary(repl_id)['uri']
         self.rs.rs_primary_stepdown(repl_id, timeout=60)
-        self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.rs_primary(repl_id)['uri'])
+        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.rs_primary(repl_id)['uri']))
         self.assertNotEqual(primary, self.rs.rs_primary(repl_id)['uri'])
-        self.waiting(timeout=80, sleep=5, fn=lambda: primary == self.rs.rs_primary(repl_id)['uri'])
-        self.assertEqual(primary, self.rs.rs_primary(repl_id)['uri'])
 
     def test_rs_del(self):
         self.rs.rs_new({'members': [{}, {}]})
