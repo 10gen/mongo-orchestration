@@ -71,7 +71,7 @@ class RSTestCase(unittest.TestCase):
         for key in self.rs:
             self.assertTrue(key in ('test-rs-1', 'test-rs-2'))
         for key in ('test-rs-1', 'test-rs-2'):
-            key in self.rs
+            self.assertTrue(key in self.rs)
 
     def test_cleanup(self):
         self.assertTrue(len(self.rs) == 0)
@@ -112,9 +112,9 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.rs_primary(repl_id)['uri']
         self.rs.rs_primary_stepdown(repl_id, timeout=60)
-        self.waiting(timeout=60, sleep=10, fn=lambda: primary != self.rs.rs_primary(repl_id)['uri'])
+        self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.rs_primary(repl_id)['uri'])
         self.assertNotEqual(primary, self.rs.rs_primary(repl_id)['uri'])
-        self.waiting(timeout=60, sleep=10, fn=lambda: primary == self.rs.rs_primary(repl_id)['uri'])
+        self.waiting(timeout=80, sleep=5, fn=lambda: primary == self.rs.rs_primary(repl_id)['uri'])
         self.assertEqual(primary, self.rs.rs_primary(repl_id)['uri'])
 
     def test_rs_del(self):
