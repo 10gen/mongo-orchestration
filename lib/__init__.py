@@ -10,6 +10,6 @@ def set_storage(storage_path, bin_path=''):
 
 
 def cleanup_storage():
-    Hosts().cleanup()
-    RS().cleanup()
     Shards().cleanup()
+    RS().cleanup()
+    Hosts().cleanup()
