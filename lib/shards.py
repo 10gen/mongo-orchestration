@@ -212,7 +212,6 @@ class Shard(object):
     def member_info(self, member_id):
         """return info about member"""
         info = self._shards[member_id].copy()
-        info.pop('_id')
         info['id'] = member_id
         return info
 

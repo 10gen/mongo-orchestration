@@ -169,10 +169,12 @@ class ShardsTestCase(unittest.TestCase):
         info = self.sh.sh_member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isHost'])
+        self.assertTrue('_id' in info)
 
         info = self.sh.sh_member_info(sh_id, 'sh-rs-01')
         self.assertEqual(info['id'], 'sh-rs-01')
         self.assertTrue(info['isReplicaSet'])
+        self.assertTrue('_id' in info)
 
     def test_sh_member_del(self):
         port = PortPool().port(check=True)
@@ -358,10 +360,12 @@ class ShardTestCase(unittest.TestCase):
         info = sh.member_info('member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isHost'])
+        self.assertTrue('_id' in info)
 
         info = sh.member_info('sh-rs-01')
         self.assertEqual(info['id'], 'sh-rs-01')
         self.assertTrue(info['isReplicaSet'])
+        self.assertTrue('_id' in info)
 
         sh.cleanup()
 
