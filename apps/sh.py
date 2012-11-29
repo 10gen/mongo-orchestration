@@ -98,8 +98,7 @@ def sh_member_add(sh_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        member_id = Shards().sh_member_add(sh_id, data)
-        result = Shards().sh_member_info(sh_id, member_id)
+        result = Shards().sh_member_info(sh_id, data)
     except StandardError as e:
         logger.error("Exception {e} while sh_member_add".format(**locals()))
         return send_result(400)
@@ -180,7 +179,6 @@ def sh_router_add(sh_id):
 @route('/sh/<sh_id>/members/<member_id>', method='GET')
 def sh_member_info(sh_id, member_id):
     logger.debug("sh_member_info({sh_id}, {member_id})".format(**locals()))
-    member_id = int(member_id)
     if sh_id not in Shards():
         return send_result(404)
     try:
@@ -197,7 +195,6 @@ def sh_member_info(sh_id, member_id):
 @route('/sh/<sh_id>/members/<member_id>', method='DELETE')
 def sh_member_del(sh_id, member_id):
     logger.debug("sh_member_del({sh_id}), {member_id}".format(**locals()))
-    member_id = int(member_id)
     if sh_id not in Shards():
         return send_result(404)
     try:
