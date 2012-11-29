@@ -15,11 +15,13 @@ import psutil
 
 from bottle import run, default_app
 
-from lib.rs import RS
+# from lib.rs import RS
+from lib import set_storage, cleanup_storage
 
 default_app.push()
 import apps.hosts
 import apps.rs
+import apps.sh
 app = default_app.pop()
 
 import StringIO
@@ -105,14 +107,11 @@ def read_env():
 
 def setup(release_path):
     logger.debug("setup({release_path})".format(**locals()))
-    rs = RS()
-    logger.debug("init RS()")
     db = os.path.join(os.path.split(__file__)[0], 'mongo-pids')
     logger.debug("db path: {db}".format(**locals()))
-    logger.debug("rs.set_settings")
-    rs.set_settings(db, release_path)
+    set_storage(db, release_path)
     logger.debug("rs.set_settings done")
-    atexit.register(rs.cleanup)
+    atexit.register(cleanup_storage)
 
 
 def delete_pid():

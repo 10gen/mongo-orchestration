@@ -116,6 +116,11 @@ class HostsTestCase(unittest.TestCase):
         self.assertTrue(self.hosts.h_id_by_hostname(h_uri) == h_id)
         self.assertTrue(self.hosts.h_id_by_hostname(h2_uri) == h2_id)
 
+    def test_hostname(self):
+        h_id = self.hosts.h_new('mongod', {}, autostart=True)
+        h_uri = self.hosts.h_info(h_id)['uri']
+        self.assertEqual(self.hosts.h_hostname(h_id), h_uri)
+
 
 class HostTestCase(unittest.TestCase):
     def setUp(self):

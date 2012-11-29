@@ -51,7 +51,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertRaises(IndexError, self.pp.port)
 
     def test_port_check(self):
-        ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        ports = [random.randint(2000, 2080) for i in xrange(5)]
         self.pp.change_range(port_sequence=ports)
         ports_opened = self.pp._PortPool__ports.copy()
         test_port = ports_opened.pop()
@@ -196,28 +196,13 @@ class ProcessTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(dir_path))
 
     def test_write_config(self):
-        config_path, cfg = process.write_config({'port': 27017, 'objcheck': 'true'})
-        self.assertTrue('port' in cfg and 'objcheck' in cfg)
-        self.assertTrue('dbpath' in cfg)
+        cfg = {'port': 27017, 'objcheck': 'true'}
+        config_path = process.write_config(cfg)
         self.assertTrue(os.path.exists(config_path))
-        self.assertTrue(os.path.exists(cfg['dbpath']))
-        self.assertTrue(os.path.isdir(cfg['dbpath']))
         config_data = open(config_path, 'r').read()
         self.assertTrue('port=27017' in config_data)
         self.assertTrue('objcheck=true' in config_data)
-        self.assertTrue('dbpath={dbpath}'.format(dbpath=cfg['dbpath']) in config_data)
         process.cleanup_mprocess(config_path, cfg)
-
-    def test_write_config_path_not_exists(self):
-        dbpath = tempfile.mkdtemp()
-        fd, log_path = tempfile.mkstemp(dir=dbpath)
-        os.remove(log_path)
-        os.removedirs(dbpath)
-        self.assertFalse(os.path.exists(dbpath))
-        self.assertFalse(os.path.exists(os.path.dirname(log_path)))
-        config_path, cfg = process.write_config({'port': 27017, 'objcheck': 'true', 'dbpath': dbpath, 'logpath': log_path})
-        self.assertTrue(os.path.exists(dbpath))
-        self.assertTrue(os.path.exists(os.path.dirname(log_path)))
 
     def test_proc_alive(self):
         p = subprocess.Popen([self.executable])

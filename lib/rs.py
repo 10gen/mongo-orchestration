@@ -290,7 +290,7 @@ class ReplicaSet(object):
             is_eval - if True execute command as eval
             member_id - member id
 
-        return True if operation success otherwise False
+        return command's result
         """
         mode = is_eval and 'eval' or 'command'
         result = getattr(self.connection(member_id=member_id).admin, mode)(command, arg)
