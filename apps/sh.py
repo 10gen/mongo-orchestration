@@ -98,7 +98,7 @@ def sh_member_add(sh_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        result = Shards().sh_member_info(sh_id, data)
+        result = Shards().sh_member_add(sh_id, data)
     except StandardError as e:
         logger.error("Exception {e} while sh_member_add".format(**locals()))
         return send_result(400)
