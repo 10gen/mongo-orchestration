@@ -30,9 +30,9 @@ class ShardsTestCase(unittest.TestCase):
         PortPool().change_range()
 
     def tearDown(self):
+        self.sh.cleanup()
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
-        self.sh.cleanup()
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(Shards()))
