@@ -390,7 +390,11 @@ command format: `command sh_id  [member_id]  [params]`
 commands:
 + **help** - show help information
 + **create** - create new shard cluster
-Example: `create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "configsvrs": [{"port": 2315}], "members": [{"id": "sh01", "shardParams": {}}, {"id": "sh02", "shardParams": {"port": 2320}}, {"id": "sh-rs-01", "shardParams": {"id": "rs1", "members": [{}, {}]}}]}`  
+
+Example: 
+```javascript
+create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "configsvrs": [{"port": 2315}], "members": [{"id": "sh01", "shardParams": {}}, {"id": "sh02", "shardParams": {"port": 2320}}, {"id": "sh-rs-01", "shardParams": {"id": "rs1", "members": [{}, {}]}}]}
+```  
 
 ```javascript
 ========= Response data =========
