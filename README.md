@@ -367,3 +367,204 @@ result code:  204
 u''
 =================================
 ```
+
+
+
+### cmd_sh.py - manage shard cluster
+
+command format: `command sh_id  [member_id]  [params]`  
+**command** - command  
+**sh_id** - shard cluster id or index
+**member_id** - member id  
+**params** - json string  
+
+**Note: two space between args**
+
+commands:
++ **help** - show help information
++ **create** - create new shard cluster
+Example: `create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "configsvrs": [{"port": 2315}], "members": [{"id": "sh01", "shardParams": {}}, {"id": "sh02", "shardParams": {"port": 2320}}, {"id": "sh-rs-01", "shardParams": {"id": "rs1", "members": [{}, {}]}}]}`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'configsvrs': [{u'hostname': u'127.0.0.1:2315',
+                  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
+ u'id': u'shard_cluster_1',
+ u'members': [{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+               u'id': u'sh01',
+               u'isHost': True},
+              {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
+              {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
+               u'id': u'sh02',
+               u'isHost': True}],
+ u'routers': [{u'hostname': u'127.0.0.1:2323',
+               u'id': u'9f6b743b-24d2-40eb-860f-1b0c474625da'},
+              {u'hostname': u'127.0.0.1:1025',
+               u'id': u'84c7a69d-ea44-4b54-9525-c394b143c799'}]}
+=================================
+[u'shard_cluster_1']
+```
+
++ **list** - show list of clusters , format: index cluster-id  
+Example: `list`  
+
+```javascript
+========= Response data =========
+result code:  200
+[u'shard_cluster_1']
+=================================
+1 shard_cluster_1
+```
+
++ **info [index or cluter-id]** - show info about cluster  
+Example: `info 1`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'configsvrs': [{u'hostname': u'127.0.0.1:2315',
+                  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
+ u'id': u'shard_cluster_1',
+ u'members': [{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+               u'id': u'sh01',
+               u'isHost': True},
+              {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
+              {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
+               u'id': u'sh02',
+               u'isHost': True}],
+ u'routers': [{u'hostname': u'127.0.0.1:2323',
+               u'id': u'9f6b743b-24d2-40eb-860f-1b0c474625da'},
+              {u'hostname': u'127.0.0.1:1025',
+               u'id': u'84c7a69d-ea44-4b54-9525-c394b143c799'}]}
+=================================
+```
+
++ **configservers [index or cluster-id]** - show list of config servers  
+Example: `configservers 1`  
+
+```javascript
+========= Response data =========
+result code:  200
+[{u'hostname': u'127.0.0.1:2315',
+  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
+=================================
+```
+
++ **routers [index or cluster-id]** - show routers  
+Example: `routers 1`  
+
+```javascript
+========= Response data =========
+result code:  200
+[{u'hostname': u'127.0.0.1:2315',
+  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
+=================================
+```
+
++ **router_add** - add new router  
+Example: `router_add [index or cluster-id]  {"port": 2525, "logpath": "/tmp/router2"}`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'hostname': u'127.0.0.1:2525',
+ u'id': u'eae3af8c-c8b0-4e69-85f9-fab69ef51b32'}
+=================================
+```
+
++ **members** - show cluster's members  
+Example: `members [index or cluster-id]`  
+
+```javascript
+========= Response data =========
+result code:  200
+[{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+  u'id': u'sh01',
+  u'isHost': True},
+ {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
+ {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
+  u'id': u'sh02',
+  u'isHost': True}]
+=================================
+```
+
++ **member_add [index or cluster-id]  {member config}** - add new member to cluster  
+Example: `member_add 1  {"id": "shardX", "shardParams": {"port": 2527, "dbpath": "/tmp/memberX", "logpath": "/tmp/memberX.log", "ipv6": true, "nojournal": true}}`   
+
+```javascript
+========= Response data =========
+result code:  200
+{u'_id': u'b380299e-6edf-4445-9f86-327a44fb9c1d',
+ u'id': u'shardX',
+ u'isHost': True}
+=================================
+```
+
++ **member_add [index or cluster-id]  {member config}** - add new member to cluster  
+Example: `member_add 1  {"id": "shard-rs", "shardParams": {"id": "repl-test", "members": [{}, {}, {"rsParams": {"arbiterOnly": true}}]}}`   
+
+```javascript
+========= Response data =========
+result code:  200
+{u'_id': u'repl-test', u'id': u'shard-rs', u'isReplicaSet': True}
+=================================
+```
+
++ **member_info [index or cluster-id]  [member-id]** - show information about member  
+Example: `member_info 1  shardX`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'_id': u'b380299e-6edf-4445-9f86-327a44fb9c1d',
+ u'id': u'shardX',
+ u'isHost': True}
+=================================
+```
+
++ **member_info [index or cluster-id]  [member-id]** - show information about member  
+Example: `member_info 1  shard-rs`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'_id': u'repl-test', u'id': u'shard-rs', u'isReplicaSet': True}
+=================================
+```
+
++ **member_delete [index or cluster-id]  [member-id]** - remove sahrd from cluster  
+Example: `member_delete 1  sh01`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'msg': u'draining started successfully',
+ u'ok': 1.0,
+ u'shard': u'sh01',
+ u'state': u'started'}
+=================================
+```
+
++ **member_delete [index or cluster-id]  [member-id]** - remove shard from cluster  
+Example: `member_delete 1  sh01`  
+
+```javascript
+========= Response data =========
+result code:  200
+{u'msg': u'removeshard completed successfully',
+ u'ok': 1.0,
+ u'shard': u'sh01',
+ u'state': u'completed'}
+=================================
+```
+
++ **delete [index or cluster-id]** - remove cluster  
+Example: `delete shard_cluster_1`  
+
+```javascript
+========= Response data =========
+result code:  204
+u''
+=================================
+```
