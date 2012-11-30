@@ -12,10 +12,10 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 
 ##Installing
 
-##Ubuntu
+###Ubuntu
 `sudo apt-get install python-dev python-pip && sudo pip install pymongo==2.3 psutil==0.6.1 requests>=0.12`
 
-##OSX
+###OSX
 
 ##Usage
 `python server.py [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
