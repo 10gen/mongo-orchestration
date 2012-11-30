@@ -5,9 +5,16 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 
 **mongo-orchestration** - http server which provide rest api to management mongo's configurations
 
-## Requires
+##Requires
 [Python 2.7](http://www.python.org/download/)  
 [psutil](https://code.google.com/p/psutil/downloads/list)
+
+##Installing
+
+##Ubuntu
+`sudo apt-get install python-dev && pip install psutil`
+
+##OSX
 
 ##Usage
 `python server.py [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
