@@ -63,6 +63,7 @@ class Daemon(object):
             open(self.pid_path, 'w').write(str(os.getpid()))
 
     def stop(self, exit=True):
+        cleanup_storage()
         if os.path.exists(self.pid_path):
             try:
                 pid = int(open(self.pid_path).read())

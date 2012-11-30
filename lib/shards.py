@@ -19,7 +19,6 @@ class Shards(Singleton):
         self._storage = Storage(pids_file, 'shards')
         self.pids_file = pids_file
         self.bin_path = bin_path or ''
-        self.cleanup()
 
     def __getitem__(self, key):
         return self.sh_info(key)

@@ -24,7 +24,6 @@ class Hosts(Singleton):
         self._storage = Storage(pids_file, 'hosts')
         self.pids_file = pids_file
         self.bin_path = bin_path or self.bin_path
-        self.cleanup()
 
     def __getitem__(self, key):
         return self.h_info(key)

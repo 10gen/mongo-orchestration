@@ -22,7 +22,6 @@ class RS(Singleton):
         self.pids_file = pids_file
         self.bin_path = bin_path
         Hosts().set_settings(pids_file, bin_path)
-        self.cleanup()
 
     def __getitem__(self, key):
         return self._storage[key]
