@@ -80,8 +80,7 @@ class PortPool(Singleton):
                     self.release_port(port)
                     port = self.__ports.pop()
         except (IndexError, KeyError):
-            closed = self.__closed
-            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(**locals()))
+            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(closed=self.__closed))
         self.__closed.add(port)
         return port
 
@@ -146,6 +145,8 @@ def mprocess(name, config_path, port=None, timeout=180):
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
+        if not proc_alive(proc.pid):
+            raise OSError
     except (OSError, TypeError) as err:
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
@@ -193,16 +194,15 @@ def remove_path(path):
         try:
             shutil.os.remove(path)
         except OSError:
-            time.sleep(2)
             onerror(shutil.os.remove, path, None)
 
 
 def write_config(params):
-    """write mongo's config file
+    """write mongo*'s config file
     Args:
        params - options wich file contains
-    Return config_path, cfg
-    where config_path - path to mongo's options file
+    Return config_path
+       where config_path - path to mongo*'s options file
     """
     config_path = tempfile.mktemp(prefix="mongo-")
 
