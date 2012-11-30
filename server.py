@@ -1,4 +1,6 @@
+#!/usr/bin/python
 # coding=utf-8
+
 import os
 
 pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
