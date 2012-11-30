@@ -10,13 +10,23 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 [psutil](https://code.google.com/p/psutil/downloads/list)
 
 ##Usage
-`python server.py`  
-default port: 8889
+`python server.py [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
+**-f** - path to config file, default: mongo-orchestration.config  
+**-e** - release name from config file, 'default' by default  
+**--no-fork** - don't start as service  
+**-p** - port number, 8889 by default  
+**start/stop/restart**: server's command  
+
+###Examples
+`python server.py start` - starts as service on 8889 port  
+`python server.py stop` - stop server  
+`python server.py -e stable-release -p 8888 --no-fork start` - starts on 8888 port using stable-release. Stops by *Ctrl+C*  
+
 
 ##Notes
 + tested on Ubuntu 12.04 and OS X 10.8.2
-+ does not support Windows (restart host issue)
-+ authorization does not implemented
++ does not support Windows
++ authorization hasn't implemented
 
 ## Command line scripts
 
