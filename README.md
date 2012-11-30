@@ -10,12 +10,15 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 [psutil](https://code.google.com/p/psutil/downloads/list)
 
 ##Usage
-`python server.py [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
-**-f** - path to config file, default: mongo-orchestration.config  
-**-e** - release name from config file, 'default' by default  
-**--no-fork** - don't start as service  
-**-p** - port number, 8889 by default  
-**start/stop/restart**: server's command  
+`python server.py [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
+  
+Arguments:  
++ **-h** - show help info
++ **-f** - path to config file, default: mongo-orchestration.config  
++ **-e** - release name from config file, 'default' by default  
++ **--no-fork** - don't start as service  
++ **-p** - port number, 8889 by default  
++ **start/stop/restart**: server's command  
 
 ###Examples
 `python server.py start` - starts as service on 8889 port  
@@ -29,6 +32,10 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 + authorization hasn't implemented
 
 ## Command line scripts
+  
++ **cmd_hosts.py** - manage hosts
++ **cmd_rs.py**    - manage replica sets
++ **cmd_sh.py**    - manage shard clusters
 
 ### cmd_hosts.py - manage hosts
 
