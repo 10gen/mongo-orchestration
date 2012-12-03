@@ -26,7 +26,6 @@ setup(
     author_email='mmamrouski@gmail.com',
     setup_requires=[
         'pymongo==2.3',
-        'nose>=1.2',
-        'psutil==0.6.1'
+        'nose>=1.2'
     ] + requiredPacks
 )

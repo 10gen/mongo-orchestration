@@ -11,7 +11,6 @@ import tempfile
 import shutil
 import stat
 import json
-import psutil
 
 import logging
 logger = logging.getLogger(__name__)
@@ -112,19 +111,14 @@ def wait_for(port_num, timeout):
     """
     t_start = time.time()
     sleeps = 1
-    while True:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while time.time() - t_start < timeout:
         try:
-            try:
-                s.connect((HOSTNAME, port_num))
-                return True
-            except (IOError, socket.error):
-                if time.time() - t_start < timeout:
-                    time.sleep(sleeps)
-                else:
-                    return False
-        finally:
+            s.connect((HOSTNAME, port_num))
             s.close()
+            return True
+        except (IOError, socket.error):
+            time.sleep(sleeps)
     return False
 
 
@@ -164,7 +158,11 @@ def kill_mprocess(pid, timeout=10):
         pid - process pid
     """
     if pid and proc_alive(pid):
-        psutil.Process(pid).terminate()
+        os.kill(pid, 15)
+        try:
+            os.wait()
+        except OSError:
+            pass
         t_start = time.time()
         while proc_alive(pid) and time.time() - t_start < timeout:
             time.sleep(1.5)
@@ -222,7 +220,7 @@ def proc_alive(pid):
     """check if process with pid is alive
     Return True or False"""
     try:
-        p = psutil.Process(pid)
-    except (psutil.NoSuchProcess, TypeError):
+        os.kill(pid, 0)
+        return True
+    except OSError:
         return False
-    return p.status in (psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING, psutil.STATUS_LOCKED)

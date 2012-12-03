@@ -209,7 +209,7 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([self.executable])
         pid = p.pid
         self.assertTrue(process.proc_alive(pid))
-        p.kill(), time.sleep(3)
+        p.kill(), os.wait()
         self.assertFalse(process.proc_alive(pid))
 
 
