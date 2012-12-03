@@ -111,14 +111,16 @@ def wait_for(port_num, timeout):
     """
     t_start = time.time()
     sleeps = 1
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     while time.time() - t_start < timeout:
         try:
-            s.connect((HOSTNAME, port_num))
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((HOSTNAME, port_num))
+                return True
+            except (IOError, socket.error):
+                time.sleep(sleeps)
+        finally:
             s.close()
-            return True
-        except (IOError, socket.error):
-            time.sleep(sleeps)
     return False
 
 
