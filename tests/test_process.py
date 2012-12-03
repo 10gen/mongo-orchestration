@@ -212,6 +212,9 @@ class ProcessTestCase(unittest.TestCase):
         p.kill(), os.wait()
         self.assertFalse(process.proc_alive(pid))
 
+        self.assertFalse(process.proc_alive(None))
+        self.assertFalse(process.proc_alive('2333'))
+
 
 if __name__ == '__main__':
     unittest.main()

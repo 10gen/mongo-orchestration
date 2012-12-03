@@ -219,8 +219,9 @@ def write_config(params):
 def proc_alive(pid):
     """check if process with pid is alive
     Return True or False"""
+
     try:
         os.kill(pid, 0)
         return True
-    except OSError:
+    except (OSError, TypeError):
         return False
