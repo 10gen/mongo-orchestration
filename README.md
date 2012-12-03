@@ -7,13 +7,12 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 
 ##Requires
 [Python 2.7](http://www.python.org/download/)  
-[psutil](https://code.google.com/p/psutil/downloads/list)  
 [requests](http://docs.python-requests.org/en/latest/user/install/#install)
 
 ##Installing
 
 ###Ubuntu
-`sudo apt-get install python-dev python-pip && sudo pip install pymongo==2.3 psutil==0.6.1 requests>=0.12`
+`sudo apt-get installpython-pip && sudo pip install pymongo==2.3 requests>=0.12`
 
 ###OSX
 
