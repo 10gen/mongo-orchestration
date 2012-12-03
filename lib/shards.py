@@ -1,4 +1,6 @@
+#!/usr/bin/python
 # coding=utf-8
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -174,7 +176,7 @@ class Shard(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().h_info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().h_new('mongos', params, autostart=True, check_db=False))
+        self._routers.append(Hosts().h_new('mongos', params, autostart=True))
         return {'id': self._routers[-1], 'hostname': Hosts().h_hostname(self._routers[-1])}
 
     def router_command(self, command, arg=None, is_eval=False):

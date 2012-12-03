@@ -1,4 +1,6 @@
+#!/usr/bin/python
 # coding=utf-8
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -58,7 +60,7 @@ class Hosts(Singleton):
             for host_id in self._storage:
                 self.h_del(host_id)
 
-    def h_new(self, name, params, auth_key=None, timeout=300, autostart=True, check_db=True):
+    def h_new(self, name, params, auth_key=None, timeout=300, autostart=True):
         """create new host
         Args:
            name - process name or path
@@ -71,7 +73,7 @@ class Hosts(Singleton):
         """
         name = os.path.split(name)[1]
         try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key, check_db)
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
             if autostart:
                 if not host.start(timeout):
                     raise OSError
@@ -132,7 +134,7 @@ class Host(object):
     """Class Host represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    default_params = {"noprealloc": True, "nojournal": True, "smallfiles": True, "oplogSize": 10}
+    mongod_default = {"noprealloc": True, "nojournal": True, "smallfiles": True, "oplogSize": 10}
 
     def __init_db(self, dbpath):
         if not dbpath:
@@ -151,7 +153,7 @@ class Host(object):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
 
-    def __init__(self, name, params, auth_key, check_db=True):
+    def __init__(self, name, params, auth_key):
         """Args:
             name - name of process (mongod or mongos)
             params - dictionary with params for mongo process
@@ -167,7 +169,6 @@ class Host(object):
         else:
             self.config_path, self.cfg = None, {}
 
-        # self.config_path, self.cfg = process.write_config(params, auth_key, check_db=check_db)
         self.pid = None  # process pid
         self.host = None  # hostname without port
         self.port = self.cfg.get('port', None)  # connection port
@@ -176,9 +177,9 @@ class Host(object):
 
     def __init_mongod(self, params, auth_key):
         cfg = params.copy()
-        for key in self.default_params:
+        for key in self.mongod_default:
             if key not in cfg:
-                cfg[key] = self.default_params[key]
+                cfg[key] = self.mongod_default[key]
 
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
         if auth_key:
