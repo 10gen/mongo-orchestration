@@ -1,4 +1,5 @@
-# encoding=utf8
+#!/usr/bin/python
+# coding=utf-8
 
 
 class MongoOrchestrationError(Exception):

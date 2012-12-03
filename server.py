@@ -1,4 +1,6 @@
+#!/usr/bin/python
 # coding=utf-8
+
 import os
 
 pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
@@ -11,7 +13,6 @@ logger = logging.getLogger(__name__)
 import argparse
 import json
 import sys
-import psutil
 
 from bottle import run, default_app
 
@@ -67,13 +68,8 @@ class Daemon(object):
         if os.path.exists(self.pid_path):
             try:
                 pid = int(open(self.pid_path).read())
-                if psutil.pid_exists(pid):
-                    p = psutil.Process(pid)
-                    print "send terminate signal to process with pid =", pid
-                    p.terminate()
-                    p.wait()
-                    print "process stopped"
-            except (ValueError):
+                os.kill(pid, 15)
+            except (OSError):
                 pass
             os.remove(self.pid_path)
         if exit:

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# coding=utf-8
+
 from hosts import Hosts
 from rs import RS
 from shards import Shards

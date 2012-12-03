@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding=utf-8
 
 import sys
@@ -208,8 +209,11 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([self.executable])
         pid = p.pid
         self.assertTrue(process.proc_alive(pid))
-        p.kill(), time.sleep(3)
+        p.kill(), os.wait()
         self.assertFalse(process.proc_alive(pid))
+
+        self.assertFalse(process.proc_alive(None))
+        self.assertFalse(process.proc_alive('2333'))
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding=utf-8
 
 import socket
@@ -10,7 +11,6 @@ import tempfile
 import shutil
 import stat
 import json
-import psutil
 
 import logging
 logger = logging.getLogger(__name__)
@@ -79,8 +79,7 @@ class PortPool(Singleton):
                     self.release_port(port)
                     port = self.__ports.pop()
         except (IndexError, KeyError):
-            closed = self.__closed
-            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(**locals()))
+            raise IndexError("Could not find a free port,\nclosed ports: {closed}".format(closed=self.__closed))
         self.__closed.add(port)
         return port
 
@@ -112,17 +111,14 @@ def wait_for(port_num, timeout):
     """
     t_start = time.time()
     sleeps = 1
-    while True:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while time.time() - t_start < timeout:
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 s.connect((HOSTNAME, port_num))
                 return True
             except (IOError, socket.error):
-                if time.time() - t_start < timeout:
-                    time.sleep(sleeps)
-                else:
-                    return False
+                time.sleep(sleeps)
         finally:
             s.close()
     return False
@@ -145,6 +141,8 @@ def mprocess(name, config_path, port=None, timeout=180):
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
+        if not proc_alive(proc.pid):
+            raise OSError
     except (OSError, TypeError) as err:
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
@@ -162,7 +160,11 @@ def kill_mprocess(pid, timeout=10):
         pid - process pid
     """
     if pid and proc_alive(pid):
-        psutil.Process(pid).terminate()
+        os.kill(pid, 15)
+        try:
+            os.wait()
+        except OSError:
+            pass
         t_start = time.time()
         while proc_alive(pid) and time.time() - t_start < timeout:
             time.sleep(1.5)
@@ -192,16 +194,15 @@ def remove_path(path):
         try:
             shutil.os.remove(path)
         except OSError:
-            time.sleep(2)
             onerror(shutil.os.remove, path, None)
 
 
 def write_config(params):
-    """write mongo's config file
+    """write mongo*'s config file
     Args:
        params - options wich file contains
-    Return config_path, cfg
-    where config_path - path to mongo's options file
+    Return config_path
+       where config_path - path to mongo*'s options file
     """
     config_path = tempfile.mktemp(prefix="mongo-")
 
@@ -220,8 +221,9 @@ def write_config(params):
 def proc_alive(pid):
     """check if process with pid is alive
     Return True or False"""
+
     try:
-        p = psutil.Process(pid)
-    except (psutil.NoSuchProcess, TypeError):
+        os.kill(pid, 0)
+        return True
+    except (OSError, TypeError):
         return False
-    return p.status in (psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING, psutil.STATUS_LOCKED)
