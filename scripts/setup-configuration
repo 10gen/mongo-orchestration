@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# WORKSPACE=/data/mongo-orchestration/workspace
+WORKSPACE=/tmp/mongo-orchestration
+LOGPATH=$WORKSPACE/log
+DBPATH=$WORKSPACE/db
+
+mkdir -p "$LOGPATH"
+mkdir -p "$DBPATH"
+
+BASE_URL=http://localhost:8889
+
+cleanupAll() {
+    rm -rf $DBPATH/*
+    rm -rf $LOGPATH/*
+    rm -rf $WORKSPACE/*
+}
+
+cleanupSingleServer() {
+    rm -rf $DBPATH/db27017
+    rm $LOGPATH/mongod27017.log
+}
+
+cleanupReplicaSet() {
+    rm -rf $DBPATH/db27017
+    rm -rf $DBPATH/db27018
+    rm -rf $DBPATH/db27019
+    rm $LOGPATH/mongod27017.log $LOGPATH/mongod27018.log $LOGPATH/mongod27019.log
+}
+
+cleanupShard() {
+    rm -rf $DBPATH/db27017
+    rm -rf $DBPATH/db27018
+    rm -rf $DBPATH/db27019
+    rm -rf $DBPATH/db27020
+    rm $LOGPATH/mongod27017.log $LOGPATH/mongod27018.log $LOGPATH/mongod27019.log $LOGPATH/mongod27019.log
+}
+
+
+if [ $# -ne 1 ]; then
+  echo "usage: setup-configuration config "
+  exit 1
+fi
+
+date
+
+if [ "$1" == "single_server" ]; then
+  cleanupSingleServer
+  params="{\"name\": \"mongod\", \"params\": {\"port\": 27017, \"dbpath\": \"$DBPATH/db27017\", \"logpath\":\"$LOGPATH/mongod27017.log\", \"ipv6\":true, \"verbose\":\"vvvvv\", \"logappend\":true, \"nojournal\":true}}"
+  echo curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
+  curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
+  echo curl -i -H "Accept: application/json" -X GET $BASE_URL/hosts 
+  curl -i -H "Accept: application/json" -X GET $BASE_URL/hosts
+
+elif [ "$1" == "replica_set" ]; then
+  cleanupReplicaSet
+  params="{\"id\": \"repl0\", \"members\":[{\"rsParams\": {\"priority\": 1.1}, \"procParams\":{\"dbpath\":\"$DBPATH/db27018\", \"port\": 27018, \"logpath\":\"$LOGPATH/db27018.log\", \"nojournal\":true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vvvvv\", \"ipv6\": true}}, {\"rsParams\":{\"priority\": 99}, \"procParams\": {\"dbpath\":\"$DBPATH/db27017\", \"port\": 27017, \"logpath\":\"$LOGPATH/db27017.log\", \"nojournal\":true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vvvvv\", \"ipv6\": true}}, {\"procParams\":{\"dbpath\":\"$DBPATH/db27019\", \"port\": 27019, \"logpath\":\"$LOGPATH/27019.log\", \"nojournal\":true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vvvvv\", \"ipv6\": true}}]}"
+  echo curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/rs
+  curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/rs
+  echo curl -i -H "Accept: application/json" -X GET $BASE_URL/rs/repl0/members
+  curl -i -H "Accept: application/json" -X GET $BASE_URL/rs/repl0/members
+
+elif [ "$1" == "shard" ]; then
+  cleanupShard
+  params="{\"routers\": [{\"port\": 27017}], \"configsvrs\": [{\"port\": 27020, \"dbpath\": \"$DBPATH/db27020\"}], \"id\": \"shard_cluster_1\", \"members\": [{\"id\": \"sh01\", \"shardParams\": {\"port\": 27018, \"dbpath\": \"$DBPATH/db27018\"}}, {\"shardParams\": {\"port\": 27019, \"dbpath\":\"$DBPATH/db27019\"}, \"id\": \"sh02\"}, {\"shardParams\": {\"id\": \"rs1\", \"members\": [{}, {}]}, \"id\": \"default\"}]}"
+  echo curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
+  curl -i -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
+  echo curl -i -H "Accept: application/json" -X GET $BASE_URL/sh/shard_cluster_1
+  curl -i -H "Accept: application/json" -X GET $BASE_URL/sh/shard_cluster_1
+
+else
+  echo "unknown configuration"
+  exit 1
+fi
+
+date

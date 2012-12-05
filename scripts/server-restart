@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# MONGO_ORCHESTRATION_DIR=~/mongo-orchestration/
+MONGO_ORCHESTRATION_DIR=/home/mmamrouski/development/mongo-orchestration
+PY=python
+
+DEFAULT_CONFIG=$MONGO_ORCHESTRATION_DIR/mongo-orchestration.config
+DEFAULT_RELEASE=stable-release
+DEFAULT_PORT=8889
+DEFAULT_MODE=
+
+
+printHelp() {
+    echo "usage: server-restart [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT]"
+
+    echo "optional arguments:"
+    echo "  -h,            show this help message and exit"
+    echo "  -f CONFIG      path to config file"
+    echo "  -e ENV         mongo release"
+    echo "  --no-fork      server mode"
+    echo "  -p PORT        port number"
+
+}
+
+ARG_HELP=false
+ARG_MODE=
+CONFIG=$DEFAULT_CONFIG
+RELEASE=$DEFAULT_RELEASE
+PORT=$DEFAULT_PORT
+
+shopt -s extglob
+
+while [[ $# -ge 1 ]]; do
+    case "$1" in
+    -h)
+    ARG_HELP=true
+    ;;
+    --help)
+    ARG_HELP=true
+    ;;
+    -f)
+        CONFIG=${2#}
+        ;;
+    -f=+([[:alpha:]_-.]))
+        CONFIG=${1#--foo=}
+        ;;
+    -e)
+        RELEASE=${2#}
+        ;;
+    -e=+([[:alpha:]_-.]))
+        RELEASE=${1#--other=}
+        ;;
+    -p)
+        PORT=${2#}
+        ;;
+    -p=+([[:alpha:]_-.]))
+        PORT=${1#--other=}
+        ;;
+    --no-fork)
+        ARG_MODE=--no-fork
+        ;;
+    *)
+        # ... invalid argument?
+        ;;
+    esac
+    shift
+done
+
+if [ $ARG_HELP == true ]; then
+  printHelp
+  exit
+fi
+
+echo $PY $MONGO_ORCHESTRATION_DIR/server.py restart -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
+$PY $MONGO_ORCHESTRATION_DIR/server.py restart -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
