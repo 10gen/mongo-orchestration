@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# WORKSPACE=/data/mongo-orchestration/workspace
 WORKSPACE=/tmp/mongo-orchestration
 LOGPATH=$WORKSPACE/log
 DBPATH=$WORKSPACE/db
