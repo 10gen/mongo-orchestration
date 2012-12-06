@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MONGO_ORCHESTRATION_DIR=~/mongo-orchestration/
+MONGO_ORCHESTRATION_DIR=~/mongo-orchestration
 PY=python
 
 DEFAULT_CONFIG=$MONGO_ORCHESTRATION_DIR/mongo-orchestration.config
