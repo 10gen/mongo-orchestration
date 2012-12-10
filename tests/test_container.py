@@ -28,7 +28,7 @@ class ContainerTestCase(unittest.TestCase):
                 onerror(os.remove, path, None)
 
     def tearDown(self):
-        self.container._storage.disconnect()
+        self.container.cleanup()
         self.remove_path(self.path)
 
     def test_set_settings(self):

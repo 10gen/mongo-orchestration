@@ -57,4 +57,4 @@ class Container(object):
 
     def cleanup(self):
         for key in self:
-            del(self[key])
+            operator.delitem(self, key)
