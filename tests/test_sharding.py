@@ -45,6 +45,11 @@ class ShardsTestCase(unittest.TestCase):
         self.sh.set_settings(path)
         self.assertEqual(path, self.sh.pids_file)
 
+    def test_bool(self):
+        self.assertEqual(False, bool(self.sh))
+        self.sh.sh_new({'id': 'sh01'})
+        self.assertEqual(True, bool(self.sh))
+
     def test_operations(self):
         config = {'members': [{}, {}, {}]}
         shard = Shard(config)

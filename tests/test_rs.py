@@ -53,6 +53,11 @@ class RSTestCase(unittest.TestCase):
         self.rs.set_settings(path)
         self.assertEqual(path, self.rs.pids_file)
 
+    def test_bool(self):
+        self.assertEqual(False, bool(self.rs))
+        self.rs.rs_new({'id': 'test-rs-1', 'members': [{}, {}]})
+        self.assertEqual(True, bool(self.rs))
+
     def test_operations(self):
         repl_cfg = {'members': [{}, {}]}
         repl = ReplicaSet(repl_cfg)

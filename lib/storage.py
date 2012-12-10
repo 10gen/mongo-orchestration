@@ -73,3 +73,13 @@ class Storage(DictMixin, object):
             if isinstance(value, unicode):
                 value = value.encode()
             yield loads(value)
+
+    def __repr__(self):
+        return "Storage({self.db}, {self.name})".format(**locals())
+
+    def __nonzero__(self):
+        return bool(len(self))
+
+    def __bool__(self):
+        # Python 3 compatibility
+        return self.__nonzero__()

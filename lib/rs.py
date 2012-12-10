@@ -51,6 +51,13 @@ class RS(Singleton):
     def __len__(self):
         return len(self._storage)
 
+    def __nonzero__(self):
+        return bool(len(self))
+
+    def __bool__(self):
+        # Python 3 compatibility
+        return self.__nonzero__()
+
     def cleanup(self):
         """remove all hosts with their data"""
         Hosts().cleanup()

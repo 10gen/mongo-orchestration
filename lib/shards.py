@@ -15,12 +15,21 @@ from rs import RS
 class Shards(Singleton):
     """ Shards is a dict-like collection for Shard objects"""
     _storage = None
+    pids_file = None
+    bin_path = None
 
     def set_settings(self, pids_file, bin_path=None):
         """set path to storage"""
         self._storage = Storage(pids_file, 'shards')
         self.pids_file = pids_file
         self.bin_path = bin_path or ''
+
+    def __nonzero__(self):
+        return bool(len(self))
+
+    def __bool__(self):
+        # Python 3 compatibility
+        return self.__nonzero__()
 
     def __getitem__(self, key):
         return self.sh_info(key)
