@@ -6,190 +6,14 @@ logger = logging.getLogger(__name__)
 from uuid import uuid4
 from singleton import Singleton
 from storage import Storage
+from container import Container
 import pymongo
 from hosts import Hosts
 import time
 import errors
+import tempfile
 
 Hosts()
-
-
-class RS(Singleton):
-    """ RS is a dict-like collection for replica set"""
-    _storage = None
-
-    def set_settings(self, pids_file, bin_path=''):
-        """set path to storage"""
-        self._storage = Storage(pids_file, 'rs')
-        self.pids_file = pids_file
-        self.bin_path = bin_path
-        Hosts().set_settings(pids_file, bin_path)
-
-    def __getitem__(self, key):
-        return self._storage[key]
-
-    def __setitem__(self, key, value):
-        if isinstance(value, ReplicaSet):
-            self._storage[key] = value
-        else:
-            raise ValueError
-
-    def __delitem__(self, key):
-        rs = self._storage.pop(key)
-        del(rs)
-
-    def __del__(self):
-        self.cleanup()
-
-    def __contains__(self, item):
-        return item in self._storage
-
-    def __iter__(self):
-        for item in self._storage:
-            yield item
-
-    def __len__(self):
-        return len(self._storage)
-
-    def __nonzero__(self):
-        return bool(len(self))
-
-    def __bool__(self):
-        # Python 3 compatibility
-        return self.__nonzero__()
-
-    def cleanup(self):
-        """remove all hosts with their data"""
-        Hosts().cleanup()
-        self._storage and self._storage.clear()
-
-    def rs_new(self, rs_params):
-        """create new replica set
-        Args:
-           rs_params - replica set configuration
-        Return repl_id which can use to take the replica set
-        """
-        repl_id = rs_params.get('id', None)
-        if repl_id is not None and repl_id in self:
-            raise errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
-        repl = ReplicaSet(rs_params)
-        self[repl.repl_id] = repl
-        return repl.repl_id
-
-    def repl_info(self, repl_id):
-        """return information about replica set
-        Args:
-            repl_id - replica set identity
-        """
-        return self[repl_id].repl_info()
-
-    def rs_primary(self, repl_id):
-        """find and return primary hostname
-        Args:
-            repl_id - replica set identity
-        """
-        repl = self[repl_id]
-        primary = repl.primary()
-        return repl.member_info(repl.host2id(primary))
-
-    def rs_primary_stepdown(self, repl_id, timeout=60):
-        """stepdown primary node
-        Args:
-            repld_id - replica set identity
-            timeout - number of seconds to avoid election to primary
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        return repl.stepdown(timeout)
-
-    def rs_del(self, repl_id):
-        """remove replica set with kill members
-        Args:
-            repl_id - replica set identity
-        return True if operation success otherwise False
-        """
-        repl = self._storage.pop(repl_id)
-        repl.cleanup()
-        del(repl)
-
-    def rs_members(self, repl_id):
-        """return list [{"_id": member_id, "host": hostname}] of replica set members
-        Args:
-            repl_id - replica set identity
-        """
-        return self[repl_id].members()
-
-    def rs_secondaries(self, repl_id):
-        """return list of secondaries members"""
-        return self[repl_id].secondaries()
-
-    def rs_arbiters(self, repl_id):
-        """return list of arbiters"""
-        return self[repl_id].arbiters()
-
-    def rs_hidden(self, repl_id):
-        """return list of hidden members"""
-        return self[repl_id].hidden()
-
-    def rs_member_info(self, repl_id, member_id):
-        """return information about member
-        Args:
-            repl_id - replica set identity
-            member_id - member index
-        """
-        return self[repl_id].member_info(member_id)
-
-    def rs_member_del(self, repl_id, member_id):
-        """remove member from replica set (reconfig replica)
-        Args:
-            repl_id - replica set identity
-            member_id - member index
-        """
-        repl = self[repl_id]
-        result = repl.member_del(member_id)
-        self[repl_id] = repl
-        return result
-
-    def rs_member_add(self, repl_id, params):
-        """create instance and add it to existing replcia
-        Args:
-            repl_id - replica set identity
-            params - member params
-
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        member_id = repl.repl_member_add(params)
-        self[repl_id] = repl
-        return member_id
-
-    def rs_member_command(self, repl_id, member_id, command):
-        """apply command(start, stop, restart) to the member of replica set
-        Args:
-            repl_id - replica set identity
-            member_id - member index
-            command - command: start, stop, restart
-
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        result = repl.member_command(member_id, command)
-        self[repl_id] = repl
-        return result
-
-    def rs_member_update(self, repl_id, member_id, params):
-        """apply new params to replica set member
-        Args:
-            repl_id - replica set identity
-            member_id - member index
-            params - new member's params
-
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        result = repl.member_update(member_id, params)
-        self[repl_id] = repl
-        return result
 
 
 class ReplicaSet(object):
@@ -484,3 +308,149 @@ class ReplicaSet(object):
                 if cfg_member_info[key] != real_member_info.get(key, None):
                     return False
         return True
+
+
+class RS(Singleton, Container):
+    """ RS is a dict-like collection for replica set"""
+    _name = 'rs'
+    _obj_type = ReplicaSet
+    bin_path = ''
+    pids_file = tempfile.mktemp(prefix="mongo-")
+
+    def set_settings(self, pids_file, bin_path=''):
+        """set path to storage"""
+        super(RS, self).set_settings(pids_file, bin_path)
+        Hosts().set_settings(pids_file, bin_path)
+
+    def cleanup(self):
+        """remove all hosts with their data"""
+        Hosts().cleanup()
+        self._storage and self._storage.clear()
+
+    def rs_new(self, rs_params):
+        """create new replica set
+        Args:
+           rs_params - replica set configuration
+        Return repl_id which can use to take the replica set
+        """
+        repl_id = rs_params.get('id', None)
+        if repl_id is not None and repl_id in self:
+            raise errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
+        repl = ReplicaSet(rs_params)
+        self[repl.repl_id] = repl
+        return repl.repl_id
+
+    def repl_info(self, repl_id):
+        """return information about replica set
+        Args:
+            repl_id - replica set identity
+        """
+        return self[repl_id].repl_info()
+
+    def rs_primary(self, repl_id):
+        """find and return primary hostname
+        Args:
+            repl_id - replica set identity
+        """
+        repl = self[repl_id]
+        primary = repl.primary()
+        return repl.member_info(repl.host2id(primary))
+
+    def rs_primary_stepdown(self, repl_id, timeout=60):
+        """stepdown primary node
+        Args:
+            repld_id - replica set identity
+            timeout - number of seconds to avoid election to primary
+        return True if operation success otherwise False
+        """
+        repl = self[repl_id]
+        return repl.stepdown(timeout)
+
+    def rs_del(self, repl_id):
+        """remove replica set with kill members
+        Args:
+            repl_id - replica set identity
+        return True if operation success otherwise False
+        """
+        repl = self._storage.pop(repl_id)
+        repl.cleanup()
+        del(repl)
+
+    def rs_members(self, repl_id):
+        """return list [{"_id": member_id, "host": hostname}] of replica set members
+        Args:
+            repl_id - replica set identity
+        """
+        return self[repl_id].members()
+
+    def rs_secondaries(self, repl_id):
+        """return list of secondaries members"""
+        return self[repl_id].secondaries()
+
+    def rs_arbiters(self, repl_id):
+        """return list of arbiters"""
+        return self[repl_id].arbiters()
+
+    def rs_hidden(self, repl_id):
+        """return list of hidden members"""
+        return self[repl_id].hidden()
+
+    def rs_member_info(self, repl_id, member_id):
+        """return information about member
+        Args:
+            repl_id - replica set identity
+            member_id - member index
+        """
+        return self[repl_id].member_info(member_id)
+
+    def rs_member_del(self, repl_id, member_id):
+        """remove member from replica set (reconfig replica)
+        Args:
+            repl_id - replica set identity
+            member_id - member index
+        """
+        repl = self[repl_id]
+        result = repl.member_del(member_id)
+        self[repl_id] = repl
+        return result
+
+    def rs_member_add(self, repl_id, params):
+        """create instance and add it to existing replcia
+        Args:
+            repl_id - replica set identity
+            params - member params
+
+        return True if operation success otherwise False
+        """
+        repl = self[repl_id]
+        member_id = repl.repl_member_add(params)
+        self[repl_id] = repl
+        return member_id
+
+    def rs_member_command(self, repl_id, member_id, command):
+        """apply command(start, stop, restart) to the member of replica set
+        Args:
+            repl_id - replica set identity
+            member_id - member index
+            command - command: start, stop, restart
+
+        return True if operation success otherwise False
+        """
+        repl = self[repl_id]
+        result = repl.member_command(member_id, command)
+        self[repl_id] = repl
+        return result
+
+    def rs_member_update(self, repl_id, member_id, params):
+        """apply new params to replica set member
+        Args:
+            repl_id - replica set identity
+            member_id - member index
+            params - new member's params
+
+        return True if operation success otherwise False
+        """
+        repl = self[repl_id]
+        result = repl.member_update(member_id, params)
+        self[repl_id] = repl
+        return result
