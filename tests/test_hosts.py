@@ -44,6 +44,11 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(path, self.hosts.pids_file)
         self.remove_path(path)
 
+    def test_bool(self):
+        self.assertEqual(False, bool(self.hosts))
+        self.hosts.h_new('mongod', {}, autostart=False)
+        self.assertTrue(True, bool(self.hosts))
+
     def test_operations(self):
         host_id = self.hosts.h_new('mongod', {}, autostart=False)
         self.assertTrue(len(self.hosts) == 1)
