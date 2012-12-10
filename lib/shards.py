@@ -6,131 +6,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 from uuid import uuid4
 from singleton import Singleton
-from storage import Storage
-import operator
+from container import Container
+import tempfile
 from hosts import Hosts
 from rs import RS
-
-
-class Shards(Singleton):
-    """ Shards is a dict-like collection for Shard objects"""
-    _storage = None
-    pids_file = None
-    bin_path = None
-
-    def set_settings(self, pids_file, bin_path=None):
-        """set path to storage"""
-        self._storage = Storage(pids_file, 'shards')
-        self.pids_file = pids_file
-        self.bin_path = bin_path or ''
-
-    def __nonzero__(self):
-        return bool(len(self))
-
-    def __bool__(self):
-        # Python 3 compatibility
-        return self.__nonzero__()
-
-    def __getitem__(self, key):
-        return self.sh_info(key)
-
-    def __setitem__(self, key, value):
-        if isinstance(value, Shard):
-            self._storage[key] = value
-        else:
-            raise ValueError
-
-    def __delitem__(self, key):
-        shard = self._storage[key]
-        operator.delitem(self._storage, key)
-        del(shard)
-
-    def __del__(self):
-        self.cleanup()
-
-    def __contains__(self, item):
-        return item in self._storage
-
-    def __iter__(self):
-        for item in self._storage:
-            yield item
-
-    def __len__(self):
-        return len(self._storage)
-
-    def cleanup(self):
-        """remove all hosts with their data"""
-        if self._storage:
-            for shard_id in self._storage:
-                self.sh_del(shard_id)
-
-    def sh_new(self, params):
-        """create new shard
-        Args:
-           params - dictionary with specific params for instance
-        Return shard_id
-           where shard_id - id which can use to take the shard from hosts collection
-        """
-        try:
-            params['id'] = params.get('id', str(uuid4()))
-            shard = Shard(params)
-            self[shard.id] = shard
-            return shard.id
-        except:
-            raise
-
-    def sh_del(self, shard_id):
-        """remove shard and data stuff
-        Args:
-            shard_id - shard identity
-        """
-        shard = self._storage.pop(shard_id)
-        shard.cleanup()
-
-    def sh_info(self, shard_id):
-        """return dictionary object with info about shard
-        Args:
-            shard_id - shard identity
-        """
-        return self._storage[shard_id].info()
-
-    def sh_configservers(self, shard_id):
-        """return list of config servers"""
-        return self._storage[shard_id].configsvrs
-
-    def sh_routers(self, shard_id):
-        """return list of routers"""
-        return self._storage[shard_id].routers
-
-    def sh_router_add(self, shard_id, params):
-        """add new router"""
-        shard = self._storage[shard_id]
-        result = shard.router_add(params)
-        self._storage[shard_id] = shard
-        return result
-
-    def sh_members(self, shard_id):
-        """return list of members"""
-        return self._storage[shard_id].members
-
-    def sh_member_info(self, shard_id, member_id):
-        """return info about member"""
-        shard = self._storage[shard_id]
-        return shard.member_info(member_id)
-
-    def sh_member_del(self, shard_id, member_id):
-        """remove member from shard cluster"""
-        shard = self._storage[shard_id]
-        result = shard.member_remove(member_id)
-        self._storage[shard_id] = shard
-        return result
-
-    def sh_member_add(self, shard_id, params):
-        """add new member into configuration"""
-        shard = self._storage[shard_id]
-        result = shard.member_add(params.get('id', None), params.get('shardParams', {}))
-        self._storage[shard_id] = shard
-        return result
 
 
 class Shard(object):
@@ -264,3 +143,93 @@ class Shard(object):
         self._configsvrs = []
         self._routers = []
         self._shards = {}
+
+
+class Shards(Singleton, Container):
+    """ Shards is a dict-like collection for Shard objects"""
+    _name = 'shards'
+    _obj_type = Shard
+    bin_path = ''
+    pids_file = tempfile.mktemp(prefix="mongo-")
+
+    def set_settings(self, pids_file, bin_path=None):
+        """set path to storage"""
+        super(Shards, self).set_settings(pids_file, bin_path)
+        RS().set_settings(pids_file, bin_path)
+
+    def __getitem__(self, key):
+        return self.sh_info(key)
+
+    def cleanup(self):
+        """remove all hosts with their data"""
+        if self._storage:
+            for shard_id in self._storage:
+                self.sh_del(shard_id)
+
+    def sh_new(self, params):
+        """create new shard
+        Args:
+           params - dictionary with specific params for instance
+        Return shard_id
+           where shard_id - id which can use to take the shard from hosts collection
+        """
+        try:
+            params['id'] = params.get('id', str(uuid4()))
+            shard = Shard(params)
+            self[shard.id] = shard
+            return shard.id
+        except:
+            raise
+
+    def sh_del(self, shard_id):
+        """remove shard and data stuff
+        Args:
+            shard_id - shard identity
+        """
+        shard = self._storage.pop(shard_id)
+        shard.cleanup()
+
+    def sh_info(self, shard_id):
+        """return dictionary object with info about shard
+        Args:
+            shard_id - shard identity
+        """
+        return self._storage[shard_id].info()
+
+    def sh_configservers(self, shard_id):
+        """return list of config servers"""
+        return self._storage[shard_id].configsvrs
+
+    def sh_routers(self, shard_id):
+        """return list of routers"""
+        return self._storage[shard_id].routers
+
+    def sh_router_add(self, shard_id, params):
+        """add new router"""
+        shard = self._storage[shard_id]
+        result = shard.router_add(params)
+        self._storage[shard_id] = shard
+        return result
+
+    def sh_members(self, shard_id):
+        """return list of members"""
+        return self._storage[shard_id].members
+
+    def sh_member_info(self, shard_id, member_id):
+        """return info about member"""
+        shard = self._storage[shard_id]
+        return shard.member_info(member_id)
+
+    def sh_member_del(self, shard_id, member_id):
+        """remove member from shard cluster"""
+        shard = self._storage[shard_id]
+        result = shard.member_remove(member_id)
+        self._storage[shard_id] = shard
+        return result
+
+    def sh_member_add(self, shard_id, params):
+        """add new member into configuration"""
+        shard = self._storage[shard_id]
+        result = shard.member_add(params.get('id', None), params.get('shardParams', {}))
+        self._storage[shard_id] = shard
+        return result
