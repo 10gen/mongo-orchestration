@@ -117,7 +117,7 @@ def setup(release_path):
 def delete_pid():
     logger.debug("delete_pid()")
     if args.no_fork and os.path.exists(pid_file):
-        logger.debug("remove pid file {pid_file}".format(**locals()))
+        logger.debug("remove pid file {pid_file}".format(pid_file=pid_file))
         os.remove(pid_file)
 
 args = read_env()
