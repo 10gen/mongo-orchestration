@@ -101,7 +101,7 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(c.admin.eval("rs.conf()")['_id'], repl_id)
         c.close()
 
-    def test_repl_info(self):
+    def test_info(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
         info = self.rs.info(repl_id)
         self.assertTrue(isinstance(info, dict))
@@ -263,7 +263,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.repl_update(config))
         self.assertTrue(self.repl.config['members'][1]['hidden'])
 
-    def test_repl_info(self):
+    def test_info(self):
         cfg = self.repl.config
         info = self.repl.info()
         self.assertEqual(info['auth_key'], self.repl.auth_key)

@@ -92,7 +92,7 @@ class ReplicaSet(object):
         self.waiting_config_state()
         return self.connection() and True
 
-    def repl_info(self):
+    def info(self):
         """return information about replica set"""
         return {"id": self.repl_id, "auth_key": self.auth_key, "members": self.members()}
 
