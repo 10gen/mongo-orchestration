@@ -123,6 +123,8 @@ def delete_pid():
 args = read_env()
 if args.command != 'stop':
     setup(args.release_path)
-    atexit.register(delete_pid)
+else:
+    setup('')
+atexit.register(delete_pid)
 getattr(Daemon(args.no_fork), args.command)()
 run(app, host='localhost', port=args.port, debug=False, reloader=False)
