@@ -1,7 +1,0 @@
-#!/bin/bash
-
-MONGO_ORCHESTRATION_DIR=~/mongo-orchestration
-PY=python
-
-echo $PY $MONGO_ORCHESTRATION_DIR/server.py stop
-$PY $MONGO_ORCHESTRATION_DIR/server.py stop

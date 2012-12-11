@@ -10,8 +10,10 @@ DEFAULT_MODE=
 
 
 printHelp() {
-    echo "usage: server-start [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT]"
+    echo "usage: server-restart [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start|stop|restart}"
 
+    echo "commands: start/stop/restart  - default start"
+    echo ""
     echo "optional arguments:"
     echo "  -h,            show this help message and exit"
     echo "  -f CONFIG      path to config file"
@@ -23,6 +25,7 @@ printHelp() {
 
 ARG_HELP=false
 ARG_MODE=
+ARG_COMMAND=start
 CONFIG=$DEFAULT_CONFIG
 RELEASE=$DEFAULT_RELEASE
 PORT=$DEFAULT_PORT
@@ -59,6 +62,7 @@ while [[ $# -ge 1 ]]; do
         ARG_MODE=--no-fork
         ;;
     *)
+        ARG_COMMAND=$1
         # ... invalid argument?
         ;;
     esac
@@ -70,5 +74,5 @@ if [ $ARG_HELP == true ]; then
   exit
 fi
 
-echo $PY $MONGO_ORCHESTRATION_DIR/server.py start -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
-$PY $MONGO_ORCHESTRATION_DIR/server.py start -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
+echo $PY $MONGO_ORCHESTRATION_DIR/server.py $ARG_COMMAND -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
+$PY $MONGO_ORCHESTRATION_DIR/server.py $ARG_COMMAND -f $CONFIG -e $RELEASE -p $PORT $ARG_MODE
