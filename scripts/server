@@ -61,8 +61,16 @@ while [[ $# -ge 1 ]]; do
     --no-fork)
         ARG_MODE=--no-fork
         ;;
+    start)
+        ARG_COMMAND=start
+        ;;
+    restart)
+        ARG_COMMAND=restart
+        ;;
+    stop)
+        ARG_COMMAND=stop
+        ;;
     *)
-        ARG_COMMAND=$1
         # ... invalid argument?
         ;;
     esac
