@@ -39,17 +39,17 @@ class Shard(object):
     @property
     def configsvrs(self):
         """return list of config servers"""
-        return [{'id': h_id, 'hostname': Hosts().h_hostname(h_id)} for h_id in self._configsvrs]
+        return [{'id': h_id, 'hostname': Hosts().hostname(h_id)} for h_id in self._configsvrs]
 
     @property
     def routers(self):
         """return list of routers"""
-        return [{'id': h_id, 'hostname': Hosts().h_hostname(h_id)} for h_id in self._routers]
+        return [{'id': h_id, 'hostname': Hosts().hostname(h_id)} for h_id in self._routers]
 
     @property
     def members(self):
         """return list of members"""
-        # return [{'id': shard, 'hostname': Hosts().h_hostname(info['_id'])} for shard, info in self._shards.items()]
+        # return [{'id': shard, 'hostname': Hosts().hostname(info['_id'])} for shard, info in self._shards.items()]
         return [self.member_info(item) for item in self._shards]
 
     @property
@@ -58,18 +58,18 @@ class Shard(object):
         for host in self._routers:
             info = Hosts().info(host)
             if info['procInfo'].get('alive', False):
-                return {'id': host, 'hostname': Hosts().h_hostname(host)}
+                return {'id': host, 'hostname': Hosts().hostname(host)}
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
         self._routers.append(Hosts().create('mongos', params, autostart=True))
-        return {'id': self._routers[-1], 'hostname': Hosts().h_hostname(self._routers[-1])}
+        return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
     def router_command(self, command, arg=None, is_eval=False):
         """run command on router host"""
-        return Hosts().h_db_command(self.router['id'], command, arg, is_eval=is_eval)
+        return Hosts().db_command(self.router['id'], command, arg, is_eval=is_eval)
 
     def _add(self, shard_uri, name):
         """execute addShard command"""
@@ -81,8 +81,8 @@ class Shard(object):
         if 'members' in params:
             # is replica set
             rs_id = RS().create(params)
-            rs_members = RS().rs_members(rs_id)
-            cfgs = rs_id + r"/" + ','.join([item['host'] for item in rs_members])
+            members = RS().members(rs_id)
+            cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
             result = self._add(cfgs, member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isReplicaSet': True, '_id': rs_id}
@@ -158,15 +158,15 @@ class Shards(Singleton, Container):
         RS().set_settings(pids_file, bin_path)
 
     def __getitem__(self, key):
-        return self.sh_info(key)
+        return self.info(key)
 
     def cleanup(self):
         """remove all hosts with their data"""
         if self._storage:
             for shard_id in self._storage:
-                self.sh_del(shard_id)
+                self.remove(shard_id)
 
-    def sh_new(self, params):
+    def create(self, params):
         """create new shard
         Args:
            params - dictionary with specific params for instance
@@ -181,7 +181,7 @@ class Shards(Singleton, Container):
         except:
             raise
 
-    def sh_del(self, shard_id):
+    def remove(self, shard_id):
         """remove shard and data stuff
         Args:
             shard_id - shard identity
@@ -189,45 +189,45 @@ class Shards(Singleton, Container):
         shard = self._storage.pop(shard_id)
         shard.cleanup()
 
-    def sh_info(self, shard_id):
+    def info(self, shard_id):
         """return dictionary object with info about shard
         Args:
             shard_id - shard identity
         """
         return self._storage[shard_id].info()
 
-    def sh_configservers(self, shard_id):
+    def configservers(self, shard_id):
         """return list of config servers"""
         return self._storage[shard_id].configsvrs
 
-    def sh_routers(self, shard_id):
+    def routers(self, shard_id):
         """return list of routers"""
         return self._storage[shard_id].routers
 
-    def sh_router_add(self, shard_id, params):
+    def router_add(self, shard_id, params):
         """add new router"""
         shard = self._storage[shard_id]
         result = shard.router_add(params)
         self._storage[shard_id] = shard
         return result
 
-    def sh_members(self, shard_id):
+    def members(self, shard_id):
         """return list of members"""
         return self._storage[shard_id].members
 
-    def sh_member_info(self, shard_id, member_id):
+    def member_info(self, shard_id, member_id):
         """return info about member"""
         shard = self._storage[shard_id]
         return shard.member_info(member_id)
 
-    def sh_member_del(self, shard_id, member_id):
+    def member_del(self, shard_id, member_id):
         """remove member from shard cluster"""
         shard = self._storage[shard_id]
         result = shard.member_remove(member_id)
         self._storage[shard_id] = shard
         return result
 
-    def sh_member_add(self, shard_id, params):
+    def member_add(self, shard_id, params):
         """add new member into configuration"""
         shard = self._storage[shard_id]
         result = shard.member_add(params.get('id', None), params.get('shardParams', {}))

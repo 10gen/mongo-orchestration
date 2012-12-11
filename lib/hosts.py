@@ -199,11 +199,11 @@ class Hosts(Singleton, Container):
         host.stop()
         host.cleanup()
 
-    def h_db_command(self, host_id, command, arg=None, is_eval=False):
+    def db_command(self, host_id, command, arg=None, is_eval=False):
         host = self._storage[host_id]
         return host.run_command(command, arg, is_eval)
 
-    def h_command(self, host_id, command, *args):
+    def command(self, host_id, command, *args):
         """run command
         Args:
             host_id - host identity
@@ -229,10 +229,10 @@ class Hosts(Singleton, Container):
         result['id'] = host_id
         return result
 
-    def h_hostname(self, host_id):
+    def hostname(self, host_id):
         return self._storage[host_id].hostname
 
-    def h_id_by_hostname(self, hostname):
+    def id_by_hostname(self, hostname):
         for host_id in self._storage:
             if self._storage[host_id].hostname == hostname:
                 return host_id

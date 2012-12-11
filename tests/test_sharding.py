@@ -112,7 +112,7 @@ class ShardsTestCase(unittest.TestCase):
         self.sh.remove(sh2_id)
         self.assertEqual(len(self.sh), 0)
 
-    def test_sh_info(self):
+    def test_info(self):
         config = {
             'configsvrs': [{}, {}, {}],
             'routers': [{}, {}, {}],
@@ -128,62 +128,62 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(info['configsvrs']), 3)
         self.assertEqual(len(info['routers']), 3)
 
-    def test_sh_configservers(self):
+    def test_configservers(self):
         config = {}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_configservers(sh_id)), 1)
+        self.assertEqual(len(self.sh.configservers(sh_id)), 1)
         self.sh.cleanup()
 
         config = {'configsvrs': [{}, {}, {}]}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_configservers(sh_id)), 3)
+        self.assertEqual(len(self.sh.configservers(sh_id)), 3)
 
-    def test_sh_routers(self):
+    def test_routers(self):
         config = {}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_routers(sh_id)), 1)
+        self.assertEqual(len(self.sh.routers(sh_id)), 1)
         self.sh.cleanup()
 
         config = {'routers': [{}, {}, {}]}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_routers(sh_id)), 3)
+        self.assertEqual(len(self.sh.routers(sh_id)), 3)
 
-    def test_sh_router_add(self):
+    def test_router_add(self):
         config = {}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_routers(sh_id)), 1)
-        self.sh.sh_router_add(sh_id, {})
-        self.assertEqual(len(self.sh.sh_routers(sh_id)), 2)
-        self.sh.sh_router_add(sh_id, {})
-        self.assertEqual(len(self.sh.sh_routers(sh_id)), 3)
+        self.assertEqual(len(self.sh.routers(sh_id)), 1)
+        self.sh.router_add(sh_id, {})
+        self.assertEqual(len(self.sh.routers(sh_id)), 2)
+        self.sh.router_add(sh_id, {})
+        self.assertEqual(len(self.sh.routers(sh_id)), 3)
         self.sh.cleanup()
 
-    def test_sh_members(self):
+    def test_members(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}]}
         sh_id = self.sh.create(config)
 
-        self.assertEqual(len(self.sh.sh_members(sh_id)), 0)
+        self.assertEqual(len(self.sh.members(sh_id)), 0)
         self.sh.cleanup()
 
         config = {'routers': [{'port': port}], 'members': [{}, {}, {}]}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.sh_members(sh_id)), 3)
+        self.assertEqual(len(self.sh.members(sh_id)), 3)
 
-    def test_sh_member_info(self):
+    def test_member_info(self):
         config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
-        info = self.sh.sh_member_info(sh_id, 'member1')
+        info = self.sh.member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isHost'])
         self.assertTrue('_id' in info)
 
-        info = self.sh.sh_member_info(sh_id, 'sh-rs-01')
+        info = self.sh.member_info(sh_id, 'sh-rs-01')
         self.assertEqual(info['id'], 'sh-rs-01')
         self.assertTrue(info['isReplicaSet'])
         self.assertTrue('_id' in info)
 
-    def test_sh_member_del(self):
+    def test_member_del(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}], 'members': [{'id': 'member1'}, {'id': 'member2'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
@@ -195,28 +195,28 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(result['shards']), 3)
 
         # remove member-host
-        result = self.sh.sh_member_del(sh_id, 'member1')
+        result = self.sh.member_del(sh_id, 'member1')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 3)
         self.assertEqual(result['state'], 'started')
         self.assertEqual(result['shard'], 'member1')
         time.sleep(5)
-        result = self.sh.sh_member_del(sh_id, 'member1')
+        result = self.sh.member_del(sh_id, 'member1')
         self.assertEqual(result['state'], 'completed')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
         self.assertEqual(result['shard'], 'member1')
 
         # remove member-replicaset
-        result = self.sh.sh_member_del(sh_id, 'sh-rs-01')
+        result = self.sh.member_del(sh_id, 'sh-rs-01')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
         self.assertEqual(result['state'], 'started')
         self.assertEqual(result['shard'], 'sh-rs-01')
         time.sleep(7)
-        result = self.sh.sh_member_del(sh_id, 'sh-rs-01')
+        result = self.sh.member_del(sh_id, 'sh-rs-01')
         self.assertEqual(result['state'], 'completed')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 1)
         self.assertEqual(result['shard'], 'sh-rs-01')
 
-    def test_sh_member_add(self):
+    def test_member_add(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}]}
         sh_id = self.sh.create(config)
@@ -225,12 +225,12 @@ class ShardsTestCase(unittest.TestCase):
         c = pymongo.Connection(host)
 
         self.assertEqual(len(c.admin.command("listShards")['shards']), 0)
-        result = self.sh.sh_member_add(sh_id, {'id': 'test1', 'shardParams': {}})
+        result = self.sh.member_add(sh_id, {'id': 'test1', 'shardParams': {}})
         self.assertTrue(result.get('isHost', False))
         self.assertEqual(result['id'], 'test1')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 1)
 
-        result = self.sh.sh_member_add(sh_id, {'id': 'test2', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}})
+        result = self.sh.member_add(sh_id, {'id': 'test2', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}})
         self.assertFalse(result.get('isHost', False))
         self.assertTrue(result.get('isReplicaSet', False))
         self.assertEqual(result['id'], 'test2')
@@ -320,8 +320,8 @@ class ShardTestCase(unittest.TestCase):
         hostname = routers[1]['hostname']
         _id = routers[1]['id']
         # stop routers 0 and 2
-        Hosts().h_command(routers[0]['id'], 'stop')
-        Hosts().h_command(routers[2]['id'], 'stop')
+        Hosts().command(routers[0]['id'], 'stop')
+        Hosts().command(routers[2]['id'], 'stop')
         router = sh.router
         self.assertEqual(router['id'], _id)
         self.assertEqual(router['hostname'], hostname)

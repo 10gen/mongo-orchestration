@@ -96,7 +96,7 @@ def host_command(host_id, command):
     if host_id not in Hosts():
         return send_result(404)
     try:
-        Hosts().h_command(host_id, command)
+        Hosts().command(host_id, command)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)

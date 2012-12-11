@@ -100,11 +100,11 @@ class HostsTestCase(unittest.TestCase):
 
     def test_hcommand(self):
         h_id = self.hosts.create('mongod', {}, autostart=False)
-        self.assertTrue(self.hosts.h_command(h_id, 'start'))
-        self.assertTrue(self.hosts.h_command(h_id, 'stop'))
-        self.assertTrue(self.hosts.h_command(h_id, 'start'))
-        self.assertTrue(self.hosts.h_command(h_id, 'restart'))
-        self.assertRaises(ValueError, self.hosts.h_command, h_id, 'fake')
+        self.assertTrue(self.hosts.command(h_id, 'start'))
+        self.assertTrue(self.hosts.command(h_id, 'stop'))
+        self.assertTrue(self.hosts.command(h_id, 'start'))
+        self.assertTrue(self.hosts.command(h_id, 'restart'))
+        self.assertRaises(ValueError, self.hosts.command, h_id, 'fake')
 
     def test_hinfo(self):
         h_id = self.hosts.create('mongod', {}, autostart=False)
@@ -114,18 +114,18 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(info['statuses'], {})
         self.assertEqual(info['serverInfo'], {})
 
-    def test_h_id_by_hostname(self):
+    def test_id_by_hostname(self):
         h_id = self.hosts.create('mongod', {}, autostart=True)
         h_uri = self.hosts.info(h_id)['uri']
         h2_id = self.hosts.create('mongod', {}, autostart=True)
         h2_uri = self.hosts.info(h2_id)['uri']
-        self.assertTrue(self.hosts.h_id_by_hostname(h_uri) == h_id)
-        self.assertTrue(self.hosts.h_id_by_hostname(h2_uri) == h2_id)
+        self.assertTrue(self.hosts.id_by_hostname(h_uri) == h_id)
+        self.assertTrue(self.hosts.id_by_hostname(h2_uri) == h2_id)
 
     def test_hostname(self):
         h_id = self.hosts.create('mongod', {}, autostart=True)
         h_uri = self.hosts.info(h_id)['uri']
-        self.assertEqual(self.hosts.h_hostname(h_id), h_uri)
+        self.assertEqual(self.hosts.hostname(h_id), h_uri)
 
 
 class HostTestCase(unittest.TestCase):

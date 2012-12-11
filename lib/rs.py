@@ -157,7 +157,7 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
+        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
         if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
@@ -179,7 +179,7 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
-        host_info = self.hosts.info(self.hosts.h_id_by_hostname(self.id2host(member_id)))
+        host_info = self.hosts.info(self.hosts.id_by_hostname(self.id2host(member_id)))
         result = {'_id': member_id, 'uri': host_info['uri'], 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
@@ -199,8 +199,8 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self.hosts.h_id_by_hostname(self.id2host(member_id))
-        return self.hosts.h_command(host_id, command)
+        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
+        return self.hosts.command(host_id, command)
 
     def members(self):
         """return list of members information"""
@@ -347,7 +347,7 @@ class RS(Singleton, Container):
         """
         return self[repl_id].info()
 
-    def rs_primary(self, repl_id):
+    def primary(self, repl_id):
         """find and return primary hostname
         Args:
             repl_id - replica set identity
@@ -356,7 +356,7 @@ class RS(Singleton, Container):
         primary = repl.primary()
         return repl.member_info(repl.host2id(primary))
 
-    def rs_primary_stepdown(self, repl_id, timeout=60):
+    def primary_stepdown(self, repl_id, timeout=60):
         """stepdown primary node
         Args:
             repld_id - replica set identity
@@ -376,26 +376,26 @@ class RS(Singleton, Container):
         repl.cleanup()
         del(repl)
 
-    def rs_members(self, repl_id):
+    def members(self, repl_id):
         """return list [{"_id": member_id, "host": hostname}] of replica set members
         Args:
             repl_id - replica set identity
         """
         return self[repl_id].members()
 
-    def rs_secondaries(self, repl_id):
+    def secondaries(self, repl_id):
         """return list of secondaries members"""
         return self[repl_id].secondaries()
 
-    def rs_arbiters(self, repl_id):
+    def arbiters(self, repl_id):
         """return list of arbiters"""
         return self[repl_id].arbiters()
 
-    def rs_hidden(self, repl_id):
+    def hidden(self, repl_id):
         """return list of hidden members"""
         return self[repl_id].hidden()
 
-    def rs_member_info(self, repl_id, member_id):
+    def member_info(self, repl_id, member_id):
         """return information about member
         Args:
             repl_id - replica set identity
@@ -403,7 +403,7 @@ class RS(Singleton, Container):
         """
         return self[repl_id].member_info(member_id)
 
-    def rs_member_del(self, repl_id, member_id):
+    def member_del(self, repl_id, member_id):
         """remove member from replica set (reconfig replica)
         Args:
             repl_id - replica set identity
@@ -414,7 +414,7 @@ class RS(Singleton, Container):
         self[repl_id] = repl
         return result
 
-    def rs_member_add(self, repl_id, params):
+    def member_add(self, repl_id, params):
         """create instance and add it to existing replcia
         Args:
             repl_id - replica set identity
@@ -427,7 +427,7 @@ class RS(Singleton, Container):
         self[repl_id] = repl
         return member_id
 
-    def rs_member_command(self, repl_id, member_id, command):
+    def member_command(self, repl_id, member_id, command):
         """apply command(start, stop, restart) to the member of replica set
         Args:
             repl_id - replica set identity
@@ -441,7 +441,7 @@ class RS(Singleton, Container):
         self[repl_id] = repl
         return result
 
-    def rs_member_update(self, repl_id, member_id, params):
+    def member_update(self, repl_id, member_id, params):
         """apply new params to replica set member
         Args:
             repl_id - replica set identity
