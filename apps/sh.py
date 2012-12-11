@@ -33,8 +33,8 @@ def sh_create():
     if json_data:
         data = json.loads(json_data)
     try:
-        sh_id = Shards().sh_new(data)
-        result = Shards().sh_info(sh_id)
+        sh_id = Shards().create(data)
+        result = Shards().info(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while sh_create".format(**locals()))
         return send_result(500)
@@ -64,7 +64,7 @@ def sh_info(sh_id):
     if sh_id not in Shards():
         return send_result(404)
     try:
-        result = Shards().sh_info(sh_id)
+        result = Shards().info(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while sh_info".format(**locals()))
         return send_result(400)
@@ -80,7 +80,7 @@ def sh_del(sh_id):
     if sh_id not in Shards():
         return send_result(404)
     try:
-        result = Shards().sh_del(sh_id)
+        result = Shards().remove(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while sh_del".format(**locals()))
         return send_result(400)

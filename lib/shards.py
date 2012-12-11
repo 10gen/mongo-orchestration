@@ -31,7 +31,7 @@ class Shard(object):
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Hosts().h_new('mongod', cfg, autostart=True))
+            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True))
 
     def __len__(self):
         return len(self._shards)
@@ -56,15 +56,15 @@ class Shard(object):
     def router(self):
         """return first available router"""
         for host in self._routers:
-            info = Hosts().h_info(host)
+            info = Hosts().info(host)
             if info['procInfo'].get('alive', False):
                 return {'id': host, 'hostname': Hosts().h_hostname(host)}
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
-        cfgs = ','.join([Hosts().h_info(item)['uri'] for item in self._configsvrs])
+        cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().h_new('mongos', params, autostart=True))
+        self._routers.append(Hosts().create('mongos', params, autostart=True))
         return {'id': self._routers[-1], 'hostname': Hosts().h_hostname(self._routers[-1])}
 
     def router_command(self, command, arg=None, is_eval=False):
@@ -80,7 +80,7 @@ class Shard(object):
         member_id = member_id or str(uuid4())
         if 'members' in params:
             # is replica set
-            rs_id = RS().rs_new(params)
+            rs_id = RS().create(params)
             rs_members = RS().rs_members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in rs_members])
             result = self._add(cfgs, member_id)
@@ -91,8 +91,8 @@ class Shard(object):
 
         else:
             # is single host
-            host_id = Hosts().h_new('mongod', params, autostart=True)
-            result = self._add(Hosts().h_info(host_id)['uri'], member_id)
+            host_id = Hosts().create('mongod', params, autostart=True)
+            result = self._add(Hosts().info(host_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isHost': True, '_id': host_id}
                 # return self._shards[result['shardAdded']]
@@ -110,9 +110,9 @@ class Shard(object):
         if result['ok'] == 1 and result['state'] == 'completed':
             shard = self._shards.pop(shard_name)
             if shard.get('isHost', False):
-                Hosts().h_del(shard['_id'])
+                Hosts().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
-                RS().rs_del(shard['_id'])
+                RS().remove(shard['_id'])
         return result
 
     def member_remove(self, member_id):
@@ -130,15 +130,15 @@ class Shard(object):
         """cleanup configuration: stop and remove all hosts"""
         for _id, shard in self._shards.items():
             if shard.get('isHost', False):
-                Hosts().h_del(shard['_id'])
+                Hosts().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
-                RS().rs_del(shard['_id'])
+                RS().remove(shard['_id'])
 
         for mongos in self._routers:
-            Hosts().h_del(mongos)
+            Hosts().remove(mongos)
 
         for configsvr in self._configsvrs:
-            Hosts().h_del(configsvr)
+            Hosts().remove(configsvr)
 
         self._configsvrs = []
         self._routers = []

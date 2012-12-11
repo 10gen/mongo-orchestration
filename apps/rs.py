@@ -33,8 +33,8 @@ def rs_create():
     if json_data:
         data = json.loads(json_data)
     try:
-        rs_id = RS().rs_new(data)
-        result = RS().repl_info(rs_id)
+        rs_id = RS().create(data)
+        result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_create".format(**locals()))
         return send_result(500)
@@ -64,7 +64,7 @@ def rs_info(rs_id):
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().repl_info(rs_id)
+        result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_info".format(**locals()))
         return send_result(400)
@@ -80,7 +80,7 @@ def rs_del(rs_id):
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_del(rs_id)
+        result = RS().remove(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_del".format(**locals()))
         return send_result(400)

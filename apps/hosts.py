@@ -33,8 +33,8 @@ def host_create():
     if json_data:
         data = json.loads(json_data)
     try:
-        host_id = Hosts().h_new(data['name'], data.get('params', {}))
-        result = Hosts().h_info(host_id)
+        host_id = Hosts().create(data['name'], data.get('params', {}))
+        result = Hosts().info(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(500)
@@ -64,7 +64,7 @@ def host_info(host_id):
     if host_id not in Hosts():
         return send_result(404)
     try:
-        result = Hosts().h_info(host_id)
+        result = Hosts().info(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)
@@ -80,7 +80,7 @@ def host_del(host_id):
     if host_id not in Hosts():
         return send_result(404)
     try:
-        Hosts().h_del(host_id)
+        Hosts().remove(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
         return send_result(400)

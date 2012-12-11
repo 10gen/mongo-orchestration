@@ -47,7 +47,7 @@ class ShardsTestCase(unittest.TestCase):
 
     def test_bool(self):
         self.assertEqual(False, bool(self.sh))
-        self.sh.sh_new({'id': 'sh01'})
+        self.sh.create({'id': 'sh01'})
         self.assertEqual(True, bool(self.sh))
 
     def test_operations(self):
@@ -66,8 +66,8 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue(len(self.sh) == 0)
         config1 = {'id': 'sh01'}
         config2 = {'id': 'sh02'}
-        self.sh.sh_new(config1)
-        self.sh.sh_new(config2)
+        self.sh.create(config1)
+        self.sh.create(config2)
         self.assertTrue(len(self.sh) == 2)
         for key in self.sh:
             self.assertTrue(key in ('sh01', 'sh02'))
@@ -78,8 +78,8 @@ class ShardsTestCase(unittest.TestCase):
         config1 = {'id': 'sh01'}
         config2 = {'id': 'sh02'}
         self.assertTrue(len(self.sh) == 0)
-        self.sh.sh_new(config1)
-        self.sh.sh_new(config2)
+        self.sh.create(config1)
+        self.sh.create(config2)
         self.assertTrue(len(self.sh) == 2)
         self.sh.cleanup()
         self.assertTrue(len(self.sh) == 0)
@@ -94,7 +94,7 @@ class ShardsTestCase(unittest.TestCase):
                         {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}},
                         ]
         }
-        shard_id = self.sh.sh_new(config)
+        shard_id = self.sh.create(config)
         self.assertEqual(shard_id, 'shard_cluster_1')
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
         c = pymongo.Connection(host)
@@ -104,12 +104,12 @@ class ShardsTestCase(unittest.TestCase):
         c.close()
 
     def test_sh_del(self):
-        sh1_id = self.sh.sh_new({})
-        sh2_id = self.sh.sh_new({})
+        sh1_id = self.sh.create({})
+        sh2_id = self.sh.create({})
         self.assertEqual(len(self.sh), 2)
-        self.sh.sh_del(sh1_id)
+        self.sh.remove(sh1_id)
         self.assertEqual(len(self.sh), 1)
-        self.sh.sh_del(sh2_id)
+        self.sh.remove(sh2_id)
         self.assertEqual(len(self.sh), 0)
 
     def test_sh_info(self):
@@ -118,8 +118,8 @@ class ShardsTestCase(unittest.TestCase):
             'routers': [{}, {}, {}],
             'members': [{}, {}]
         }
-        sh_id = self.sh.sh_new(config)
-        info = self.sh.sh_info(sh_id)
+        sh_id = self.sh.create(config)
+        info = self.sh.info(sh_id)
         self.assertTrue('members' in info)
         self.assertTrue('configsvrs' in info)
         self.assertTrue('routers' in info)
@@ -130,27 +130,27 @@ class ShardsTestCase(unittest.TestCase):
 
     def test_sh_configservers(self):
         config = {}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_configservers(sh_id)), 1)
         self.sh.cleanup()
 
         config = {'configsvrs': [{}, {}, {}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_configservers(sh_id)), 3)
 
     def test_sh_routers(self):
         config = {}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_routers(sh_id)), 1)
         self.sh.cleanup()
 
         config = {'routers': [{}, {}, {}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_routers(sh_id)), 3)
 
     def test_sh_router_add(self):
         config = {}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_routers(sh_id)), 1)
         self.sh.sh_router_add(sh_id, {})
         self.assertEqual(len(self.sh.sh_routers(sh_id)), 2)
@@ -161,18 +161,18 @@ class ShardsTestCase(unittest.TestCase):
     def test_sh_members(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
 
         self.assertEqual(len(self.sh.sh_members(sh_id)), 0)
         self.sh.cleanup()
 
         config = {'routers': [{'port': port}], 'members': [{}, {}, {}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         self.assertEqual(len(self.sh.sh_members(sh_id)), 3)
 
     def test_sh_member_info(self):
         config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
         info = self.sh.sh_member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isHost'])
@@ -186,7 +186,7 @@ class ShardsTestCase(unittest.TestCase):
     def test_sh_member_del(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}], 'members': [{'id': 'member1'}, {'id': 'member2'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
 
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
         c = pymongo.Connection(host)
@@ -219,7 +219,7 @@ class ShardsTestCase(unittest.TestCase):
     def test_sh_member_add(self):
         port = PortPool().port(check=True)
         config = {'routers': [{'port': port}]}
-        sh_id = self.sh.sh_new(config)
+        sh_id = self.sh.create(config)
 
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
         c = pymongo.Connection(host)
@@ -311,7 +311,7 @@ class ShardTestCase(unittest.TestCase):
     def test_router(self):
         config = {}
         sh = Shard(config)
-        self.assertTrue(Hosts().h_info(sh.router['id'])['statuses']['mongos'])
+        self.assertTrue(Hosts().info(sh.router['id'])['statuses']['mongos'])
         sh.cleanup()
 
         config = {'routers': [{}, {}, {}]}

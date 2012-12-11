@@ -2,7 +2,6 @@
 # coding=utf-8
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import process
 from uuid import uuid4
@@ -161,15 +160,15 @@ class Hosts(Singleton, Container):
     pids_file = tempfile.mktemp(prefix="mongo-")
 
     def __getitem__(self, key):
-        return self.h_info(key)
+        return self.info(key)
 
     def cleanup(self):
         """remove all hosts with their data"""
         if self._storage:
             for host_id in self._storage:
-                self.h_del(host_id)
+                self.remove(host_id)
 
-    def h_new(self, name, params, auth_key=None, timeout=300, autostart=True):
+    def create(self, name, params, auth_key=None, timeout=300, autostart=True):
         """create new host
         Args:
            name - process name or path
@@ -191,7 +190,7 @@ class Hosts(Singleton, Container):
         except:
             raise
 
-    def h_del(self, host_id):
+    def remove(self, host_id):
         """remove host and data stuff
         Args:
             host_id - host identity
@@ -221,7 +220,7 @@ class Hosts(Singleton, Container):
         self._storage[host_id] = host
         return result
 
-    def h_info(self, host_id):
+    def info(self, host_id):
         """return dicionary object with info about host
         Args:
             host_id - host identity

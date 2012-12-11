@@ -145,8 +145,8 @@ class ReplicaSet(object):
         member_config = params.get('rsParams', {})
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
-        host_id = self.hosts.h_new('mongod', proc_params, self.auth_key)
-        member_config.update({"_id": member_id, "host": self.hosts.h_info(host_id)['uri']})
+        host_id = self.hosts.create('mongod', proc_params, self.auth_key)
+        member_config.update({"_id": member_id, "host": self.hosts.info(host_id)['uri']})
         return member_config
 
     def member_del(self, member_id, reconfig=True):
@@ -162,7 +162,7 @@ class ReplicaSet(object):
             config = self.config
             config['members'].pop(member_id)
             self.repl_update(config)
-        self.hosts.h_del(host_id)
+        self.hosts.remove(host_id)
         return True
 
     def member_update(self, member_id, params):
@@ -179,7 +179,7 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
-        host_info = self.hosts.h_info(self.hosts.h_id_by_hostname(self.id2host(member_id)))
+        host_info = self.hosts.info(self.hosts.h_id_by_hostname(self.id2host(member_id)))
         result = {'_id': member_id, 'uri': host_info['uri'], 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
@@ -327,7 +327,7 @@ class RS(Singleton, Container):
         Hosts().cleanup()
         self._storage and self._storage.clear()
 
-    def rs_new(self, rs_params):
+    def create(self, rs_params):
         """create new replica set
         Args:
            rs_params - replica set configuration
@@ -340,12 +340,12 @@ class RS(Singleton, Container):
         self[repl.repl_id] = repl
         return repl.repl_id
 
-    def repl_info(self, repl_id):
+    def info(self, repl_id):
         """return information about replica set
         Args:
             repl_id - replica set identity
         """
-        return self[repl_id].repl_info()
+        return self[repl_id].info()
 
     def rs_primary(self, repl_id):
         """find and return primary hostname
@@ -366,7 +366,7 @@ class RS(Singleton, Container):
         repl = self[repl_id]
         return repl.stepdown(timeout)
 
-    def rs_del(self, repl_id):
+    def remove(self, repl_id):
         """remove replica set with kill members
         Args:
             repl_id - replica set identity
