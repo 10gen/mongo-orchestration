@@ -79,6 +79,10 @@ class ContainerTestCase(unittest.TestCase):
         self.container['key'] = 'value'
         self.assertTrue(True, bool(self.container))
 
+    def test_notimplemented(self):
+        self.assertRaises(NotImplementedError, self.container.create)
+        self.assertRaises(NotImplementedError, self.container.remove)
+        self.assertRaises(NotImplementedError, self.container.info)
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,3 +58,12 @@ class Container(object):
     def cleanup(self):
         for key in self:
             operator.delitem(self, key)
+
+    def create(self):
+        raise NotImplementedError("Please Implement this method")
+
+    def remove(self):
+        raise NotImplementedError("Please Implement this method")
+
+    def info(self):
+        raise NotImplementedError("Please Implement this method")
