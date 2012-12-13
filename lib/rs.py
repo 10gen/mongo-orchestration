@@ -179,8 +179,9 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
-        host_info = self.hosts.info(self.hosts.id_by_hostname(self.id2host(member_id)))
-        result = {'_id': member_id, 'uri': host_info['uri'], 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
+        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
+        host_info = self.hosts.info(host_id)
+        result = {'_id': member_id, 'uri': host_info['uri'], 'host_id': host_id, 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
@@ -206,7 +207,7 @@ class ReplicaSet(object):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
-            result.append({"_id": member['_id'], "host": member["name"]})
+            result.append({"_id": member['_id'], "host": member["name"], "host_id": self.hosts.id_by_hostname(member["name"])})
         return result
 
     def stepdown(self, timeout=60):
@@ -260,16 +261,16 @@ class ReplicaSet(object):
 
     def secondaries(self):
         """return list of secondaries members"""
-        return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(2)]
+        return [{"_id": self.host2id(member), "host": member, "host_id": self.hosts.id_by_hostname(member)} for member in self.get_members_in_state(2)]
 
     def arbiters(self):
         """return list of arbiters"""
-        return [{"_id": self.host2id(member), "host": member} for member in self.get_members_in_state(7)]
+        return [{"_id": self.host2id(member), "host": member, "host_id": self.hosts.id_by_hostname(member)} for member in self.get_members_in_state(7)]
 
     def hidden(self):
         """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
-        return [{"_id": member['_id'], "host": member['uri']} for member in members if member['rsInfo'].get('hidden', False)]
+        return [{"_id": member['_id'], "host": member['uri'], "host_id": self.hosts.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
 
     def waiting_config_state(self, timeout=300):
         """waiting while real state equal config state
