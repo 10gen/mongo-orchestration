@@ -8,7 +8,7 @@ log_file = os.path.join(os.path.split(__file__)[0], 'server.log')
 cfg_file = os.path.join(os.path.split(__file__)[0], 'mongo-orchestration.config')
 
 import logging
-logging.basicConfig(level=logging.DEBUG, filename=log_file)
+logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
 logger = logging.getLogger(__name__)
 
 import argparse
