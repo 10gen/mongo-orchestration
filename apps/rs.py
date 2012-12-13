@@ -33,8 +33,8 @@ def rs_create():
     if json_data:
         data = json.loads(json_data)
     try:
-        rs_id = RS().rs_new(data)
-        result = RS().repl_info(rs_id)
+        rs_id = RS().create(data)
+        result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_create".format(**locals()))
         return send_result(500)
@@ -64,7 +64,7 @@ def rs_info(rs_id):
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().repl_info(rs_id)
+        result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_info".format(**locals()))
         return send_result(400)
@@ -80,7 +80,7 @@ def rs_del(rs_id):
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_del(rs_id)
+        result = RS().remove(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_del".format(**locals()))
         return send_result(400)
@@ -91,8 +91,8 @@ def rs_del(rs_id):
 
 
 @route('/rs/<rs_id>/members', method='POST')
-def rs_member_add(rs_id):
-    logger.debug("rs_member_add({rs_id})".format(**locals()))
+def member_add(rs_id):
+    logger.debug("member_add({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
     data = {}
@@ -100,10 +100,10 @@ def rs_member_add(rs_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        member_id = RS().rs_member_add(rs_id, data)
-        result = RS().rs_member_info(rs_id, member_id)
+        member_id = RS().member_add(rs_id, data)
+        result = RS().member_info(rs_id, member_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_member_add".format(**locals()))
+        logger.error("Exception {e} while member_add".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -112,14 +112,14 @@ def rs_member_add(rs_id):
 
 
 @route('/rs/<rs_id>/members', method='GET')
-def rs_members(rs_id):
-    logger.debug("rs_members({rs_id})".format(**locals()))
+def members(rs_id):
+    logger.debug("members({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_members(rs_id)
+        result = RS().members(rs_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_members".format(**locals()))
+        logger.error("Exception {e} while members".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -128,14 +128,14 @@ def rs_members(rs_id):
 
 
 @route('/rs/<rs_id>/secondaries', method='GET')
-def rs_secondaries(rs_id):
-    logger.debug("rs_secondaries({rs_id})".format(**locals()))
+def secondaries(rs_id):
+    logger.debug("secondaries({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_secondaries(rs_id)
+        result = RS().secondaries(rs_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_secondaries".format(**locals()))
+        logger.error("Exception {e} while secondaries".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -144,14 +144,14 @@ def rs_secondaries(rs_id):
 
 
 @route('/rs/<rs_id>/arbiters', method='GET')
-def rs_arbiters(rs_id):
-    logger.debug("rs_arbiters({rs_id})".format(**locals()))
+def arbiters(rs_id):
+    logger.debug("arbiters({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_arbiters(rs_id)
+        result = RS().arbiters(rs_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_arbiters".format(**locals()))
+        logger.error("Exception {e} while arbiters".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -160,14 +160,14 @@ def rs_arbiters(rs_id):
 
 
 @route('/rs/<rs_id>/hidden', method='GET')
-def rs_hidden(rs_id):
-    logger.debug("rs_hidden({rs_id})".format(**locals()))
+def hidden(rs_id):
+    logger.debug("hidden({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_hidden(rs_id)
+        result = RS().hidden(rs_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_hidden".format(**locals()))
+        logger.error("Exception {e} while hidden".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -176,15 +176,15 @@ def rs_hidden(rs_id):
 
 
 @route('/rs/<rs_id>/members/<member_id>', method='GET')
-def rs_member_info(rs_id, member_id):
-    logger.debug("rs_member_info({rs_id}, {member_id})".format(**locals()))
+def member_info(rs_id, member_id):
+    logger.debug("member_info({rs_id}, {member_id})".format(**locals()))
     member_id = int(member_id)
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_member_info(rs_id, member_id)
+        result = RS().member_info(rs_id, member_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_member_info".format(**locals()))
+        logger.error("Exception {e} while member_info".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -193,15 +193,15 @@ def rs_member_info(rs_id, member_id):
 
 
 @route('/rs/<rs_id>/members/<member_id>', method='DELETE')
-def rs_member_del(rs_id, member_id):
-    logger.debug("rs_member_del({rs_id}), {member_id}".format(**locals()))
+def member_del(rs_id, member_id):
+    logger.debug("member_del({rs_id}), {member_id}".format(**locals()))
     member_id = int(member_id)
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_member_del(rs_id, member_id)
+        result = RS().member_del(rs_id, member_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_member_del".format(**locals()))
+        logger.error("Exception {e} while member_del".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -210,8 +210,8 @@ def rs_member_del(rs_id, member_id):
 
 
 @route('/rs/<rs_id>/members/<member_id>', method='PUT')
-def rs_member_update(rs_id, member_id):
-    logger.debug("rs_member_update({rs_id}, {member_id})".format(**locals()))
+def member_update(rs_id, member_id):
+    logger.debug("member_update({rs_id}, {member_id})".format(**locals()))
     member_id = int(member_id)
     if rs_id not in RS():
         return send_result(404)
@@ -220,10 +220,10 @@ def rs_member_update(rs_id, member_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        RS().rs_member_update(rs_id, member_id, data)
-        result = RS().rs_member_info(rs_id, member_id)
+        RS().member_update(rs_id, member_id, data)
+        result = RS().member_info(rs_id, member_id)
     except StandardError as e:
-        logger.error("Exception {e} while rs_member_update".format(**locals()))
+        logger.error("Exception {e} while member_update".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -232,18 +232,18 @@ def rs_member_update(rs_id, member_id):
 
 
 @route('/rs/<rs_id>/members/<member_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
-def rs_member_command(rs_id, member_id, command):
-    logger.debug("rs_member_command({rs_id}, {member_id}, {command})".format(**locals()))
+def member_command(rs_id, member_id, command):
+    logger.debug("member_command({rs_id}, {member_id}, {command})".format(**locals()))
     member_id = int(member_id)
     if rs_id not in RS():
         return send_result(404)
     try:
-        result = RS().rs_member_command(rs_id, member_id, command)
+        result = RS().member_command(rs_id, member_id, command)
         if result:
             return send_result(200)
         return send_result(400)
     except StandardError as e:
-        logger.error("Exception {e} while rs_member_command".format(**locals()))
+        logger.error("Exception {e} while member_command".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
@@ -257,7 +257,7 @@ def rs_member_primary(rs_id):
         return send_result(404)
 
     try:
-        result = RS().rs_primary(rs_id)
+        result = RS().primary(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_member_primary".format(**locals()))
         return send_result(400)
@@ -268,8 +268,8 @@ def rs_member_primary(rs_id):
 
 
 @route('/rs/<rs_id>/primary/stepdown', method='PUT')
-def rs_primary_stepdown(rs_id):
-    logger.debug("rs_primary_stepdown({rs_id})".format(**locals()))
+def primary_stepdown(rs_id):
+    logger.debug("primary_stepdown({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
 
@@ -278,9 +278,9 @@ def rs_primary_stepdown(rs_id):
     if json_data:
         data = json.loads(json_data)
     try:
-        RS().rs_primary_stepdown(rs_id, data.get('timeout', 60))
+        RS().primary_stepdown(rs_id, data.get('timeout', 60))
     except StandardError as e:
-        logger.error("Exception {e} while rs_primary_stepdown".format(**locals()))
+        logger.error("Exception {e} while primary_stepdown".format(**locals()))
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))

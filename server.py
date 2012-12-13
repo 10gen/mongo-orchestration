@@ -5,6 +5,7 @@ import os
 
 pid_file = os.path.join(os.path.split(__file__)[0], 'server.pid')
 log_file = os.path.join(os.path.split(__file__)[0], 'server.log')
+cfg_file = os.path.join(os.path.split(__file__)[0], 'mongo-orchestration.config')
 
 import logging
 logging.basicConfig(level=logging.DEBUG, filename=log_file)
@@ -83,13 +84,15 @@ class Daemon(object):
 def read_env():
     logging.debug("read_env()")
     parser = argparse.ArgumentParser(description='mongo-orchestration server')
-    parser.add_argument('-f', '--config', action='store', default="mongo-orchestration.config", type=str, dest='config')
+    parser.add_argument('-f', '--config', action='store', default=cfg_file, type=str, dest='config')
     parser.add_argument('-e', '--env', action='store', type=str, dest='env', default='default')
     parser.add_argument(action='store', type=str, dest='command', default='start', choices=('start', 'stop', 'restart'))
     parser.add_argument('--no-fork', action='store_true', dest='no_fork', default=False)
     parser.add_argument('-p', '--port', action='store', dest='port', default=DEFAULT_PORT)
     args = parser.parse_args()
 
+    if args.command == 'stop':
+        return args
     try:
         config = json.loads(open(args.config, 'r').read())
         args.release_path = config['releases'][args.env]
@@ -114,11 +117,14 @@ def setup(release_path):
 def delete_pid():
     logger.debug("delete_pid()")
     if args.no_fork and os.path.exists(pid_file):
-        logger.debug("remove pid file {pid_file}".format(**locals()))
+        logger.debug("remove pid file {pid_file}".format(pid_file=pid_file))
         os.remove(pid_file)
 
 args = read_env()
-setup(args.release_path)
+if args.command != 'stop':
+    setup(args.release_path)
+else:
+    setup('')
 atexit.register(delete_pid)
 getattr(Daemon(args.no_fork), args.command)()
 run(app, host='localhost', port=args.port, debug=False, reloader=False)

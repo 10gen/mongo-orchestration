@@ -2,132 +2,15 @@
 # coding=utf-8
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import process
 from uuid import uuid4
 from singleton import Singleton
-from storage import Storage
+from container import Container
 import pymongo
 import os
-import operator
 import tempfile
 import stat
-
-
-class Hosts(Singleton):
-    """ Hosts is a dict-like collection for Host objects"""
-    _storage = None
-    bin_path = ''
-    pids_file = tempfile.mktemp(prefix="mongo-")
-
-    def set_settings(self, pids_file, bin_path=None):
-        """set path to storage"""
-        self._storage = Storage(pids_file, 'hosts')
-        self.pids_file = pids_file
-        self.bin_path = bin_path or self.bin_path
-
-    def __getitem__(self, key):
-        return self.h_info(key)
-
-    def __setitem__(self, key, value):
-        if isinstance(value, Host):
-            self._storage[key] = value
-        else:
-            raise ValueError
-
-    def __delitem__(self, key):
-        host = self._storage[key]
-        operator.delitem(self._storage, key)
-        del(host)
-
-    def __del__(self):
-        self.cleanup()
-
-    def __contains__(self, item):
-        return item in self._storage
-
-    def __iter__(self):
-        for item in self._storage:
-            yield item
-
-    def __len__(self):
-        return len(self._storage)
-
-    def cleanup(self):
-        """remove all hosts with their data"""
-        if self._storage:
-            for host_id in self._storage:
-                self.h_del(host_id)
-
-    def h_new(self, name, params, auth_key=None, timeout=300, autostart=True):
-        """create new host
-        Args:
-           name - process name or path
-           params - dictionary with specific params for instance
-           auth_key - authorization key
-           timeout -  specify how long, in seconds, a command can take before times out.
-           autostart - (default: True), autostart instance
-        Return host_id
-           where host_id - id which can use to take the host from hosts collection
-        """
-        name = os.path.split(name)[1]
-        try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
-            if autostart:
-                if not host.start(timeout):
-                    raise OSError
-            self[host_id] = host
-            return host_id
-        except:
-            raise
-
-    def h_del(self, host_id):
-        """remove host and data stuff
-        Args:
-            host_id - host identity
-        """
-        host = self._storage.pop(host_id)
-        host.stop()
-        host.cleanup()
-
-    def h_db_command(self, host_id, command, arg=None, is_eval=False):
-        host = self._storage[host_id]
-        return host.run_command(command, arg, is_eval)
-
-    def h_command(self, host_id, command, *args):
-        """run command
-        Args:
-            host_id - host identity
-            command - command which apply to host
-        """
-        host = self._storage[host_id]
-        try:
-            if args:
-                result = getattr(host, command)(args)
-            else:
-                result = getattr(host, command)()
-        except AttributeError:
-            raise ValueError
-        self._storage[host_id] = host
-        return result
-
-    def h_info(self, host_id):
-        """return dicionary object with info about host
-        Args:
-            host_id - host identity
-        """
-        result = self._storage[host_id].info()
-        result['id'] = host_id
-        return result
-
-    def h_hostname(self, host_id):
-        return self._storage[host_id].hostname
-
-    def h_id_by_hostname(self, hostname):
-        for host_id in self._storage:
-            if self._storage[host_id].hostname == hostname:
-                return host_id
 
 
 class Host(object):
@@ -267,3 +150,89 @@ class Host(object):
     def cleanup(self):
         """remove host data"""
         process.cleanup_mprocess(self.config_path, self.cfg)
+
+
+class Hosts(Singleton, Container):
+    """ Hosts is a dict-like collection for Host objects"""
+    _name = 'hosts'
+    _obj_type = Host
+    bin_path = ''
+    pids_file = tempfile.mktemp(prefix="mongo-")
+
+    def __getitem__(self, key):
+        return self.info(key)
+
+    def cleanup(self):
+        """remove all hosts with their data"""
+        if self._storage:
+            for host_id in self._storage:
+                self.remove(host_id)
+
+    def create(self, name, params, auth_key=None, timeout=300, autostart=True):
+        """create new host
+        Args:
+           name - process name or path
+           params - dictionary with specific params for instance
+           auth_key - authorization key
+           timeout -  specify how long, in seconds, a command can take before times out.
+           autostart - (default: True), autostart instance
+        Return host_id
+           where host_id - id which can use to take the host from hosts collection
+        """
+        name = os.path.split(name)[1]
+        try:
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
+            if autostart:
+                if not host.start(timeout):
+                    raise OSError
+            self[host_id] = host
+            return host_id
+        except:
+            raise
+
+    def remove(self, host_id):
+        """remove host and data stuff
+        Args:
+            host_id - host identity
+        """
+        host = self._storage.pop(host_id)
+        host.stop()
+        host.cleanup()
+
+    def db_command(self, host_id, command, arg=None, is_eval=False):
+        host = self._storage[host_id]
+        return host.run_command(command, arg, is_eval)
+
+    def command(self, host_id, command, *args):
+        """run command
+        Args:
+            host_id - host identity
+            command - command which apply to host
+        """
+        host = self._storage[host_id]
+        try:
+            if args:
+                result = getattr(host, command)(args)
+            else:
+                result = getattr(host, command)()
+        except AttributeError:
+            raise ValueError
+        self._storage[host_id] = host
+        return result
+
+    def info(self, host_id):
+        """return dicionary object with info about host
+        Args:
+            host_id - host identity
+        """
+        result = self._storage[host_id].info()
+        result['id'] = host_id
+        return result
+
+    def hostname(self, host_id):
+        return self._storage[host_id].hostname
+
+    def id_by_hostname(self, hostname):
+        for host_id in self._storage:
+            if self._storage[host_id].hostname == hostname:
+                return host_id

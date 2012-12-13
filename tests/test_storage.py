@@ -13,7 +13,8 @@ import operator
 class StorageTestCase(unittest.TestCase):
     def setUp(self):
         self.path = tempfile.mktemp(prefix="storage-test-")
-        self.storage = Storage(self.path, 'test')
+        self.name = 'test'
+        self.storage = Storage(self.path, self.name)
 
     def tearDown(self):
         if self.path:
@@ -63,6 +64,14 @@ class StorageTestCase(unittest.TestCase):
         del(self.storage)
         self.storage2 = Storage(self.path, 'test')
         self.assertEqual(self.storage2['key'], 'value')
+
+    def test_repr(self):
+        self.assertEqual(str(self.storage), "Storage({self.path}, {self.name})".format(**locals()))
+
+    def test_bool(self):
+        self.assertEqual(False, bool(self.storage))
+        self.storage['key'] = 'value'
+        self.assertEqual(True, bool(self.storage))
 
 
 if __name__ == '__main__':

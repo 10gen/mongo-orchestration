@@ -51,20 +51,11 @@ class PortPoolTestCase(unittest.TestCase):
         self.listen_port(port)
         self.assertRaises(IndexError, self.pp.port)
 
-    def test_port_check(self):
-        ports = [random.randint(2000, 2080) for i in xrange(5)]
-        self.pp.change_range(port_sequence=ports)
-        ports_opened = self.pp._PortPool__ports.copy()
-        test_port = ports_opened.pop()
-        self.assertTrue(test_port in self.pp._PortPool__ports)
-        for port in ports:
-            if port != test_port:
-                try:
-                    self.listen_port(port)
-                except socket.error:
-                    pass
-
-        self.assertTrue(test_port == self.pp.port(check=True))
+    def test_port_with_check(self):
+        port1, port2 = self.pp.port(check=True), self.pp.port(check=True)
+        self.pp.change_range(port_sequence=[port1, port2])
+        self.listen_port(port1, 0)
+        self.assertTrue(port2 == self.pp.port(check=True))
 
     def test_check_port(self):
         port = self.pp.port(check=True)

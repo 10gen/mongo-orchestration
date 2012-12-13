@@ -134,20 +134,26 @@ def mprocess(name, config_path, port=None, timeout=180):
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (pid, host) if process started, return (None, None) if not
     """
+    logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
     host = HOSTNAME + ':' + str(port)
     try:
+        logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         if not proc_alive(proc.pid):
             raise OSError
     except (OSError, TypeError) as err:
+        logger.debug("exception while executing process: {err}".format(**locals()))
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
+        logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
         return (proc.pid, host)
     elif timeout > 0:
+        logger.debug("hasn't connected to pid={proc.pid} with host={host} during timeout {timeout} ".format(**locals()))
+        logger.debug("terminate process with pid={proc.pid}".format(**locals()))
         proc.terminate()
         proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
         raise OSError(errno.ETIMEDOUT, "could not connect to process during {timeout} seconds".format(timeout=timeout))
