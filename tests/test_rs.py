@@ -157,6 +157,42 @@ class RSTestCase(unittest.TestCase):
         hidden = self.rs.hidden(repl_id)
         self.assertEqual(len(hidden), 1)
 
+    def test_passives(self):
+        config = {"members": [{},
+                              {"rsParams": {"priority": 0}},
+                              {"rsParams": {"arbiterOnly": True}},
+                              {"rsParams": {"priority": 0, 'hidden':True}},
+                              {"rsParams": {"priority": 0, 'slaveDelay': 5}}]}
+        repl_id = self.rs.create(config)
+        passives = self.rs.passives(repl_id)
+        self.assertEqual(len(passives), 1)
+
+    def test_hosts(self):
+        config = {"members": [{},
+                              {"rsParams": {"priority": 0}},
+                              {"rsParams": {"arbiterOnly": True}},
+                              {"rsParams": {"priority": 0, 'hidden':True}},
+                              {"rsParams": {"priority": 0, 'slaveDelay': 5}}]}
+        repl_id = self.rs.create(config)
+        hosts = self.rs.hosts(repl_id)
+        self.assertEqual(len(hosts), 1)
+
+    def test_compare_passives_and_hosts(self):
+        config = {"members": [{},
+                              {"rsParams": {"priority": 0}},
+                              {"rsParams": {"arbiterOnly": True}},
+                              {"rsParams": {"priority": 0, 'hidden':True}},
+                              {"rsParams": {"priority": 0, 'slaveDelay': 5}}]}
+
+        repl_id = self.rs.create(config)
+        passives = [host['host'] for host in self.rs.passives(repl_id)]
+        hosts = [host['host'] for host in self.rs.hosts(repl_id)]
+        for item in passives:
+            self.assertTrue(item not in hosts)
+
+        for item in hosts:
+            self.assertTrue(item not in passives)
+
     def test_member_info(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"arbiterOnly": True}}, {"rsParams": {"priority":0, "hidden": True}}]})
         info = self.rs.member_info(repl_id, 0)
@@ -378,6 +414,27 @@ class ReplicaSetTestCase(unittest.TestCase):
     def test_hidden(self):
         for member in self.repl.hidden():
             self.assertTrue(self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=2)['repl']['hidden'])
+
+    def test_passives(self):
+        self.repl.repl_member_add({"rsParams": {"priority": 0}})
+        for member in self.repl.passives():
+            self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('passives'))
+
+    def test_hosts(self):
+        self.repl.repl_member_add({"rsParams": {"priority": 0}})
+        for member in self.repl.hosts():
+            self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('hosts'))
+
+    def test_compare_hosts_passives(self):
+        self.repl.repl_member_add({"rsParams": {"priority": 0}})
+        self.repl.repl_member_add({})
+        hosts = self.repl.hosts()
+        passives = self.repl.passives()
+        for item in hosts:
+            self.assertTrue(item not in passives)
+
+        for item in passives:
+            self.assertTrue(item not in hosts)
 
 
 if __name__ == '__main__':
