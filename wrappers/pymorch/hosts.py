@@ -17,28 +17,28 @@ class Host(object):
         return self.__host_id
 
     def start(self):
-        url = "{api_url}/{base_url}/{config_id}/start".format(api_url=self.api_url,
-                                                              base_url=self.base_url,
-                                                              config_id=self.id)
+        url = "{api_url}/hosts/{config_id}/start".format(api_url=self.api_url,
+                                                         base_url=self.base_url,
+                                                         config_id=self.__host_id)
         return request('put', url)
 
     def stop(self):
-        url = "{api_url}/{base_url}/{config_id}/stop".format(api_url=self.api_url,
-                                                             base_url=self.base_url,
-                                                             config_id=self.id)
+        url = "{api_url}/hosts/{config_id}/stop".format(api_url=self.api_url,
+                                                        base_url=self.base_url,
+                                                        config_id=self.__host_id)
         return request('put', url)
 
     def restart(self):
-        url = "{api_url}/{base_url}/{config_id}/restart".format(api_url=self.api_url,
-                                                                base_url=self.base_url,
-                                                                config_id=self.id)
+        url = "{api_url}/hosts/{config_id}/restart".format(api_url=self.api_url,
+                                                           base_url=self.base_url,
+                                                           config_id=self.__host_id)
         return request('put', url)
 
     @property
     def info(self):
-        url = "{api_url}/{base_url}/{config_id}".format(api_url=self.api_url,
-                                                        base_url=self.base_url,
-                                                        config_id=self.id)
+        url = "{api_url}/hosts/{config_id}".format(api_url=self.api_url,
+                                                   base_url=self.base_url,
+                                                   config_id=self.__host_id)
         return request('get', url)
 
     @property
@@ -79,15 +79,15 @@ class Hosts(object):
 
     @staticmethod
     def create(params):
-        url = "{api_url}/{base_url}".format(api_url=Hosts.api_url,
-                                            base_url=Hosts.base_url)
+        url = "{api_url}/hosts".format(api_url=Hosts.api_url,
+                                       base_url=Hosts.base_url)
 
         return Host(request('post', url, data=params)['id'], Hosts.api_url)
 
     @staticmethod
     def _ids():
-        url = "{api_url}/{base_url}".format(api_url=Hosts.api_url,
-                                            base_url=Hosts.base_url)
+        url = "{api_url}/hosts".format(api_url=Hosts.api_url,
+                                       base_url=Hosts.base_url)
 
         return request('get', url)
 
@@ -106,9 +106,9 @@ class Hosts(object):
 
     @staticmethod
     def remove(host):
-        url = "{api_url}/{base_url}/{config_id}".format(api_url=Hosts.api_url,
-                                                        base_url=Hosts.base_url,
-                                                        config_id=host.id)
+        url = "{api_url}/hosts/{config_id}".format(api_url=Hosts.api_url,
+                                                   base_url=Hosts.base_url,
+                                                   config_id=host.id)
 
         return request('delete', url)
 
