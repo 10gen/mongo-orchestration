@@ -151,8 +151,11 @@ class RSMeta(type):
     def __iter__(cls):
         return RS.__iter__()
 
-    def __contains__(cls, host):
-        return RS.__contains__(host)
+    def __contains__(cls, rs):
+        return RS.__contains__(rs)
+
+    def __getitem__(cls, rs_id):
+        return RS.__getitem__(rs_id)
 
 
 class RS(object):
@@ -188,6 +191,13 @@ class RS(object):
     @staticmethod
     def __contains__(repl):
         return repl.id in RS._ids()
+
+    @staticmethod
+    def __getitem__(rs_id):
+        for rs in RS:
+            if rs.id == rs_id:
+                return rs
+        raise KeyError
 
     @staticmethod
     def remove(repl):
