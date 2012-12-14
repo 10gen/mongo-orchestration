@@ -44,6 +44,18 @@ class ReplMember(Host):
     def is_secondary(self):
         return self.info.get('rsInfo', {}).get('secondary', False)
 
+    def is_passive(self):
+        url = "{api_url}/{base_url}/{config_id}/passives".format(api_url=self.api_url,
+                                                                 base_url=self.base_url,
+                                                                 config_id=self.__repl_id)
+        return self.info['uri'] in request('get', url)
+
+    def is_host(self):
+        url = "{api_url}/{base_url}/{config_id}/hosts".format(api_url=self.api_url,
+                                                              base_url=self.base_url,
+                                                              config_id=self.__repl_id)
+        return self.info['uri'] in request('get', url)
+
 
 class ReplicaSet(object):
     """wrap rest api for replicaset objects"""
@@ -117,6 +129,18 @@ class ReplicaSet(object):
         url = "{api_url}/{base_url}/{config_id}/hidden".format(api_url=self.api_url,
                                                                base_url=self.base_url,
                                                                config_id=self.id)
+        return [ReplMember(self.id, member['_id'], member['host_id']) for member in request('get', url)]
+
+    def passives(self):
+        url = "{api_url}/{base_url}/{config_id}/passives".format(api_url=self.api_url,
+                                                                 base_url=self.base_url,
+                                                                 config_id=self.id)
+        return [ReplMember(self.id, member['_id'], member['host_id']) for member in request('get', url)]
+
+    def hosts(self):
+        url = "{api_url}/{base_url}/{config_id}/hosts".format(api_url=self.api_url,
+                                                              base_url=self.base_url,
+                                                              config_id=self.id)
         return [ReplMember(self.id, member['_id'], member['host_id']) for member in request('get', url)]
 
 
