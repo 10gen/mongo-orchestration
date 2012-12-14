@@ -19,7 +19,7 @@ Hosts()
 class ReplicaSet(object):
     """class represents ReplicaSet"""
 
-    hosts = Hosts()  # singleton to manage hosts instances
+    _hosts = Hosts()  # singleton to manage hosts instances
     # replica set's default parameters
     default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
 
@@ -145,8 +145,8 @@ class ReplicaSet(object):
         member_config = params.get('rsParams', {})
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
-        host_id = self.hosts.create('mongod', proc_params, self.auth_key)
-        member_config.update({"_id": member_id, "host": self.hosts.info(host_id)['uri']})
+        host_id = self._hosts.create('mongod', proc_params, self.auth_key)
+        member_config.update({"_id": member_id, "host": self._hosts.info(host_id)['uri']})
         return member_config
 
     def member_del(self, member_id, reconfig=True):
@@ -157,12 +157,12 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
+        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
         if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
             self.repl_update(config)
-        self.hosts.remove(host_id)
+        self._hosts.remove(host_id)
         return True
 
     def member_update(self, member_id, params):
@@ -179,8 +179,8 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
-        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
-        host_info = self.hosts.info(host_id)
+        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
+        host_info = self._hosts.info(host_id)
         result = {'_id': member_id, 'uri': host_info['uri'], 'host_id': host_id, 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
@@ -200,14 +200,14 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self.hosts.id_by_hostname(self.id2host(member_id))
-        return self.hosts.command(host_id, command)
+        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
+        return self._hosts.command(host_id, command)
 
     def members(self):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
-            result.append({"_id": member['_id'], "host": member["name"], "host_id": self.hosts.id_by_hostname(member["name"])})
+            result.append({"_id": member['_id'], "host": member["name"], "host_id": self._hosts.id_by_hostname(member["name"])})
         return result
 
     def stepdown(self, timeout=60):
@@ -261,16 +261,26 @@ class ReplicaSet(object):
 
     def secondaries(self):
         """return list of secondaries members"""
-        return [{"_id": self.host2id(member), "host": member, "host_id": self.hosts.id_by_hostname(member)} for member in self.get_members_in_state(2)]
+        return [{"_id": self.host2id(member), "host": member, "host_id": self._hosts.id_by_hostname(member)} for member in self.get_members_in_state(2)]
 
     def arbiters(self):
         """return list of arbiters"""
-        return [{"_id": self.host2id(member), "host": member, "host_id": self.hosts.id_by_hostname(member)} for member in self.get_members_in_state(7)]
+        return [{"_id": self.host2id(member), "host": member, "host_id": self._hosts.id_by_hostname(member)} for member in self.get_members_in_state(7)]
 
     def hidden(self):
         """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
-        return [{"_id": member['_id'], "host": member['uri'], "host_id": self.hosts.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
+        return [{"_id": member['_id'], "host": member['uri'], "host_id": self._hosts.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
+
+    def passives(self):
+        """return list of passive hosts"""
+        hosts = self.run_command('ismaster').get('passives', [])
+        return [member for member in self.members() if member['host'] in hosts]
+
+    def hosts(self):
+        """return list of hosts (not hidden nodes)"""
+        hosts = self.run_command('ismaster').get('hosts', [])
+        return [member for member in self.members() if member['host'] in hosts]
 
     def waiting_config_state(self, timeout=300):
         """waiting while real state equal config state
@@ -395,6 +405,14 @@ class RS(Singleton, Container):
     def hidden(self, repl_id):
         """return list of hidden members"""
         return self[repl_id].hidden()
+
+    def passives(self, repl_id):
+        """return list of passive nodes"""
+        return self[repl_id].passives()
+
+    def hosts(self, repl_id):
+        """return list of hosts"""
+        return self[repl_id].hosts()
 
     def member_info(self, repl_id, member_id):
         """return information about member

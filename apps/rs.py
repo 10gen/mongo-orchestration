@@ -175,6 +175,38 @@ def hidden(rs_id):
     return send_result(200, result)
 
 
+@route('/rs/<rs_id>/passives', method='GET')
+def passives(rs_id):
+    logger.debug("passives({rs_id})".format(**locals()))
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().passives(rs_id)
+    except StandardError as e:
+        logger.error("Exception {e} while passives".format(**locals()))
+        return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
+    return send_result(200, result)
+
+
+@route('/rs/<rs_id>/hosts', method='GET')
+def hosts(rs_id):
+    logger.debug("hosts({rs_id})".format(**locals()))
+    if rs_id not in RS():
+        return send_result(404)
+    try:
+        result = RS().hosts(rs_id)
+    except StandardError as e:
+        logger.error("Exception {e} while hosts".format(**locals()))
+        return send_result(400)
+    except Exception as e:
+        logger.critical("Unknown Exception {e}".format(**locals()))
+        return send_result(500)
+    return send_result(200, result)
+
+
 @route('/rs/<rs_id>/members/<member_id>', method='GET')
 def member_info(rs_id, member_id):
     logger.debug("member_info({rs_id}, {member_id})".format(**locals()))
