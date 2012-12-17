@@ -29,6 +29,8 @@ class ReplicaSet(object):
         """
         self.host_map = {}
         self.auth_key = rs_params.get('auth_key', None)
+        self.login = rs_params.get('login', '')
+        self.password = rs_params.get('password', '')
         self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
 
         config = {"_id": self.repl_id, "members": [
@@ -37,6 +39,15 @@ class ReplicaSet(object):
         if not self.repl_init(config):
             self.cleanup()
             raise errors.ReplicaSetError("replica can't started")
+
+        if self.login:
+            try:
+                c = self.connection()
+                c.admin.add_user(self.login, self.password)
+            except pymongo.errors.OperationFailure:
+                pass
+            finally:
+                c.close()
 
     def __len__(self):
         return len(self.host_map)
@@ -72,9 +83,9 @@ class ReplicaSet(object):
         if not self.wait_while_reachable([member['host'] for member in config['members']]):
             self.cleanup()
             return False
-        c = pymongo.Connection(init_host)
-        result = c.admin.command("replSetInitiate", config)
-        if result.get('ok', 0) == 1:
+
+        result = self.connection(init_host).admin.command("replSetInitiate", config)
+        if int(result.get('ok', 0)) == 1:
             # wait while real state equals config
             return self.waiting_config_state()
         else:
@@ -87,7 +98,7 @@ class ReplicaSet(object):
         cfg['version'] += 1
         try:
             result = self.run_command("replSetReconfig", cfg)
-            if result.get('ok', 0) != 1:
+            if int(result.get('ok', 0)) != 1:
                 return False
         except pymongo.errors.AutoReconnect:
             self.update_host_map(cfg)  # use new host_map
@@ -255,10 +266,12 @@ class ReplicaSet(object):
                 if hostname is None:
                     c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20)
                     if c.primary:
+                        c.admin.authenticate(self.login, self.password)
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     c = pymongo.Connection(hosts, read_preference=read_preference, network_timeout=20)
+                    c.admin.authenticate(self.login, self.password)
                     return c
             except (pymongo.errors.PyMongoError):
                 if time.time() - t_start > timeout:
