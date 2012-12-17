@@ -444,8 +444,45 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
 
 
+class ReplicaSetAuthTestCase(unittest.TestCase):
+    def setUp(self):
+        PortPool().change_range()
+        fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
+        self.hosts = Hosts()
+        self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
+        self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+
+    def tearDown(self):
+        if len(self.repl) > 0:
+            self.repl.cleanup()
+        if os.path.exists(self.db_path):
+            os.remove(self.db_path)
+
+    def test_auth_admin(self):
+        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        self.assertTrue(c.admin.logout() is None)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+
+    def test_auth_collection(self):
+        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        db = c.test_auth
+        db.add_user('user', 'userpass')
+        c.admin.logout()
+
+        self.assertTrue(db.authenticate('user', 'userpass'))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, w=2, wtimeout=1000))
+        self.assertTrue(isinstance(db.foo.find_one(), dict))
+        db.logout()
+        self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
+
 if __name__ == '__main__':
     unittest.main()
     # suite = unittest.TestSuite()
-    # suite.addTest(ReplicaSetTestCase('test_wait_while_reachable'))
+    # suite.addTest(ReplicaSetAuthTestCase('test_auth_admin'))
+    # suite.addTest(ReplicaSetAuthTestCase('test_auth_collection'))
     # unittest.TextTestRunner(verbosity=2).run(suite)
