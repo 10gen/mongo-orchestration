@@ -298,8 +298,13 @@ class ReplicaSet(object):
 
     def check_config_state(self):
         "return True if real state equal config state otherwise False"
-        if len(filter(lambda item: item['state'] in (3, 4, 5, 6, 9), self.run_command("rs.status()", is_eval=True)['members'])) > 0:
+        try:
+            if len(filter(lambda item: item['state'] in (3, 4, 5, 6, 9), self.run_command("rs.status()", is_eval=True)['members'])) > 0:
+                return False
+        except pymongo.errors.AutoReconnect:
+            # catch 'No replica set primary available' Exception
             return False
+
         config = self.config
         self.update_host_map(config)
         for member in config['members']:
