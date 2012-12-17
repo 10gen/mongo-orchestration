@@ -398,10 +398,11 @@ class ReplicaSetTestCase(unittest.TestCase):
 
     def test_connection(self):
         _id = 2
+        hostname = self.repl.id2host(_id)
         self.assertTrue(self.repl.connection(timeout=5))
-        self.assertTrue(self.repl.connection(_id, timeout=5))
+        self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
         self.repl.member_command(_id, 'stop')
-        self.assertFalse(self.repl.connection(_id, timeout=5))
+        self.assertFalse(self.repl.connection(hostname=hostname, timeout=5))
 
     def test_secondaries(self):
         secondaries = [item['host'] for item in self.repl.secondaries()]
@@ -436,6 +437,15 @@ class ReplicaSetTestCase(unittest.TestCase):
         for item in passives:
             self.assertTrue(item not in hosts)
 
+    def test_wait_while_reachable(self):
+        hosts = [member['host'] for member in self.repl.members()]
+        self.assertTrue(self.repl.wait_while_reachable(hosts, timeout=10))
+        self.repl.member_command(2, 'stop')
+        self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
+
 
 if __name__ == '__main__':
     unittest.main()
+    # suite = unittest.TestSuite()
+    # suite.addTest(ReplicaSetTestCase('test_wait_while_reachable'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)

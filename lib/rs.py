@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 from uuid import uuid4
 from singleton import Singleton
-from storage import Storage
 from container import Container
 import pymongo
 from hosts import Hosts
@@ -70,6 +69,9 @@ class ReplicaSet(object):
         init_host = [member['host'] for member in config['members']
                      if not (member.get('arbiterOnly', False)
                              or member.get('priority', 1) == 0)][0]
+        if not self.wait_while_reachable([member['host'] for member in config['members']]):
+            self.cleanup()
+            return False
         c = pymongo.Connection(init_host)
         result = c.admin.command("replSetInitiate", config)
         if result.get('ok', 0) == 1:
@@ -125,7 +127,10 @@ class ReplicaSet(object):
         return command's result
         """
         mode = is_eval and 'eval' or 'command'
-        result = getattr(self.connection(member_id=member_id).admin, mode)(command, arg)
+        hostname = None
+        if member_id:
+            hostname = self.id2host(member_id)
+        result = getattr(self.connection(hostname=hostname).admin, mode)(command, arg)
         return result
 
     @property
@@ -234,19 +239,20 @@ class ReplicaSet(object):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def connection(self, member_id=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return ReplicaSetConnection object if member_id specified
-        return Connection object if member_id doesn't specified
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
+        """return ReplicaSetConnection object if hostname specified
+        return Connection object if hostname doesn't specified
         Args:
-            member_id - member index
+            hostname - connection uri
             read_preference - default PRIMARY
             timeout - specify how long, in seconds, a command can take before server times out.
         """
         t_start = time.time()
-        hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
+        # hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
+        hosts = hostname or ",".join(self.host_map.values())
         while True:
             try:
-                if member_id is None:
+                if hostname is None:
                     c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20)
                     if c.primary:
                         return c
@@ -281,6 +287,23 @@ class ReplicaSet(object):
         """return list of hosts (not hidden nodes)"""
         hosts = self.run_command('ismaster').get('hosts', [])
         return [member for member in self.members() if member['host'] in hosts]
+
+    def wait_while_reachable(self, hosts, timeout=60):
+        """wait while all hosts be reachable
+        Args:
+            hosts - list of hosts
+        """
+        t_start = time.time()
+        while  True:
+            try:
+                for host in hosts:
+                    if int(self.connection(hostname=host, timeout=5).server_info()['ok']) != 1:
+                        raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
+                return True
+            except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
+                if time.time() - t_start > timeout:
+                    return False
+                time.sleep(2)
 
     def waiting_config_state(self, timeout=300):
         """waiting while real state equal config state
