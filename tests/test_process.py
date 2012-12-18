@@ -11,7 +11,6 @@ import subprocess
 import os
 import random
 import tempfile
-import time
 
 
 class PortPoolTestCase(unittest.TestCase):
@@ -149,7 +148,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue(pid > 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
         self.sockets.pop(port).close()
-        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 2)
+        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 1)
 
     def test_kill_mprocess(self):
         p = subprocess.Popen([self.executable])
@@ -194,6 +193,13 @@ class ProcessTestCase(unittest.TestCase):
         config_data = open(config_path, 'r').read()
         self.assertTrue('port=27017' in config_data)
         self.assertTrue('objcheck=true' in config_data)
+        process.cleanup_mprocess(config_path, cfg)
+
+    def test_write_config_with_specify_config_path(self):
+        cfg = {'port': 27017, 'objcheck': 'true'}
+        fd_key, file_path = tempfile.mkstemp()
+        config_path = process.write_config(cfg, file_path)
+        self.assertEqual(file_path, config_path)
         process.cleanup_mprocess(config_path, cfg)
 
     def test_proc_alive(self):
