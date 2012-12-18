@@ -101,7 +101,8 @@ class Host(object):
 
     @property
     def connection(self):
-        c = pymongo.Connection(self.hostname)
+        hostname = "localhost:{port}".format(port=self.port)
+        c = pymongo.Connection(hostname)
         c.admin.authenticate(self.login, self.password)
         return c
 
