@@ -12,6 +12,7 @@ import tempfile
 import time
 import stat
 import operator
+import pymongo
 
 
 class HostsTestCase(unittest.TestCase):
@@ -85,6 +86,16 @@ class HostsTestCase(unittest.TestCase):
 
         self.assertRaises(OSError, self.hosts.create, 'fake_process_', {})
 
+    def test_new_host_with_auth(self):
+        host_id = self.hosts.create('mongod', {}, login='adminko', password='XXX', autostart=True)
+        hostname = self.hosts.hostname(host_id)
+        c = pymongo.Connection(hostname)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('adminko', 'XXX'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        self.assertTrue(c.admin.logout() is None)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+
     def test_hdel(self):
         self.assertEqual(len(self.hosts), 0)
         h_id = self.hosts.create('mongod', {}, autostart=True)
@@ -126,6 +137,12 @@ class HostsTestCase(unittest.TestCase):
         h_id = self.hosts.create('mongod', {}, autostart=True)
         h_uri = self.hosts.info(h_id)['uri']
         self.assertEqual(self.hosts.hostname(h_id), h_uri)
+
+    def test_is_alive(self):
+        h_id = self.hosts.create('mongod', {}, autostart=True)
+        self.assertEqual(self.hosts.is_alive(h_id), True)
+        self.hosts.command(h_id, 'stop')
+        self.assertEqual(self.hosts.is_alive(h_id), False)
 
 
 class HostTestCase(unittest.TestCase):
@@ -189,6 +206,14 @@ class HostTestCase(unittest.TestCase):
         s.shutdown(0)
         s.close()
 
+    def test_is_alive(self):
+        self.host.start()
+        self.assertTrue(self.host.is_alive)
+        self.host.stop()
+        self.assertFalse(self.host.is_alive)
+        self.host.restart()
+        self.assertTrue(self.host.is_alive)
+
     def test_cleanup(self):
         self.host.start(80)
         self.assertTrue(os.path.exists(self.host.cfg['dbpath']))
@@ -199,5 +224,55 @@ class HostTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(self.host.config_path))
 
 
+class HostAuthTestCase(unittest.TestCase):
+    def setUp(self):
+        PortPool().change_range()
+        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.host = Host(mongod, {}, None, login='admin', password='admin')
+        self.host.start()
+
+    def tearDown(self):
+        if hasattr(self, 'host'):
+            self.host.stop()
+            self.host.cleanup()
+        pass
+
+    def test_auth_connection(self):
+        self.assertTrue(isinstance(self.host.connection.admin.collection_names(), list))
+        c = pymongo.Connection(self.host.host, self.host.port)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.host.restart()
+        c = pymongo.Connection(self.host.host, self.host.port)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+
+    def test_auth_admin(self):
+        c = pymongo.Connection(self.host.host, self.host.port)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        self.assertTrue(c.admin.logout() is None)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+
+    def test_auth_collection(self):
+        c = pymongo.Connection(self.host.host, self.host.port)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        db = c.test_host_auth
+        db.add_user('user', 'userpass')
+        c.admin.logout()
+
+        self.assertTrue(db.authenticate('user', 'userpass'))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, wtimeout=1000))
+        self.assertTrue(isinstance(db.foo.find_one(), dict))
+        db.logout()
+        self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
+
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(HostsTestCase('test_new_host_with_auth'))
+    suite.addTest(HostsTestCase('test_is_alive'))
+    suite.addTest(HostTestCase('test_is_alive'))
+    suite.addTest(HostAuthTestCase('test_auth_connection'))
+    suite.addTest(HostAuthTestCase('test_auth_admin'))
+    suite.addTest(HostAuthTestCase('test_auth_collection'))
+    unittest.TextTestRunner(verbosity=2).run(suite)
