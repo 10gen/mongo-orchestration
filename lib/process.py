@@ -203,14 +203,16 @@ def remove_path(path):
             onerror(shutil.os.remove, path, None)
 
 
-def write_config(params):
+def write_config(params, config_path=None):
     """write mongo*'s config file
     Args:
        params - options wich file contains
+       config_path - path to the config_file, will create if None
     Return config_path
        where config_path - path to mongo*'s options file
     """
-    config_path = tempfile.mktemp(prefix="mongo-")
+    if config_path is None:
+        config_path = tempfile.mktemp(prefix="mongo-")
 
     cfg = params.copy()
     # fix boolean value
