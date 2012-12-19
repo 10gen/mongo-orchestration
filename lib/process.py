@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 HOME = os.environ.get('HOME')
 HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 HOSTNAME = socket.gethostbyname_ex(HOSTNAME)[2][0]
+HOSTNAME = 'localhost'
 
 
 class PortPool(Singleton):
@@ -137,7 +138,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
-    host = 'localhost:' + str(port)
+    host = HOSTNAME + str(port)
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,

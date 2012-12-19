@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 import unittest
 from lib.rs import ReplicaSet, RS
 from lib.hosts import Hosts
-from lib.process import PortPool
-HOSTNAME = 'localhost'
+from lib.process import PortPool, HOSTNAME
 import pymongo
 
 import operator
