@@ -51,6 +51,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertRaises(IndexError, self.pp.port)
 
     def test_port_with_check(self):
+        self.pp.change_range(min_port=1100, max_port=1200)
         port1, port2 = self.pp.port(check=True), self.pp.port(check=True)
         self.pp.change_range(port_sequence=[port1, port2])
         self.listen_port(port1, 0)
