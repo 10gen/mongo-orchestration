@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 import unittest
 from lib.rs import ReplicaSet, RS
 from lib.hosts import Hosts
-from lib.process import PortPool, HOSTNAME
+from lib.process import PortPool
+HOSTNAME = 'localhost'
 import pymongo
 
 import operator
@@ -101,8 +102,33 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(c.admin.eval("rs.conf()")['_id'], repl_id)
         c.close()
 
+    def test_rs_new_with_auth(self):
+        port1, port2 = PortPool().port(check=True), PortPool().port(check=True)
+        repl_id = self.rs.create({'id': 'test-rs-1',
+                                  'auth_key': 'sercret', 'login': 'admin', 'password': 'admin',
+                                  'members': [{"procParams": {"port": port1}},
+                                              {"procParams": {"port": port2}}
+                                              ]})
+        self.assertEqual(repl_id, 'test-rs-1')
+        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
+        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
+        c = pymongo.Connection([host1, host2], replicaSet=repl_id)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        c.admin.logout()
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        c.close()
+
     def test_info(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
+        info = self.rs.info(repl_id)
+        self.assertTrue(isinstance(info, dict))
+        self.assertEqual(info['id'], repl_id)
+        self.assertEqual(len(info['members']), 2)
+
+    def test_info_with_auth(self):
+        repl_id = self.rs.create({'id': 'test-rs-1', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]})
         info = self.rs.info(repl_id)
         self.assertTrue(isinstance(info, dict))
         self.assertEqual(info['id'], repl_id)
@@ -243,6 +269,17 @@ class RSTestCase(unittest.TestCase):
 
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority":0, "hidden": True}}, {}]})
+        hidden = self.rs.hidden(repl_id)[0]
+        self.assertTrue(self.rs.member_info(repl_id, hidden['_id'])['rsInfo']['hidden'])
+        self.rs.member_update(repl_id, hidden['_id'], {"rsParams": {"priority": 1, "hidden": False}})
+        self.assertEqual(len(self.rs.hidden(repl_id)), 0)
+        self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
+
+    def test_member_update_with_auth(self):
+        repl_id = self.rs.create({'login': 'admin', 'password': 'admin',
+                                 'members': [{"rsParams": {"priority": 1.5}},
+                                             {"rsParams": {"priority":0, "hidden": True}},
+                                             {}]})
         hidden = self.rs.hidden(repl_id)[0]
         self.assertTrue(self.rs.member_info(repl_id, hidden['_id'])['rsInfo']['hidden'])
         self.rs.member_update(repl_id, hidden['_id'], {"rsParams": {"priority": 1, "hidden": False}})
@@ -444,45 +481,54 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
 
 
-# class ReplicaSetAuthTestCase(unittest.TestCase):
-#     def setUp(self):
-#         PortPool().change_range()
-#         fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
-#         self.hosts = Hosts()
-#         self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
-#         self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
-#         self.repl = ReplicaSet(self.repl_cfg)
+class ReplicaSetAuthTestCase(unittest.TestCase):
+    def setUp(self):
+        PortPool().change_range()
+        fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
+        self.hosts = Hosts()
+        self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
+        self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
 
-#     def tearDown(self):
-#         if len(self.repl) > 0:
-#             self.repl.cleanup()
-#         if os.path.exists(self.db_path):
-#             os.remove(self.db_path)
+    def tearDown(self):
+        if len(self.repl) > 0:
+            self.repl.cleanup()
+        if os.path.exists(self.db_path):
+            os.remove(self.db_path)
 
-#     def test_auth_admin(self):
-#         c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
-#         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
-#         self.assertTrue(c.admin.authenticate('admin', 'admin'))
-#         self.assertTrue(isinstance(c.admin.collection_names(), list))
-#         self.assertTrue(c.admin.logout() is None)
-#         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+    def test_auth_connection(self):
+        self.assertTrue(isinstance(self.repl.connection().admin.collection_names(), list))
+        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
-#     def test_auth_collection(self):
-#         c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
-#         self.assertTrue(c.admin.authenticate('admin', 'admin'))
-#         db = c.test_auth
-#         db.add_user('user', 'userpass')
-#         c.admin.logout()
+    def test_auth_admin(self):
+        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        self.assertTrue(c.admin.logout() is None)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
-#         self.assertTrue(db.authenticate('user', 'userpass'))
-#         self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, w=2, wtimeout=1000))
-#         self.assertTrue(isinstance(db.foo.find_one(), dict))
-#         db.logout()
-#         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
+    def test_auth_collection(self):
+        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        db = c.test_auth
+        db.add_user('user', 'userpass')
+        c.admin.logout()
+
+        self.assertTrue(db.authenticate('user', 'userpass'))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, w=2, wtimeout=1000))
+        self.assertTrue(isinstance(db.foo.find_one(), dict))
+        db.logout()
+        self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
 if __name__ == '__main__':
-    unittest.main()
-    # suite = unittest.TestSuite()
-    # suite.addTest(ReplicaSetAuthTestCase('test_auth_admin'))
-    # suite.addTest(ReplicaSetAuthTestCase('test_auth_collection'))
-    # unittest.TextTestRunner(verbosity=2).run(suite)
+    # unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(RSTestCase('test_rs_new_with_auth'))
+    suite.addTest(RSTestCase('test_member_update_with_auth'))
+    suite.addTest(RSTestCase('test_info_with_auth'))
+    suite.addTest(ReplicaSetAuthTestCase('test_auth_connection'))
+    suite.addTest(ReplicaSetAuthTestCase('test_auth_admin'))
+    suite.addTest(ReplicaSetAuthTestCase('test_auth_collection'))
+    unittest.TextTestRunner(verbosity=2).run(suite)
