@@ -102,9 +102,7 @@ class Host(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        # use localhost because authentication failed with external ip
-        hostname = "localhost:{port}".format(port=self.port)
-        c = pymongo.Connection(hostname)
+        c = pymongo.Connection(self.hostname)
         c.admin.authenticate(self.login, self.password)
         return c
 
