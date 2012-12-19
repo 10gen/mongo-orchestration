@@ -137,7 +137,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
     port = port or PortPool().port(check=True)
     cmd = [name, "--config", config_path]
-    host = HOSTNAME + ':' + str(port)
+    host = 'localhost:' + str(port)
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,
