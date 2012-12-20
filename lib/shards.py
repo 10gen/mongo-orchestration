@@ -10,6 +10,7 @@ from container import Container
 import tempfile
 from hosts import Hosts
 from rs import RS
+import pymongo
 
 
 class Shard(object):
@@ -18,6 +19,9 @@ class Shard(object):
     def __init__(self, params):
         """init configuration acording params"""
         self.id = params.get('id', None) or 'sh-' + str(uuid4())
+        self.login = params.get('login', '')
+        self.password = params.get('password', '')
+        self.auth_key = params.get('auth_key', None)
         self._configsvrs = []
         self._routers = []
         self._shards = {}
@@ -26,12 +30,15 @@ class Shard(object):
         for cfg in params.get('members', []):
             self.member_add(cfg.get('id', None), cfg.get('shardParams', {}))
 
+        if self.login:
+            self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
+
     def __init_configsvr(self, params):
         """create and start config servers"""
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True))
+            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True, auth_key=self.auth_key))
 
     def __len__(self):
         return len(self._shards)
@@ -64,8 +71,13 @@ class Shard(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().create('mongos', params, autostart=True))
+        self._routers.append(Hosts().create('mongos', params, autostart=True, auth_key=self.auth_key))
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
+
+    def connection(self):
+        c = pymongo.Connection(self.router['hostname'])
+        c.admin.authenticate(self.login, self.password)
+        return c
 
     def router_command(self, command, arg=None, is_eval=False):
         """run command on router host"""
@@ -80,7 +92,9 @@ class Shard(object):
         member_id = member_id or str(uuid4())
         if 'members' in params:
             # is replica set
-            rs_id = RS().create(params)
+            rs_params = params.copy()
+            rs_params.update({'auth_key': self.auth_key})
+            rs_id = RS().create(rs_params)
             members = RS().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
             result = self._add(cfgs, member_id)
@@ -91,7 +105,7 @@ class Shard(object):
 
         else:
             # is single host
-            host_id = Hosts().create('mongod', params, autostart=True)
+            host_id = Hosts().create('mongod', params, autostart=True, auth_key=self.auth_key)
             result = self._add(Hosts().info(host_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isHost': True, '_id': host_id}
