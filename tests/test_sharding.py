@@ -103,6 +103,25 @@ class ShardsTestCase(unittest.TestCase):
             shard['_id'] in ('sh01', 'sh02', 'sh-rs-01')
         c.close()
 
+    def test_sh_new_with_auth(self):
+        port = PortPool().port(check=True)
+        config = {
+            'id': 'shard_cluster_1',
+            'auth_key': 'secret',
+            'login': 'admin',
+            'password': 'adminpass',
+            'configsvrs': [{}],
+            'routers': [{"port": port}],
+            'members': [{'id': 'sh01'}, {'id': 'sh02'}]
+        }
+        self.sh.create(config)
+        host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
+        c = pymongo.Connection(host)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
+        c.admin.authenticate('admin', 'adminpass')
+        self.assertTrue(isinstance(c.admin.command("listShards"), dict))
+        c.close()
+
     def test_sh_del(self):
         sh1_id = self.sh.create({})
         sh2_id = self.sh.create({})
@@ -171,6 +190,19 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(self.sh.members(sh_id)), 3)
 
     def test_member_info(self):
+        config = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
+        sh_id = self.sh.create(config)
+        info = self.sh.member_info(sh_id, 'member1')
+        self.assertEqual(info['id'], 'member1')
+        self.assertTrue(info['isHost'])
+        self.assertTrue('_id' in info)
+
+        info = self.sh.member_info(sh_id, 'sh-rs-01')
+        self.assertEqual(info['id'], 'sh-rs-01')
+        self.assertTrue(info['isReplicaSet'])
+        self.assertTrue('_id' in info)
+
+    def test_member_info_with_auth(self):
         config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'member1')
@@ -260,6 +292,38 @@ class ShardTestCase(unittest.TestCase):
         self.assertEqual(len(sh), 1)
 
         sh.cleanup()
+
+    def test_sh_new(self):
+        port = PortPool().port(check=True)
+        config = {
+            'id': 'shard_cluster_1',
+            'configsvrs': [{}],
+            'routers': [{"port": port}],
+            'members': [{'id': 'sh01'}, {'id': 'sh02'}]
+        }
+        sh = Shard(config)
+        c = pymongo.Connection(sh.router['hostname'])
+        for item in c.admin.command("listShards")['shards']:
+            self.assertTrue(item['_id'] in ('sh01', 'sh02'))
+
+    def test_sh_new_with_auth(self):
+        port = PortPool().port(check=True)
+        config = {
+            'id': 'shard_cluster_1',
+            'auth_key': 'secret',
+            'login': 'admin',
+            'password': 'adminpass',
+            'configsvrs': [{}],
+            'routers': [{"port": port}],
+            'members': [{'id': 'sh01'}, {'id': 'sh02'}]
+        }
+        sh = Shard(config)
+        c = pymongo.Connection(sh.router['hostname'])
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
+        c.admin.authenticate('admin', 'adminpass')
+        self.assertTrue(isinstance(c.admin.command("listShards"), dict))
+        for item in c.admin.command("listShards")['shards']:
+            self.assertTrue(item['_id'] in ('sh01', 'sh02'))
 
     def test_cleanup(self):
         config = {
@@ -376,6 +440,21 @@ class ShardTestCase(unittest.TestCase):
 
         sh.cleanup()
 
+    def test_member_info_with_auth(self):
+        config = {'auth_key': 'secret', 'login': 'admin', 'password': 'adminpass', 'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
+        sh = Shard(config)
+        info = sh.member_info('member1')
+        self.assertEqual(info['id'], 'member1')
+        self.assertTrue(info['isHost'])
+        self.assertTrue('_id' in info)
+
+        info = sh.member_info('sh-rs-01')
+        self.assertEqual(info['id'], 'sh-rs-01')
+        self.assertTrue(info['isReplicaSet'])
+        self.assertTrue('_id' in info)
+
+        sh.cleanup()
+
     def test_member_remove(self):
         config = {'members': [{'id': 'member1'}, {'id': 'member2'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh = Shard(config)
@@ -424,4 +503,11 @@ class ShardTestCase(unittest.TestCase):
         sh.cleanup()
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(ShardsTestCase('test_sh_new_with_auth'))
+    suite.addTest(ShardsTestCase('test_member_info'))
+    suite.addTest(ShardTestCase('test_sh_new'))
+    suite.addTest(ShardTestCase('test_sh_new_with_auth'))
+    suite.addTest(ShardTestCase('test_member_info'))
+    unittest.TextTestRunner(verbosity=2).run(suite)
