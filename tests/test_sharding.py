@@ -502,12 +502,26 @@ class ShardTestCase(unittest.TestCase):
 
         sh.cleanup()
 
+    def test_tagging(self):
+        tags = ['tag1', 'tag2']
+        tags_repl = ['replTag']
+        config = {
+            'configsvrs': [{}], 'routers': [{}],
+            'members': [{'id': 'sh01', 'shardParams': {'tags': tags}},
+                        {'id': 'sh02'},
+                        {'id': 'sh03', 'shardParams': {'tags': tags_repl, 'members': [{}, {}]}}
+                        ]
+        }
+        sh = Shard(config)
+        self.assertEqual(tags, sh.member_info('sh01')['tags'])
+        self.assertEqual([], sh.member_info('sh02')['tags'])
+        self.assertEqual(tags_repl, sh.member_info('sh03')['tags'])
+
+        sh.cleanup()
+
+
 if __name__ == '__main__':
     # unittest.main()
     suite = unittest.TestSuite()
-    suite.addTest(ShardsTestCase('test_sh_new_with_auth'))
-    suite.addTest(ShardsTestCase('test_member_info'))
-    suite.addTest(ShardTestCase('test_sh_new'))
-    suite.addTest(ShardTestCase('test_sh_new_with_auth'))
-    suite.addTest(ShardTestCase('test_member_info'))
+    suite.addTest(ShardTestCase('test_tagging'))
     unittest.TextTestRunner(verbosity=2).run(suite)

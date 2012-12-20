@@ -238,6 +238,19 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(info['_id'], 2)
         self.assertTrue(info['rsInfo']['hidden'])
 
+    def test_tagging(self):
+        tags_0 = {"status": "primary"}
+        tags_1 = {"status": "arbiter"}
+        tags_2 = {"status": "hidden"}
+        repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5, "tags": tags_0}}, {"rsParams": {"arbiterOnly": True}, "tags": tags_1}, {"rsParams": {"priority":0, "hidden": True, "tags": tags_2}}]})
+        self.assertEqual(tags_0, self.rs.primary(repl_id)['rsInfo']['tags'])
+
+        member_arbiter = self.rs.arbiters(repl_id)[0]['_id']
+        self.assertFalse('tags' in self.rs.member_info(repl_id, member_arbiter)['rsInfo'])
+
+        member_hidden = self.rs.hidden(repl_id)[0]['_id']
+        self.assertTrue('tags' in self.rs.member_info(repl_id, member_hidden)['rsInfo'])
+
     def test_member_del(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
         self.assertEqual(len(self.rs.members(repl_id)), 3)
@@ -524,10 +537,5 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 if __name__ == '__main__':
     # unittest.main()
     suite = unittest.TestSuite()
-    suite.addTest(RSTestCase('test_rs_new_with_auth'))
-    suite.addTest(RSTestCase('test_member_update_with_auth'))
-    suite.addTest(RSTestCase('test_info_with_auth'))
-    suite.addTest(ReplicaSetAuthTestCase('test_auth_connection'))
-    suite.addTest(ReplicaSetAuthTestCase('test_auth_admin'))
-    suite.addTest(ReplicaSetAuthTestCase('test_auth_collection'))
+    suite.addTest(RSTestCase('test_tagging'))
     unittest.TextTestRunner(verbosity=2).run(suite)

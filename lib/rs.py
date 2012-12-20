@@ -201,7 +201,7 @@ class ReplicaSet(object):
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
-            for key in ('votes', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
+            for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
             result['rsInfo']['primary'] = (repl['ismaster'] == True)
@@ -348,6 +348,7 @@ class ReplicaSet(object):
             cfg_member_info.update(member)
             'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value
             'votes' in cfg_member_info and cfg_member_info.pop('votes')  # no way to check 'votes' value
+            'tags' in cfg_member_info and cfg_member_info.pop('tags')  # no way to check 'tags' value
             cfg_member_info['host'] = cfg_member_info['host'].lower()
 
             real_member_info = self.default_params.copy()

@@ -25,10 +25,22 @@ class Shard(object):
         self._configsvrs = []
         self._routers = []
         self._shards = {}
+        self.tags = {}
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
         for cfg in params.get('members', []):
-            self.member_add(cfg.get('id', None), cfg.get('shardParams', {}))
+            shard_params = cfg.get('shardParams', {})
+            shard_tags = shard_params.pop('tags', None)
+            info = self.member_add(cfg.get('id', None), shard_params)
+            if shard_tags:
+                self.tags[info['id']] = shard_tags
+
+        if self.tags:
+            for sh_id in self.tags:
+                for tag in self.tags[sh_id]:
+                    command = 'sh.addShardTag("{sh_id}", "{tag}")'.format(**locals())
+                    logger.debug(command)
+                    self.router_command(command=command, is_eval=True)
 
         if self.login:
             self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
@@ -116,6 +128,7 @@ class Shard(object):
         """return info about member"""
         info = self._shards[member_id].copy()
         info['id'] = member_id
+        info['tags'] = self.tags.get(member_id, list())
         return info
 
     def _remove(self, shard_name):
