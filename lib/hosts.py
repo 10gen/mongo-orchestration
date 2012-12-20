@@ -65,12 +65,16 @@ class Host(object):
 
         self.__init_logpath(cfg.get('logpath', None))
 
+        # use keyFile
+        if self.auth_key:
+            cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
+
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
         return process.write_config(cfg), cfg
 
-    def __init__(self, name, params, auth_key=None, login=None, password=None):
+    def __init__(self, name, params, auth_key=None, login='', password=''):
         """Args:
             name - name of process (mongod or mongos)
             params - dictionary with params for mongo process
@@ -86,12 +90,14 @@ class Host(object):
         self.pid = None  # process pid
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
+        self.is_mongos = False
 
         proc_name = os.path.split(name)[1].lower()
         if proc_name.startswith('mongod'):
             self.config_path, self.cfg = self.__init_mongod(params)
 
         elif proc_name.startswith('mongos'):
+            self.is_mongos = True
             self.config_path, self.cfg = self.__init_mongos(params)
 
         else:
@@ -103,7 +109,8 @@ class Host(object):
     def connection(self):
         """return authenticated connection"""
         c = pymongo.Connection(self.hostname)
-        c.admin.authenticate(self.login, self.password)
+        if not self.is_mongos:
+            c.admin.authenticate(self.login, self.password)
         return c
 
     def run_command(self, command, arg=None, is_eval=False):
@@ -142,7 +149,7 @@ class Host(object):
                 c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'])
                 server_info = c.server_info()
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
-            except pymongo.errors.AutoReconnect:
+            except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 pass
 
         return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
