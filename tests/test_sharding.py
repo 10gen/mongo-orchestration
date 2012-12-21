@@ -190,7 +190,7 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(self.sh.members(sh_id)), 3)
 
     def test_member_info(self):
-        config = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
+        config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
@@ -203,7 +203,7 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue('_id' in info)
 
     def test_member_info_with_auth(self):
-        config = {'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
+        config = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')

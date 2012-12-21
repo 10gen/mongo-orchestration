@@ -43,7 +43,8 @@ class Shard(object):
                     self.router_command(command=command, is_eval=True)
 
         if self.login:
-            self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
+            pymongo.Connection(self.router['hostname']).admin.add_user(self.login, self.password)
+            # self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
 
     def __init_configsvr(self, params):
         """create and start config servers"""
