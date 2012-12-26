@@ -5,6 +5,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import json
+import traceback
 import sys
 
 sys.path.insert(0, '..')
@@ -37,9 +38,11 @@ def rs_create():
         result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -51,9 +54,11 @@ def rs_list():
         data = [info for info in RS()]
     except StandardError as e:
         logger.error("Exception {e} while rs_list".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, data)
 
@@ -67,9 +72,11 @@ def rs_info(rs_id):
         result = RS().info(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_info".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -83,9 +90,11 @@ def rs_del(rs_id):
         result = RS().remove(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_del".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(204, result)
 
@@ -104,9 +113,11 @@ def member_add(rs_id):
         result = RS().member_info(rs_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_add".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -120,9 +131,11 @@ def members(rs_id):
         result = RS().members(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while members".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -136,9 +149,11 @@ def secondaries(rs_id):
         result = RS().secondaries(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while secondaries".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -152,9 +167,11 @@ def arbiters(rs_id):
         result = RS().arbiters(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while arbiters".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -168,9 +185,11 @@ def hidden(rs_id):
         result = RS().hidden(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while hidden".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -184,9 +203,11 @@ def passives(rs_id):
         result = RS().passives(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while passives".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -200,9 +221,11 @@ def hosts(rs_id):
         result = RS().hosts(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while hosts".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -217,9 +240,11 @@ def member_info(rs_id, member_id):
         result = RS().member_info(rs_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_info".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -234,9 +259,11 @@ def member_del(rs_id, member_id):
         result = RS().member_del(rs_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_del".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -256,9 +283,11 @@ def member_update(rs_id, member_id):
         result = RS().member_info(rs_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_update".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -276,9 +305,11 @@ def member_command(rs_id, member_id, command):
         return send_result(400)
     except StandardError as e:
         logger.error("Exception {e} while member_command".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
 
 
@@ -292,9 +323,11 @@ def rs_member_primary(rs_id):
         result = RS().primary(rs_id)
     except StandardError as e:
         logger.error("Exception {e} while rs_member_primary".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -313,9 +346,11 @@ def primary_stepdown(rs_id):
         RS().primary_stepdown(rs_id, data.get('timeout', 60))
     except StandardError as e:
         logger.error("Exception {e} while primary_stepdown".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200)
 

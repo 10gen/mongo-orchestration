@@ -5,6 +5,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import json
+import traceback
 import sys
 
 sys.path.insert(0, '..')
@@ -37,9 +38,11 @@ def sh_create():
         result = Shards().info(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while sh_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -51,9 +54,11 @@ def sh_list():
         data = [info for info in Shards()]
     except StandardError as e:
         logger.error("Exception {e} while sh_list".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, data)
 
@@ -67,9 +72,11 @@ def info(sh_id):
         result = Shards().info(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while info".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -83,9 +90,11 @@ def sh_del(sh_id):
         result = Shards().remove(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while sh_del".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(204, result)
 
@@ -103,9 +112,11 @@ def member_add(sh_id):
         result = Shards().member_add(sh_id, data)
     except StandardError as e:
         logger.error("Exception {e} while member_add".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -119,9 +130,11 @@ def members(sh_id):
         result = Shards().members(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while members".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -135,9 +148,11 @@ def configservers(sh_id):
         result = Shards().configservers(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while configservers".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -151,9 +166,11 @@ def routers(sh_id):
         result = Shards().routers(sh_id)
     except StandardError as e:
         logger.error("Exception {e} while routers".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -171,9 +188,11 @@ def router_add(sh_id):
         result = Shards().router_add(sh_id, data)
     except StandardError as e:
         logger.error("Exception {e} while router_add".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -187,9 +206,11 @@ def member_info(sh_id, member_id):
         result = Shards().member_info(sh_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_info".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -203,9 +224,11 @@ def member_del(sh_id, member_id):
         result = Shards().member_del(sh_id, member_id)
     except StandardError as e:
         logger.error("Exception {e} while member_del".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 

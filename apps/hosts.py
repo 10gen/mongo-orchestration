@@ -5,8 +5,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import json
+import traceback
 import sys
-
 sys.path.insert(0, '..')
 from lib.hosts import Hosts
 from bottle import route, request, response, abort, run
@@ -37,9 +37,11 @@ def host_create():
         result = Hosts().info(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -51,9 +53,11 @@ def host_list():
         data = [info for info in Hosts()]
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, data)
 
@@ -67,9 +71,11 @@ def host_info(host_id):
         result = Hosts().info(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200, result)
 
@@ -83,9 +89,11 @@ def host_del(host_id):
         Hosts().remove(host_id)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(400)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(204)
 
@@ -99,9 +107,11 @@ def host_command(host_id, command):
         Hosts().command(host_id, command)
     except StandardError as e:
         logger.error("Exception {e} while host_create".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     except Exception as e:
         logger.critical("Unknown Exception {e}".format(**locals()))
+        logger.error(traceback.print_last())
         return send_result(500)
     return send_result(200)
 
