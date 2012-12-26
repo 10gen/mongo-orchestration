@@ -11,6 +11,8 @@ from hosts import Hosts
 import time
 import errors
 import tempfile
+import sys
+import traceback
 
 Hosts()
 
@@ -274,8 +276,12 @@ class ReplicaSet(object):
                     c.admin.authenticate(self.login, self.password)
                     return c
             except (pymongo.errors.PyMongoError):
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
+                logger.error("Exception {exc_type} {exc_value}".format(**locals()))
+                logger.error(err_message)
                 if time.time() - t_start > timeout:
-                    return False
+                    raise pymongo.errors.AutoReconnect("Couldn't connect while timeout {timeout} second".format(**locals()))
                 time.sleep(10)
 
     def secondaries(self):
