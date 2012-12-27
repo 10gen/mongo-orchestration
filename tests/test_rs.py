@@ -451,7 +451,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.connection(timeout=5))
         self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
         self.repl.member_command(_id, 'stop')
-        self.assertFalse(self.repl.connection(hostname=hostname, timeout=5))
+        self.assertRaises(pymongo.errors.AutoReconnect, lambda: self.repl.connection(hostname=hostname, timeout=5))
 
     def test_secondaries(self):
         secondaries = [item['host'] for item in self.repl.secondaries()]
@@ -537,5 +537,5 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 if __name__ == '__main__':
     # unittest.main()
     suite = unittest.TestSuite()
-    suite.addTest(RSTestCase('test_tagging'))
+    suite.addTest(ReplicaSetTestCase('test_connection'))
     unittest.TextTestRunner(verbosity=2).run(suite)
