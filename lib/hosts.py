@@ -149,8 +149,9 @@ class Host(object):
                 c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'])
                 server_info = c.server_info()
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
-            except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
-                pass
+            except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
+                server_info = {}
+                status_info = {}
 
         return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
 
