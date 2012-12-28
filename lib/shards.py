@@ -91,7 +91,7 @@ class Shard(object):
 
     def connection(self):
         c = pymongo.Connection(self.router['hostname'])
-        c.admin.authenticate(self.login, self.password)
+        self.login and self.password and c.admin.authenticate(self.login, self.password)
         return c
 
     def router_command(self, command, arg=None, is_eval=False):

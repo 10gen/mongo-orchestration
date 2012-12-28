@@ -109,7 +109,7 @@ class Host(object):
     def connection(self):
         """return authenticated connection"""
         c = pymongo.Connection(self.hostname)
-        if not self.is_mongos:
+        if not self.is_mongos and (self.login and self.password):
             c.admin.authenticate(self.login, self.password)
         return c
 
