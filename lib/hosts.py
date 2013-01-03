@@ -142,18 +142,21 @@ class Host(object):
         """return info about host as dict object"""
         proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
                      "pid": self.pid, "optfile": self.config_path}
-
+        logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
                 c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'])
                 server_info = c.server_info()
+                logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
+                logger.debug("status_info: {status_info}".format(**locals()))
             except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
                 server_info = {}
                 status_info = {}
 
+        logger.debug("return {d}".format(d={"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
         return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
 
     def start(self, timeout=300):
@@ -161,6 +164,7 @@ class Host(object):
         return True of False"""
         try:
             self.pid, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
         except OSError:
@@ -246,7 +250,9 @@ class Hosts(Singleton, Container):
 
     def db_command(self, host_id, command, arg=None, is_eval=False):
         host = self._storage[host_id]
-        return host.run_command(command, arg, is_eval)
+        result = host.run_command(command, arg, is_eval)
+        self._storage[host_id] = host
+        return result
 
     def command(self, host_id, command, *args):
         """run command

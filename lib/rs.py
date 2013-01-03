@@ -38,11 +38,13 @@ class ReplicaSet(object):
         config = {"_id": self.repl_id, "members": [
                   self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
                   ]}
+        logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
             raise errors.ReplicaSetError("replica can't started")
 
         if self.login:
+            logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
             try:
                 c = self.connection()
                 c.admin.add_user(self.login, self.password)
@@ -83,10 +85,12 @@ class ReplicaSet(object):
                      if not (member.get('arbiterOnly', False)
                              or member.get('priority', 1) == 0)][0]
         if not self.wait_while_reachable([member['host'] for member in config['members']]):
+            logger.error("all hosts must be reachable")
             self.cleanup()
             return False
 
         result = self.connection(init_host).admin.command("replSetInitiate", config)
+        logger.debug("replica init result: {result}".format(**locals()))
         if int(result.get('ok', 0)) == 1:
             # wait while real state equals config
             return self.waiting_config_state()
@@ -139,9 +143,10 @@ class ReplicaSet(object):
 
         return command's result
         """
+        logger.debug("run_command({command}, {arg}, {is_eval}, {member_id})".format(**locals()))
         mode = is_eval and 'eval' or 'command'
         hostname = None
-        if member_id:
+        if isinstance(member_id, int):
             hostname = self.id2host(member_id)
         result = getattr(self.connection(hostname=hostname).admin, mode)(command, arg)
         return result
@@ -199,10 +204,11 @@ class ReplicaSet(object):
         """return information about member"""
         host_id = self._hosts.id_by_hostname(self.id2host(member_id))
         host_info = self._hosts.info(host_id)
-        result = {'_id': member_id, 'uri': host_info['uri'], 'host_id': host_id, 'rsInfo': {}, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
+        result = {'_id': member_id, 'uri': host_info['uri'], 'host_id': host_id, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
         result['rsInfo'] = {}
         if host_info['procInfo']['alive']:
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
+            logger.debug("member {member_id} repl info: {repl}".format(**locals()))
             for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
@@ -252,7 +258,7 @@ class ReplicaSet(object):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=120):
         """return ReplicaSetConnection object if hostname specified
         return Connection object if hostname doesn't specified
         Args:
@@ -260,6 +266,7 @@ class ReplicaSet(object):
             read_preference - default PRIMARY
             timeout - specify how long, in seconds, a command can take before server times out.
         """
+        logger.debug("connection({hostname}, {read_preference}, {timeout})".format(**locals()))
         t_start = time.time()
         # hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
         hosts = hostname or ",".join(self.host_map.values())
@@ -272,7 +279,8 @@ class ReplicaSet(object):
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
-                    c = pymongo.Connection(hosts, read_preference=read_preference, network_timeout=20)
+                    logger.debug("connection to the {hosts}".format(**locals()))
+                    c = pymongo.Connection(hosts, network_timeout=20)
                     if self.login and self.password:
                         c.admin.authenticate(self.login, self.password)
                     return c
@@ -347,7 +355,7 @@ class ReplicaSet(object):
         except pymongo.errors.AutoReconnect:
             # catch 'No replica set primary available' Exception
             return False
-
+        logger.debug("all members in correct state")
         config = self.config
         self.update_host_map(config)
         for member in config['members']:
@@ -363,9 +371,10 @@ class ReplicaSet(object):
             real_member_info["_id"] = info['_id']
             real_member_info["host"] = info["uri"].lower()
             real_member_info.update(info['rsInfo'])
-
+            logger.debug("real_member_info({member_id}): {info}".format(member_id=member['_id'], info=info))
             for key in cfg_member_info:
                 if cfg_member_info[key] != real_member_info.get(key, None):
+                    logger.debug("{key}: {value1} ! = {value2}".format(key=key, value1=cfg_member_info[key], value2=real_member_info.get(key, None)))
                     return False
         return True
 
