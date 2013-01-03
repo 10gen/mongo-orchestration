@@ -81,6 +81,7 @@ def host_info(host_id):
 
 
 @route('/hosts/<host_id>', method='DELETE')
+# TODO: return 400 code if process failed
 @error_wrap
 def host_del(host_id):
     logger.debug("host_del({host_id})")
