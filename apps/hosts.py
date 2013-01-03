@@ -52,7 +52,12 @@ def host_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    host_id = Hosts().create(data['name'], data.get('params', {}))
+    host_id = Hosts().create(data['name'],
+                             data.get('params', {}),
+                             data.get('auth_key', ''),
+                             data.get('login', ''), data.get('password', ''),
+                             data.get('timeout', 300),
+                             data.get('autostart', True))
     result = Hosts().info(host_id)
     return send_result(200, result)
 
