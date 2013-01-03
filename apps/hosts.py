@@ -53,7 +53,7 @@ def host_create():
     if json_data:
         data = json.loads(json_data)
     host_id = Hosts().create(data['name'],
-                             data.get('params', {}),
+                             data.get('procParams', {}),
                              data.get('auth_key', ''),
                              data.get('login', ''), data.get('password', ''),
                              data.get('timeout', 300),
