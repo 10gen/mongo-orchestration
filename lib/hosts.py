@@ -82,6 +82,7 @@ class Host(object):
             login - username for the  admin collection
             password - password
         """
+        logger.debug("Host.__init__({name}, {params}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
         self.login = login
         self.password = password

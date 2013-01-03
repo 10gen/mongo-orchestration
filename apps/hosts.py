@@ -52,7 +52,12 @@ def host_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    host_id = Hosts().create(data['name'], data.get('params', {}))
+    host_id = Hosts().create(data['name'],
+                             data.get('procParams', {}),
+                             data.get('auth_key', ''),
+                             data.get('login', ''), data.get('password', ''),
+                             data.get('timeout', 300),
+                             data.get('autostart', True))
     result = Hosts().info(host_id)
     return send_result(200, result)
 
@@ -76,6 +81,7 @@ def host_info(host_id):
 
 
 @route('/hosts/<host_id>', method='DELETE')
+# TODO: return 400 code if process failed
 @error_wrap
 def host_del(host_id):
     logger.debug("host_del({host_id})")
@@ -88,6 +94,7 @@ def host_del(host_id):
 @route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
 @error_wrap
 def host_command(host_id, command):
+    # TODO: use timeout value
     logger.debug("host_command({host_id}, {command})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
