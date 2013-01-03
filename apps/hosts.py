@@ -94,6 +94,7 @@ def host_del(host_id):
 @route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
 @error_wrap
 def host_command(host_id, command):
+    # TODO: use timeout value
     logger.debug("host_command({host_id}, {command})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
