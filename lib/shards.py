@@ -95,8 +95,24 @@ class Shard(object):
         return c
 
     def router_command(self, command, arg=None, is_eval=False):
-        """run command on router host"""
-        return Hosts().db_command(self.router['id'], command, arg, is_eval=is_eval)
+        """run command on the router host
+
+        Args:
+            command - command string
+            arg - command argument
+            is_eval - if True execute command as eval
+
+        return command's result
+        """
+        mode = is_eval and 'eval' or 'command'
+
+        if isinstance(arg, tuple):
+            name, d = arg
+        else:
+            name, d = arg, {}
+
+        result = getattr(self.connection().admin, mode)(command, name, **d)
+        return result
 
     def _add(self, shard_uri, name):
         """execute addShard command"""
