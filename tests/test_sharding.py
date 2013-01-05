@@ -22,6 +22,12 @@ import time
 import operator
 import unittest
 import pymongo
+import re
+import subprocess
+
+from nose.plugins.skip import SkipTest
+
+MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 
 
 class ShardsTestCase(unittest.TestCase):
@@ -270,9 +276,17 @@ class ShardsTestCase(unittest.TestCase):
 
 
 class ShardTestCase(unittest.TestCase):
+
+    def mongod_version(self):
+        raw = subprocess.Popen([os.path.join(self.bin_path, 'mongod'), '--version'], stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.read()
+        m = MONGODB_VERSION.match(raw)
+        if m:
+            return m.groups()
+
     def setUp(self):
         fd, self.db_path = tempfile.mkstemp(prefix='test-shard', suffix='shard.db')
-        set_storage(self.db_path, os.environ.get('MONGOBIN', None))
+        self.bin_path = os.environ.get('MONGOBIN', '')
+        set_storage(self.db_path, self.bin_path)
         PortPool().change_range()
 
     def tearDown(self):
@@ -503,6 +517,10 @@ class ShardTestCase(unittest.TestCase):
         sh.cleanup()
 
     def test_tagging(self):
+        version = self.mongod_version()
+        if version and version < ('2', '2', '0'):
+            raise SkipTest("mongodb v{version} doesn't support shard tagging".format(version='.'.join(version)))
+
         tags = ['tag1', 'tag2']
         tags_repl = ['replTag']
         config = {
@@ -521,7 +539,7 @@ class ShardTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # unittest.main()
-    suite = unittest.TestSuite()
-    suite.addTest(ShardTestCase('test_tagging'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()
+    # suite = unittest.TestSuite()
+    # suite.addTest(ShardTestCase('test_tagging'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)
