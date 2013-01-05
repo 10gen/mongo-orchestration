@@ -155,7 +155,7 @@ class RSTestCase(unittest.TestCase):
         self.assertTrue(pymongo.Connection(primary))
         self.rs.remove(repl_id)
         self.assertEqual(len(self.rs), 1)
-        self.assertRaises(pymongo.errors.AutoReconnect, pymongo.Connection, primary)
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, primary)
 
     def test_members(self):
         port1, port2 = PortPool().port(check=True), PortPool().port(check=True)
@@ -258,7 +258,7 @@ class RSTestCase(unittest.TestCase):
         self.assertTrue(pymongo.Connection(secondary['host']))
         self.assertTrue(self.rs.member_del(repl_id, secondary['_id']))
         self.assertEqual(len(self.rs.members(repl_id)), 2)
-        self.assertRaises(pymongo.errors.AutoReconnect, pymongo.Connection, secondary['host'])
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, secondary['host'])
 
     def test_member_add(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}]})
@@ -537,5 +537,6 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 if __name__ == '__main__':
     # unittest.main()
     suite = unittest.TestSuite()
-    suite.addTest(ReplicaSetTestCase('test_connection'))
+    suite.addTest(RSTestCase('test_member_del'))
+    suite.addTest(RSTestCase('test_rs_del'))
     unittest.TextTestRunner(verbosity=2).run(suite)
