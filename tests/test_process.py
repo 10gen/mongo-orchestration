@@ -121,10 +121,15 @@ class ProcessTestCase(unittest.TestCase):
         self.pp = process.PortPool(min_port=1025, max_port=2000)
         self.sockets = {}
         self.tmp_files = list()
+        self.bin_path = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.db_path = tempfile.mkdtemp()
+        self.cfg = {"noprealloc": True, "smallfiles": True, "oplogSize": 10, 'dbpath': self.db_path}
 
     def tearDown(self):
         for s in self.sockets:
             self.sockets[s].close()
+        if self.cfg:
+            process.cleanup_mprocess('', self.cfg)
         for item in self.tmp_files:
             if os.path.exists(item):
                 os.remove(item)
@@ -154,11 +159,9 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_mprocess(self):
         port = self.pp.port(check=True)
-        bin_path = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        cfg = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
-        config_path = process.write_config(cfg)
+        config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        result = process.mprocess(bin_path, config_path, port=port, timeout=300)
+        result = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
         self.assertTrue(isinstance(result, tuple))
         pid, host = result
         self.assertTrue(isinstance(pid, int))
@@ -167,19 +170,16 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_mprocess_timeout(self):
         port = self.pp.port()
-        bin_path = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        cfg = {"noprealloc": False, "smallfiles": True, "oplogSize": 10}
-        config_path = process.write_config(cfg)
+        config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        pid, host = process.mprocess(bin_path, config_path, port, 0)
+        pid, host = process.mprocess(self.bin_path, config_path, port, 0)
         self.assertTrue(isinstance(pid, int))
         self.assertTrue(isinstance(host, str))
         process.kill_mprocess(pid)
-        self.assertRaises(OSError, process.mprocess, bin_path, config_path, port, 1)
+        self.assertRaises(OSError, process.mprocess, self.bin_path, config_path, port, 1)
 
     def test_mprocess_busy_port(self):
-        cfg = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
-        config_path = process.write_config(cfg)
+        config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
         port = self.pp.port()
         self.listen_port(port, max_connection=0)
