@@ -153,7 +153,7 @@ def mprocess(name, config_path, port=None, timeout=180):
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
-        print "proc.pid=", proc.pid
+
         if proc.poll() == 0:
             logger.debug("process is not alive")
             raise OSError
@@ -198,7 +198,7 @@ def cleanup_mprocess(config_path, cfg):
     """
     for key in ('keyFile', 'logPath', 'dbpath'):
         remove_path(cfg.get(key, None))
-    remove_path(config_path)
+    os.path.exists(config_path) and remove_path(config_path)
 
 
 def remove_path(path):
