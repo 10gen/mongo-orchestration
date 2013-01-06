@@ -158,7 +158,7 @@ class ProcessTestCase(unittest.TestCase):
         cfg = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
         config_path = process.write_config(cfg)
         self.tmp_files.append(config_path)
-        result = process.mprocess(bin_path, config_path, port=port, timeout=60)
+        result = process.mprocess(bin_path, config_path, port=port, timeout=300)
         self.assertTrue(isinstance(result, tuple))
         pid, host = result
         self.assertTrue(isinstance(pid, int))
