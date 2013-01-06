@@ -138,7 +138,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     """
 
     logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
-    if not os.path.exists(config_path):
+    if not (config_path and isinstance(config_path, str) and os.path.exists(config_path)):
         raise OSError("can't find config file {config_path}".format(**locals()))
 
     cfg = read_config(config_path)
@@ -198,7 +198,7 @@ def cleanup_mprocess(config_path, cfg):
     """
     for key in ('keyFile', 'logPath', 'dbpath'):
         remove_path(cfg.get(key, None))
-    os.path.exists(config_path) and remove_path(config_path)
+    isinstance(config_path, str) and os.path.exists(config_path) and remove_path(config_path)
 
 
 def remove_path(path):
