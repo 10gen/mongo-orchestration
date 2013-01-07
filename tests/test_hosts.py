@@ -144,12 +144,19 @@ class HostsTestCase(unittest.TestCase):
         self.hosts.command(h_id, 'stop')
         self.assertEqual(self.hosts.is_alive(h_id), False)
 
+    def test_db_command(self):
+        h_id = self.hosts.create('mongod', {}, autostart=False)
+        self.assertRaises(pymongo.errors.PyMongoError, self.hosts.db_command, h_id, 'serverStatus', None, False)
+        self.hosts.command(h_id, 'start', 10)
+        self.assertEqual(self.hosts.db_command(h_id, 'serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
+        self.assertEqual(self.hosts.db_command(h_id, 'db.getName()', arg=None, is_eval=True), 'admin')
+
 
 class HostTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        self.host = Host(mongod, {}, None)
+        self.mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.host = Host(self.mongod, {}, None)
 
     def tearDown(self):
         if hasattr(self, 'host'):
@@ -158,6 +165,32 @@ class HostTestCase(unittest.TestCase):
 
     def test_host(self):
         self.assertTrue(isinstance(self.host, Host))
+
+    def test_init_path(self):
+        self.host.cleanup()
+        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        log_dir = os.path.join(tempfile.gettempdir(), os.path.split(tempfile.mktemp())[-1])
+        log_path = tempfile.mktemp(dir=log_dir)
+        db_path = os.path.join(tempfile.gettempdir(), os.path.split(tempfile.mktemp())[-1])
+        self.assertFalse(os.path.exists(log_dir))
+        self.assertFalse(os.path.exists(db_path))
+        self.host = Host(mongod, {'logpath': log_path, 'dbpath': db_path})
+        self.assertTrue(os.path.exists(log_dir))
+        self.assertTrue(os.path.exists(db_path))
+
+    def test_mongos(self):
+        self.host.cleanup()
+        self.host = Host(self.mongod, {'configsvr': True})
+        self.host.start(20)
+        mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
+        self.host2 = Host(mongos, {'configdb': self.host.info()['uri']})
+        self.assertTrue(self.host2.start())
+        self.assertTrue(self.host2.info()['statuses'].get('mongos', False))
+        self.host2.stop()
+        self.host2.cleanup()
+
+    def test_run_command(self):
+        self.host.start(10)
 
     def test_info(self):
         self.host.start(10)
@@ -174,7 +207,16 @@ class HostTestCase(unittest.TestCase):
         for param, value in params.items():
             self.assertTrue(info2['procInfo']['params'].get(param, value) == value)
         host2.stop()
+        info = host2.info()
+        self.assertEqual(len(info['serverInfo']), 0)
+        self.assertEqual(len(info['statuses']), 0)
         host2.cleanup()
+
+    def test_command(self):
+        self.assertRaises(pymongo.errors.PyMongoError, self.host.run_command, 'serverStatus', None, False)
+        self.host.start(10)
+        self.assertEqual(self.host.run_command('serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
+        self.assertEqual(self.host.run_command('db.getName()', arg=None, is_eval=True), 'admin')
 
     def test_start(self):
         self.assertTrue(self.host.info()['procInfo']['pid'] is None)
@@ -227,15 +269,34 @@ class HostTestCase(unittest.TestCase):
 class HostAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        self.host = Host(mongod, {}, 'secret', login='admin', password='admin')
+        self.mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.host = Host(self.mongod, {}, 'secret', login='admin', password='admin')
         self.host.start()
 
     def tearDown(self):
         if hasattr(self, 'host'):
             self.host.stop()
             self.host.cleanup()
-        pass
+
+    def test_mongos(self):
+        self.host.stop()
+        self.host.cleanup()
+        self.host = Host(self.mongod, {'configsvr': True}, auth_key='secret')
+        self.host.start(20)
+        mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
+        self.host2 = Host(mongos, {'configdb': self.host.info()['uri']}, auth_key='secret', login='admin', password='admin')
+        self.host2.start()
+
+        for host in (self.host, self.host2):
+            c = pymongo.Connection(host.host, host.port)
+            self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+            self.assertTrue(c.admin.authenticate('admin', 'admin'))
+            self.assertTrue(isinstance(c.admin.collection_names(), list))
+            self.assertTrue(c.admin.logout() is None)
+            self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+
+        self.host2.stop()
+        self.host2.cleanup()
 
     def test_auth_connection(self):
         self.assertTrue(isinstance(self.host.connection.admin.collection_names(), list))
@@ -269,10 +330,10 @@ class HostAuthTestCase(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main(verbosity=3)
     # suite = unittest.TestSuite()
-    # suite.addTest(HostsTestCase('test_new_host_with_auth'))
-    # suite.addTest(HostsTestCase('test_is_alive'))
+    # suite.addTest(HostTestCase('test_command'))
+    # suite.addTest(HostsTestCase('test_db_command'))
     # suite.addTest(HostTestCase('test_is_alive'))
     # suite.addTest(HostAuthTestCase('test_auth_connection'))
     # suite.addTest(HostAuthTestCase('test_auth_admin'))
-    # suite.addTest(HostAuthTestCase('test_auth_collection'))
+    # suite.addTest(HostAuthTestCase('test_mongos'))
     # unittest.TextTestRunner(verbosity=2).run(suite)
