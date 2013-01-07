@@ -17,7 +17,7 @@ class PortPoolTestCase(unittest.TestCase):
     def setUp(self):
         self.hostname = process.HOSTNAME
         self.pp = process.PortPool()
-        self.pp.change_range(min_port=1025, max_port=1030)
+        self.pp.change_range(min_port=1025, max_port=1080)
         self.sockets = {}
 
     def tearDown(self):
@@ -44,7 +44,8 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertEqual(ports, _ports)
 
     def test_find_port(self):
-        self.pp.change_range(1040, 1040)
+        port = self.pp.port()
+        self.pp.change_range(port, port)
         port = self.pp.port()
         self.assertTrue(port > 0)
         self.listen_port(port)
