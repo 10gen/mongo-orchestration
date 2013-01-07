@@ -228,7 +228,7 @@ class HostAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        self.host = Host(mongod, {}, None, login='admin', password='admin')
+        self.host = Host(mongod, {}, 'secret', login='admin', password='admin')
         self.host.start()
 
     def tearDown(self):
@@ -267,12 +267,12 @@ class HostAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
 if __name__ == '__main__':
-    # unittest.main()
-    suite = unittest.TestSuite()
-    suite.addTest(HostsTestCase('test_new_host_with_auth'))
-    suite.addTest(HostsTestCase('test_is_alive'))
-    suite.addTest(HostTestCase('test_is_alive'))
-    suite.addTest(HostAuthTestCase('test_auth_connection'))
-    suite.addTest(HostAuthTestCase('test_auth_admin'))
-    suite.addTest(HostAuthTestCase('test_auth_collection'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=3)
+    # suite = unittest.TestSuite()
+    # suite.addTest(HostsTestCase('test_new_host_with_auth'))
+    # suite.addTest(HostsTestCase('test_is_alive'))
+    # suite.addTest(HostTestCase('test_is_alive'))
+    # suite.addTest(HostAuthTestCase('test_auth_connection'))
+    # suite.addTest(HostAuthTestCase('test_auth_admin'))
+    # suite.addTest(HostAuthTestCase('test_auth_collection'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)
