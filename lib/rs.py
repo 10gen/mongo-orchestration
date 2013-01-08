@@ -87,10 +87,11 @@ class ReplicaSet(object):
 
         hosts = [member['host'] for member in config['members']]
         # TODO: looks ugly, change it
-        attempts = 3
-        while attempts >= 0:
-            attempts -= 1
+        attempts = 0
+        while attempts < 4:
+            attempts += 1
             if not self.wait_while_reachable(hosts, timeout=90):
+                logger.warning("attemp {attempts}: not all hosts are reachable".format(**locals()))
                 continue
             try:
                 result = self.connection(init_host).admin.command("replSetInitiate", config)
@@ -100,9 +101,14 @@ class ReplicaSet(object):
                     # wait while real state equals config
                     return self.waiting_config_state()
             except pymongo.errors.PyMongoError:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
+                logger.error("Exception {exc_type} {exc_value}".format(**locals()))
+                logger.error(err_message)
+                logger.errror("attempt {attempts}: {err_message}".format(**locals()))
                 # sometimes mongodb 2.0.7 has OperationFailure: all members and seeds must be reachable to initiate set
                 # to prevent this issue uses 3 attempts to init replica
-                if attempts >= 0:
+                if attempts < 4:
                     time.sleep(3)
                 else:
                     raise
