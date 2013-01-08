@@ -84,19 +84,30 @@ class ReplicaSet(object):
         init_host = [member['host'] for member in config['members']
                      if not (member.get('arbiterOnly', False)
                              or member.get('priority', 1) == 0)][0]
-        if not self.wait_while_reachable([member['host'] for member in config['members']]):
-            logger.error("all hosts must be reachable")
-            self.cleanup()
-            return False
 
-        result = self.connection(init_host).admin.command("replSetInitiate", config)
-        logger.debug("replica init result: {result}".format(**locals()))
-        if int(result.get('ok', 0)) == 1:
-            # wait while real state equals config
-            return self.waiting_config_state()
-        else:
-            self.cleanup()
-            return False
+        hosts = [member['host'] for member in config['members']]
+        # TODO: looks ugly, change it
+        attempts = 3
+        while attempts >= 0:
+            attempts -= 1
+            if not self.wait_while_reachable(hosts, timeout=90):
+                continue
+            try:
+                result = self.connection(init_host).admin.command("replSetInitiate", config)
+                logger.debug("replica init result: {result}".format(**locals()))
+                if int(result.get('ok', 0)) == 1 and self.waiting_config_state():
+                    return True
+                    # wait while real state equals config
+                    return self.waiting_config_state()
+            except pymongo.errors.PyMongoError:
+                # sometimes mongodb 2.0.7 has OperationFailure: all members and seeds must be reachable to initiate set
+                # to prevent this issue uses 3 attempts to init replica
+                if attempts >= 0:
+                    time.sleep(3)
+                else:
+                    raise
+        self.cleanup()
+        return False
 
     def repl_update(self, config):
         """Reconfig Replicaset with new config"""
