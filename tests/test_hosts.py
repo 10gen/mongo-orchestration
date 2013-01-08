@@ -13,8 +13,11 @@ import time
 import stat
 import operator
 import pymongo
+from nose.plugins.attrib import attr
 
 
+@attr('hosts')
+@attr('test')
 class HostsTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -152,6 +155,8 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(self.hosts.db_command(h_id, 'db.getName()', arg=None, is_eval=True), 'admin')
 
 
+@attr('hosts')
+@attr('test')
 class HostTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -266,6 +271,9 @@ class HostTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(self.host.config_path))
 
 
+@attr('hosts')
+@attr('auth')
+@attr('test')
 class HostAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
