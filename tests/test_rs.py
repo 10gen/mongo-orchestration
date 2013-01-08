@@ -5,10 +5,11 @@ import os
 import sys
 sys.path.insert(0, '../')
 
-log_file = os.path.join(os.path.split(__file__)[0], 'test.log')
+# log_file = os.path.join(os.path.split(__file__)[0], 'test.log')
 
 import logging
-logging.basicConfig(level=logging.DEBUG, filename=log_file)
+# logging.basicConfig(level=logging.DEBUG, filename=log_file)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -311,15 +312,15 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.hosts = Hosts()
         self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}, {'rsParams': {'arbiterOnly': True}}]}
-        self.repl = ReplicaSet(self.repl_cfg)
+        # self.repl = ReplicaSet(self.repl_cfg)
 
     def tearDown(self):
-        if len(self.repl) > 0:
-            self.repl.cleanup()
+        self.repl.cleanup()
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
 
     def test_len(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
         self.repl.member_del(3)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']) - 1)
@@ -327,26 +328,36 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
 
     def test_cleanup(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
         self.repl.cleanup()
         self.assertTrue(len(self.repl) == 0)
 
     def test_id2host(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
             self.assertTrue(member['host'] == self.repl.id2host(member['_id']))
 
     def test_host2id(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
             self.assertTrue(member['_id'] == self.repl.host2id(member['host']))
 
     def test_update_host_map(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         origin = self.repl.host_map.copy()
         self.repl.update_host_map(self.repl.config)
         self.assertEqual(self.repl.host_map, origin)
 
     def test_repl_update(self):
+        self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         config = self.repl.config
         config['members'][1]['priority'] = 0
         config['members'][1]['hidden'] = True
@@ -354,6 +365,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.config['members'][1]['hidden'])
 
     def test_info(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         cfg = self.repl.config
         info = self.repl.info()
         self.assertEqual(info['auth_key'], self.repl.auth_key)
@@ -366,12 +379,16 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertEqual(members1[i]['host'], members2[i]['host'])
 
     def test_repl_member_add(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         member_id = self.repl.repl_member_add({"rsParams": {"priority": 0, "hidden": True}})
         self.assertTrue(member_id >= 0)
         member = filter(lambda item: item['_id'] == member_id, self.repl.config['members'])[0]
         self.assertTrue(member['hidden'])
 
     def test_run_command(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertEqual(self.repl.run_command("rs.status()", is_eval=True)['ok'], 1)
         result = self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=0)['repl']
         for key in ('me', 'ismaster', 'setName', 'primary', 'hosts'):
@@ -379,11 +396,15 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertEqual(self.repl.run_command(command="replSetGetStatus", is_eval=False)['ok'], 1)
 
     def test_config(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         config = self.repl.config
         self.assertTrue('_id' in config)
         self.assertTrue('members' in config)
 
     def test_member_create(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         result = self.repl.member_create({}, 13)
         self.assertTrue('host' in result)
         self.assertTrue('_id' in result)
@@ -394,17 +415,22 @@ class ReplicaSetTestCase(unittest.TestCase):
         Hosts().remove(h_id)
 
     def test_member_del(self):
+        self.repl_cfg = {'members': [{}, {}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         m_count = len(self.repl.config['members'])
-        self.assertTrue(self.repl.member_del(3))
+        self.assertTrue(self.repl.member_del(2))
         self.assertEqual(len(self.repl.config['members']), m_count - 1)
 
     def test_member_del_no_reconfig(self):
+        self.repl_cfg = {'members': [{}, {}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         m_count = len(self.repl.config['members'])
-        self.assertTrue(self.repl.member_del(3, reconfig=False))
+        self.assertTrue(self.repl.member_del(2, reconfig=False))
         self.assertEqual(len(self.repl.config['members']), m_count)
-        self.repl.host_map.pop(3)
+        self.repl.host_map.pop(2)
 
     def test_member_update(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         member = filter(lambda item: item['_id'] == 2, self.repl.config['members'])[0]
         self.assertTrue(member.get('hidden', False))
         self.assertTrue(self.repl.member_update(2, {"rsParams": {"priority": 1, "hidden": False}}))
@@ -412,14 +438,18 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertFalse(member.get('hidden', False))
 
     def test_member_info(self):
-        member = filter(lambda item: item['_id'] == 3, self.repl.config['members'])[0]
-        result = self.repl.member_info(3)
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        member = filter(lambda item: item['_id'] == 1, self.repl.config['members'])[0]
+        result = self.repl.member_info(1)
         self.assertTrue(result['procInfo']['alive'])
         self.assertEqual(member['host'], result['uri'])
         self.assertTrue(len(result['rsInfo']) > 0)
 
     def test_member_command(self):
-        _id = 3
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        _id = 1
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
         self.repl.member_command(_id, 'stop')
         self.assertFalse(self.repl.member_info(_id)['procInfo']['alive'])
@@ -429,6 +459,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
 
     def test_members(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members1 = sorted(self.repl.config['members'], key=lambda item: item['_id'])
         members2 = sorted(self.repl.members(), key=lambda item: item['_id'])
         self.assertEqual(len(members1), len(members2))
@@ -437,21 +469,29 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
 
     def test_stepdown(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
         self.assertTrue(self.repl.stepdown())
         self.assertNotEqual(primary, self.repl.primary())
 
     def test_primary(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
         self.assertTrue(Hosts().info(Hosts().id_by_hostname(primary))['statuses']['primary'])
 
     def test_get_members_in_state(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primaries = self.repl.get_members_in_state(1)
         self.assertEqual(len(primaries), 1)
         self.assertEqual(primaries[0], self.repl.primary())
 
     def test_connection(self):
-        _id = 2
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        _id = 1
         hostname = self.repl.id2host(_id)
         self.assertTrue(self.repl.connection(timeout=5))
         self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
@@ -459,28 +499,36 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.AutoReconnect, lambda: self.repl.connection(hostname=hostname, timeout=5))
 
     def test_secondaries(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         secondaries = [item['host'] for item in self.repl.secondaries()]
         self.assertEqual(secondaries, self.repl.get_members_in_state(2))
 
     def test_arbiters(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         arbiters = [item['host'] for item in self.repl.arbiters()]
         self.assertEqual(arbiters, self.repl.get_members_in_state(7))
 
     def test_hidden(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         for member in self.repl.hidden():
             self.assertTrue(self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=2)['repl']['hidden'])
 
     def test_passives(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         for member in self.repl.passives():
             self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('passives'))
 
     def test_hosts(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         for member in self.repl.hosts():
             self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('hosts'))
 
     def test_compare_hosts_passives(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         self.repl.repl_member_add({})
         hosts = self.repl.hosts()
@@ -492,9 +540,11 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertTrue(item not in hosts)
 
     def test_wait_while_reachable(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         hosts = [member['host'] for member in self.repl.members()]
         self.assertTrue(self.repl.wait_while_reachable(hosts, timeout=10))
-        self.repl.member_command(2, 'stop')
+        self.repl.member_command(1, 'stop')
         self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
 
 
