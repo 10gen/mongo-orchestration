@@ -21,8 +21,11 @@ import pymongo
 import operator
 import tempfile
 import time
+from nose.plugins.attrib import attr
 
 
+@attr('rs')
+@attr('test')
 class RSTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -299,6 +302,8 @@ class RSTestCase(unittest.TestCase):
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
 
+@attr('rs')
+@attr('test')
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -493,6 +498,9 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
 
 
+@attr('rs')
+@attr('test')
+@attr('auth')
 class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -535,8 +543,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
 if __name__ == '__main__':
-    # unittest.main()
-    suite = unittest.TestSuite()
-    suite.addTest(RSTestCase('test_member_del'))
-    suite.addTest(RSTestCase('test_rs_del'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=3)
+    # suite = unittest.TestSuite()
+    # suite.addTest(ReplicaSetTestCase('test_update_host_map'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)
