@@ -315,7 +315,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         # self.repl = ReplicaSet(self.repl_cfg)
 
     def tearDown(self):
-        self.repl.cleanup()
+        if hasattr(self, 'repl'):
+            self.repl.cleanup()
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
 
