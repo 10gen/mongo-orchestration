@@ -342,6 +342,7 @@ class ReplicaSet(object):
         while  True:
             try:
                 for host in hosts:
+                    # TODO: use state code to check if host is reachable
                     if int(self.connection(hostname=host, timeout=5).server_info()['ok']) != 1:
                         raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
                 return True
