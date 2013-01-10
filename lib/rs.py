@@ -293,7 +293,7 @@ class ReplicaSet(object):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=120):
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
         """return ReplicaSetConnection object if hostname specified
         return Connection object if hostname doesn't specified
         Args:
