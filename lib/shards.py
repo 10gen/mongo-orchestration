@@ -136,7 +136,10 @@ class Shard(object):
 
         else:
             # is single host
-            host_id = Hosts().create('mongod', params, autostart=True, auth_key=self.auth_key)
+            params.update({'autostart': True, 'auth_key': self.auth_key})
+            params['procParams'] = params.get('procParams', {})
+            logger.debug("hosts create params: {params}".format(**locals()))
+            host_id = Hosts().create('mongod', **params)
             result = self._add(Hosts().info(host_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isHost': True, '_id': host_id}
