@@ -20,6 +20,7 @@ class Container(object):
         self._storage = Storage(pids_file, self._name)
         self.pids_file = pids_file
         self.bin_path = bin_path or ''
+        logger.debug("Storage({pids_file}, {bin_path}".format(**locals()))
 
     def __getitem__(self, key):
         return self._storage[key]
