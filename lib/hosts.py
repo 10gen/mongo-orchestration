@@ -74,15 +74,15 @@ class Host(object):
 
         return process.write_config(cfg), cfg
 
-    def __init__(self, name, params, auth_key=None, login='', password=''):
+    def __init__(self, name, procParams, auth_key=None, login='', password=''):
         """Args:
             name - name of process (mongod or mongos)
-            params - dictionary with params for mongo process
+            procParams - dictionary with params for mongo process
             auth_key - authorization key
             login - username for the  admin collection
             password - password
         """
-        logger.debug("Host.__init__({name}, {params}, {auth_key}, {login}, {password})".format(**locals()))
+        logger.debug("Host.__init__({name}, {procParams}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
         self.login = login
         self.password = password
@@ -95,11 +95,11 @@ class Host(object):
 
         proc_name = os.path.split(name)[1].lower()
         if proc_name.startswith('mongod'):
-            self.config_path, self.cfg = self.__init_mongod(params)
+            self.config_path, self.cfg = self.__init_mongod(procParams)
 
         elif proc_name.startswith('mongos'):
             self.is_mongos = True
-            self.config_path, self.cfg = self.__init_mongos(params)
+            self.config_path, self.cfg = self.__init_mongos(procParams)
 
         else:
             self.config_path, self.cfg = None, {}
@@ -215,11 +215,11 @@ class Hosts(Singleton, Container):
             for host_id in self._storage:
                 self.remove(host_id)
 
-    def create(self, name, params, auth_key=None, login=None, password=None, timeout=300, autostart=True):
+    def create(self, name, procParams, auth_key=None, login=None, password=None, timeout=300, autostart=True):
         """create new host
         Args:
            name - process name or path
-           params - dictionary with specific params for instance
+           procParams - dictionary with specific params for instance
            auth_key - authorization key
            login - username for the  admin collection
            password - password
@@ -230,7 +230,7 @@ class Hosts(Singleton, Container):
         """
         name = os.path.split(name)[1]
         try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key, login, password)
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), procParams, auth_key, login, password)
             if autostart:
                 if not host.start(timeout):
                     raise OSError
