@@ -10,8 +10,11 @@ import tempfile
 import time
 import stat
 import operator
+from nose.plugins.attrib import attr
 
 
+@attr('container')
+@attr('test')
 class ContainerTestCase(unittest.TestCase):
     def setUp(self):
         self.path = tempfile.mktemp(prefix="test-storage")

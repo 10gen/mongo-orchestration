@@ -22,8 +22,8 @@ class OperationFailure(MongoOrchestrationError):
     """
 
     def __init__(self, error, code=None):
-        self.code = code
-        MongoOrchestrationError.__init__(self, error)
+        self.code = code  # pragma: no cover
+        MongoOrchestrationError.__init__(self, error)  # pragma: no cover
 
 
 class TimeoutError(OperationFailure):

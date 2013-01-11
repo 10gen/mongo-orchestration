@@ -20,6 +20,7 @@ class Container(object):
         self._storage = Storage(pids_file, self._name)
         self.pids_file = pids_file
         self.bin_path = bin_path or ''
+        logger.debug("Storage({pids_file}, {bin_path}".format(**locals()))
 
     def __getitem__(self, key):
         return self._storage[key]
@@ -53,7 +54,7 @@ class Container(object):
 
     def __bool__(self):
         # Python 3 compatibility
-        return self.__nonzero__()
+        return self.__nonzero__()  # pragma: no cover
 
     def cleanup(self):
         for key in self:

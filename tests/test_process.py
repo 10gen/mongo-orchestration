@@ -11,9 +11,14 @@ import subprocess
 import os
 import random
 import tempfile
+from nose.plugins.attrib import attr
 
 
+@attr('process')
+@attr('portpool')
+@attr('test')
 class PortPoolTestCase(unittest.TestCase):
+
     def setUp(self):
         self.hostname = process.HOSTNAME
         self.pp = process.PortPool()
@@ -114,6 +119,8 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(ports == random_ports)
 
 
+@attr('process')
+@attr('test')
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
         self.hostname = process.HOSTNAME

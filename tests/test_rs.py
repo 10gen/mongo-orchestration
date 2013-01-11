@@ -5,10 +5,8 @@ import os
 import sys
 sys.path.insert(0, '../')
 
-log_file = os.path.join(os.path.split(__file__)[0], 'test.log')
-
 import logging
-logging.basicConfig(level=logging.DEBUG, filename=log_file)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -21,8 +19,12 @@ import pymongo
 import operator
 import tempfile
 import time
+from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 
 
+@attr('rs')
+@attr('test')
 class RSTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -299,6 +301,8 @@ class RSTestCase(unittest.TestCase):
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
 
+@attr('rs')
+@attr('test')
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -306,15 +310,16 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.hosts = Hosts()
         self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}, {'rsParams': {'arbiterOnly': True}}]}
-        self.repl = ReplicaSet(self.repl_cfg)
+        # self.repl = ReplicaSet(self.repl_cfg)
 
     def tearDown(self):
-        if len(self.repl) > 0:
+        if hasattr(self, 'repl'):
             self.repl.cleanup()
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
 
     def test_len(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
         self.repl.member_del(3)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']) - 1)
@@ -322,26 +327,36 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
 
     def test_cleanup(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertTrue(len(self.repl) == len(self.repl_cfg['members']))
         self.repl.cleanup()
         self.assertTrue(len(self.repl) == 0)
 
     def test_id2host(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
             self.assertTrue(member['host'] == self.repl.id2host(member['_id']))
 
     def test_host2id(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
             self.assertTrue(member['_id'] == self.repl.host2id(member['host']))
 
     def test_update_host_map(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         origin = self.repl.host_map.copy()
         self.repl.update_host_map(self.repl.config)
         self.assertEqual(self.repl.host_map, origin)
 
     def test_repl_update(self):
+        self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         config = self.repl.config
         config['members'][1]['priority'] = 0
         config['members'][1]['hidden'] = True
@@ -349,6 +364,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.config['members'][1]['hidden'])
 
     def test_info(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         cfg = self.repl.config
         info = self.repl.info()
         self.assertEqual(info['auth_key'], self.repl.auth_key)
@@ -361,12 +378,16 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertEqual(members1[i]['host'], members2[i]['host'])
 
     def test_repl_member_add(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         member_id = self.repl.repl_member_add({"rsParams": {"priority": 0, "hidden": True}})
         self.assertTrue(member_id >= 0)
         member = filter(lambda item: item['_id'] == member_id, self.repl.config['members'])[0]
         self.assertTrue(member['hidden'])
 
     def test_run_command(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.assertEqual(self.repl.run_command("rs.status()", is_eval=True)['ok'], 1)
         result = self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=0)['repl']
         for key in ('me', 'ismaster', 'setName', 'primary', 'hosts'):
@@ -374,11 +395,15 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertEqual(self.repl.run_command(command="replSetGetStatus", is_eval=False)['ok'], 1)
 
     def test_config(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         config = self.repl.config
         self.assertTrue('_id' in config)
         self.assertTrue('members' in config)
 
     def test_member_create(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         result = self.repl.member_create({}, 13)
         self.assertTrue('host' in result)
         self.assertTrue('_id' in result)
@@ -389,17 +414,22 @@ class ReplicaSetTestCase(unittest.TestCase):
         Hosts().remove(h_id)
 
     def test_member_del(self):
+        self.repl_cfg = {'members': [{}, {}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         m_count = len(self.repl.config['members'])
-        self.assertTrue(self.repl.member_del(3))
+        self.assertTrue(self.repl.member_del(2))
         self.assertEqual(len(self.repl.config['members']), m_count - 1)
 
     def test_member_del_no_reconfig(self):
+        self.repl_cfg = {'members': [{}, {}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         m_count = len(self.repl.config['members'])
-        self.assertTrue(self.repl.member_del(3, reconfig=False))
+        self.assertTrue(self.repl.member_del(2, reconfig=False))
         self.assertEqual(len(self.repl.config['members']), m_count)
-        self.repl.host_map.pop(3)
+        self.repl.host_map.pop(2)
 
     def test_member_update(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         member = filter(lambda item: item['_id'] == 2, self.repl.config['members'])[0]
         self.assertTrue(member.get('hidden', False))
         self.assertTrue(self.repl.member_update(2, {"rsParams": {"priority": 1, "hidden": False}}))
@@ -407,14 +437,18 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertFalse(member.get('hidden', False))
 
     def test_member_info(self):
-        member = filter(lambda item: item['_id'] == 3, self.repl.config['members'])[0]
-        result = self.repl.member_info(3)
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        member = filter(lambda item: item['_id'] == 1, self.repl.config['members'])[0]
+        result = self.repl.member_info(1)
         self.assertTrue(result['procInfo']['alive'])
         self.assertEqual(member['host'], result['uri'])
         self.assertTrue(len(result['rsInfo']) > 0)
 
     def test_member_command(self):
-        _id = 3
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        _id = 1
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
         self.repl.member_command(_id, 'stop')
         self.assertFalse(self.repl.member_info(_id)['procInfo']['alive'])
@@ -424,6 +458,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
 
     def test_members(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         members1 = sorted(self.repl.config['members'], key=lambda item: item['_id'])
         members2 = sorted(self.repl.members(), key=lambda item: item['_id'])
         self.assertEqual(len(members1), len(members2))
@@ -432,21 +468,29 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
 
     def test_stepdown(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
         self.assertTrue(self.repl.stepdown())
         self.assertNotEqual(primary, self.repl.primary())
 
     def test_primary(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
         self.assertTrue(Hosts().info(Hosts().id_by_hostname(primary))['statuses']['primary'])
 
     def test_get_members_in_state(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         primaries = self.repl.get_members_in_state(1)
         self.assertEqual(len(primaries), 1)
         self.assertEqual(primaries[0], self.repl.primary())
 
     def test_connection(self):
-        _id = 2
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        _id = 1
         hostname = self.repl.id2host(_id)
         self.assertTrue(self.repl.connection(timeout=5))
         self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
@@ -454,28 +498,36 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.AutoReconnect, lambda: self.repl.connection(hostname=hostname, timeout=5))
 
     def test_secondaries(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         secondaries = [item['host'] for item in self.repl.secondaries()]
         self.assertEqual(secondaries, self.repl.get_members_in_state(2))
 
     def test_arbiters(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         arbiters = [item['host'] for item in self.repl.arbiters()]
         self.assertEqual(arbiters, self.repl.get_members_in_state(7))
 
     def test_hidden(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         for member in self.repl.hidden():
             self.assertTrue(self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=2)['repl']['hidden'])
 
     def test_passives(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         for member in self.repl.passives():
             self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('passives'))
 
     def test_hosts(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         for member in self.repl.hosts():
             self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('hosts'))
 
     def test_compare_hosts_passives(self):
+        self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         self.repl.repl_member_add({})
         hosts = self.repl.hosts()
@@ -487,12 +539,17 @@ class ReplicaSetTestCase(unittest.TestCase):
             self.assertTrue(item not in hosts)
 
     def test_wait_while_reachable(self):
+        self.repl_cfg = {'members': [{}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
         hosts = [member['host'] for member in self.repl.members()]
         self.assertTrue(self.repl.wait_while_reachable(hosts, timeout=10))
-        self.repl.member_command(2, 'stop')
+        self.repl.member_command(1, 'stop')
         self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
 
 
+@attr('rs')
+@attr('test')
+@attr('auth')
 class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -534,9 +591,251 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
+
+@attr('quick-rs')
+@attr('rs')
+@attr('test')
+class RSSingleTestCase(unittest.TestCase):
+    def setUp(self):
+        raise SkipTest("quick replicaset test doesn't implemented")
+        PortPool().change_range()
+        self.port1 = PortPool().port(check=True)
+        self.port2 = PortPool().port(check=True)
+
+        self.path = tempfile.mktemp(prefix="test-rs")
+        self.rs = RS()
+        self.rs.set_settings(self.path, os.environ.get('MONGOBIN', None))
+
+        self.tags_primary = {"status": "primary"}
+        self.tags_hidden = {"status": "hidden"}
+
+        config = {
+            'id': 'testRs',
+            'auth_key': 'sercret', 'login': 'admin', 'password': 'admin',
+            'members': [{"procParams": {"port": self.port1, 'logpath': '/tmp/mongo1'}},
+                        {"procParams": {"port": self.port2, 'logpath': '/tmp/mongo2'}},
+                        {"rsParams": {"priority": 1.5, "tags": self.tags_primary}, "procParams": {'logpath': '/tmp/mongo3'}},
+                        {"rsParams": {"arbiterOnly": True}, "procParams": {'logpath': '/tmp/mongo4'}},
+                        {"rsParams": {"arbiterOnly": True}, "procParams": {'logpath': '/tmp/mongo5'}},
+                        {"rsParams": {"priority":0, "hidden": True, "votes": 0, "tags": self.tags_hidden}, "procParams": {'logpath': '/tmp/mongo5'}},
+                        {"rsParams": {"priority":0, "hidden": True, "tags": self.tags_hidden}, "procParams": {'logpath': '/tmp/mongo6'}},
+                        {"rsParams": {"priority": 0, 'slaveDelay': 5, "votes": 0}, "procParams": {'logpath': '/tmp/mongo7'}},
+                        {"rsParams": {"priority": 0}, "procParams": {'logpath': '/tmp/mongo8'}}
+                        ]
+        }
+        self.repl_id = self.rs.create(config)
+        logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
+
+    def tearDown(self):
+        pass
+        # self.rs.cleanup()
+        # self.rs._storage.disconnect()
+        # if os.path.exists(self.path):
+        #     os.remove(self.path)
+
+    def waiting(self, fn, timeout=300, sleep=10):
+        t_start = time.time()
+        while not fn():
+            if time.time() - t_start > timeout:
+                return False
+            time.sleep(sleep)
+        return True
+
+    def test_rs(self):
+        # test singleton
+        self.assertEqual(id(self.rs), id(RS()))
+
+        # test set_settings
+        print "test set_setting"
+        self.assertEqual(self.path, self.rs.pids_file)
+
+        # test bool
+        print "test bool"
+        self.assertEqual(True, bool(self.rs))
+
+        # TODO: test_operations
+        # TODO: test_operations2
+
+        # rs_new
+        print "test bool"
+        self.assertEqual(self.repl_id, 'testRs')
+
+        # rs_new_with_auth
+        print "rs_new_with_auth"
+        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
+        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
+        c = pymongo.Connection([host1, host2], replicaSet=self.repl_id)
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        self.assertTrue(c.admin.authenticate('admin', 'admin'))
+        self.assertTrue(isinstance(c.admin.collection_names(), list))
+        c.admin.logout()
+        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        c.close()
+
+        # info_with_auth
+        print "info_with_auth"
+        info = self.rs.info(self.repl_id)
+        self.assertTrue(isinstance(info, dict))
+        self.assertEqual(info['id'], self.repl_id)
+        self.assertEqual(len(info['members']), 9)
+
+        # primary
+        print "primary"
+        primary = self.rs.primary(self.repl_id)['uri']
+        c = pymongo.Connection(primary)
+        self.assertTrue(c.is_primary)
+        c.close()
+
+        # members
+        print "members"
+        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
+        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
+        members = self.rs.members(self.repl_id)
+        self.assertTrue(host1 in [member['host'] for member in members])
+        self.assertTrue(host2 in [member['host'] for member in members])
+
+        # secondaries
+        print "secondaries"
+        secondaries = self.rs.secondaries(self.repl_id)
+        self.assertEqual(len(secondaries), 6)
+
+        # arbiters
+        print "arbiters"
+        arbiters = self.rs.arbiters(self.repl_id)
+        self.assertEqual(len(arbiters), 2)
+
+        # hidden
+        print "hidden"
+        hidden = self.rs.hidden(self.repl_id)
+        self.assertEqual(len(hidden), 2)
+
+        # passives
+        print "passives"
+        passives = self.rs.passives(self.repl_id)
+        self.assertEqual(len(passives), 1)
+
+        # hosts
+        print "hosts"
+        hosts = self.rs.hosts(self.repl_id)
+        self.assertEqual(len(hosts), 3)
+
+        # compare_passives_and_hosts
+        print "compare_passives_and_hosts"
+        passives = [host['host'] for host in self.rs.passives(self.repl_id)]
+        hosts = [host['host'] for host in self.rs.hosts(self.repl_id)]
+        for item in passives:
+            self.assertTrue(item not in hosts)
+
+        for item in hosts:
+            self.assertTrue(item not in passives)
+
+        # member_info
+        print "member_info"
+        info = self.rs.member_info(self.repl_id, 0)
+        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+            self.assertTrue(key in info)
+        self.assertEqual(info['_id'], 0)
+
+        for arbiter in self.rs.arbiters(self.repl_id):
+            _id = arbiter['_id']
+            info = self.rs.member_info(self.repl_id, _id)
+            for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+                self.assertTrue(key in info)
+            self.assertEqual(info['_id'], _id)
+            self.assertTrue(info['rsInfo']['arbiterOnly'])
+
+        for hidden in self.rs.hidden(self.repl_id):
+            _id = hidden['_id']
+            info = self.rs.member_info(self.repl_id, _id)
+            for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+                self.assertTrue(key in info)
+            self.assertEqual(info['_id'], _id)
+            self.assertTrue(info['rsInfo']['hidden'])
+
+        # tagging
+        print "tagging"
+        print self.rs.primary(self.repl_id)
+        self.assertEqual(self.tags_primary, self.rs.primary(self.repl_id)['rsInfo']['tags'])
+        for hidden in self.rs.hidden(self.repl_id):
+            self.assertEqual(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('tags', None), self.tags_hidden)
+
+        # stepdown
+        print "stepdown"
+        time.sleep(5)
+        primary = self.rs.primary(self.repl_id)['uri']
+        self.rs.primary_stepdown(self.repl_id, timeout=60)
+        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.primary(self.repl_id)['uri']))
+        self.assertNotEqual(primary, self.rs.primary(self.repl_id)['uri'])
+
+        # member_update
+        print "member_update"
+        h_count = len(self.rs.hidden(self.repl_id))
+        logger.debug("h_count: {h_count}".format(h_count=h_count))
+        hidden = self.rs.hidden(self.repl_id)[0]
+        logger.debug("hidden member: {hidden}".format(hidden=hidden))
+        self.rs.member_update(self.repl_id, hidden['_id'], {"rsParams": {"priority": 1, "hidden": False}})
+        self.assertEqual(len(self.rs.hidden(self.repl_id)), h_count - 1)
+        self.assertFalse(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
+
+        # member_del
+        print "member_del"
+        mb_count = len(self.rs.members(self.repl_id))
+        logger.debug("mb_count = {mb_count}".format(mb_count=mb_count))
+        logger.debug("members: {members}".format(members=self.rs.members(self.repl_id)))
+        logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
+        member_del = self.rs.secondaries(self.repl_id)[0]
+        logger.debug("member to remove: {member_del}".format(member_del=member_del))
+        self.assertTrue(pymongo.Connection(member_del['host']))
+        self.assertTrue(self.rs.member_del(self.repl_id, member_del['_id']))
+        self.assertEqual(len(self.rs.members(self.repl_id)), mb_count - 1)
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member_del['host'])
+
+        # member_add
+        print "member_add"
+        mb_count = len(self.rs.members(self.repl_id))
+        member_id = self.rs.member_add(self.repl_id, {"rsParams": {"priority": 0, "hidden": True, "votes": 0}})
+        self.assertEqual(len(self.rs.members(self.repl_id)), mb_count + 1)
+        info = self.rs.member_info(self.repl_id, member_id)
+        self.assertTrue(info['rsInfo']['hidden'])
+
+        # member_command
+        print "member_command"
+        _id = self.rs.secondaries(self.repl_id)[0]['_id']
+        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
+        self.rs.member_command(self.repl_id, _id, 'stop')
+        self.assertFalse(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
+        self.rs.member_command(self.repl_id, _id, 'start')
+        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
+        self.rs.member_command(self.repl_id, _id, 'restart')
+        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
+
+        # rs_del
+        print "rs_del"
+        rs_count = len(self.rs)
+        self.assertTrue(rs_count > 0)
+        members = self.rs.members(self.repl_id)
+        for member in members:
+            self.assertTrue(pymongo.errors.PyMongoError, pymongo.Connection, member['host'])
+        self.rs.remove(self.repl_id)
+        self.assertEqual(len(self.rs), rs_count - 1)
+        for member in members:
+            self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member['host'])
+
+        # rs_create
+        print "rs_create"
+        rs_count = len(self.rs)
+        self.rs.create({'id': 'test-rs-create-1', 'members': [{}, {}]})
+        self.rs.create({'id': 'test-rs-create-2', 'members': [{}, {}]})
+        self.assertTrue(len(self.rs) == rs_count + 2)
+
+        # cleanup
+        print "cleanup"
+        self.rs.cleanup()
+        self.assertTrue(len(self.rs) == 0)
+
+
 if __name__ == '__main__':
-    # unittest.main()
-    suite = unittest.TestSuite()
-    suite.addTest(RSTestCase('test_member_del'))
-    suite.addTest(RSTestCase('test_rs_del'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=3)
+    # suite = unittest.TestSuite()
+    # suite.addTest(ReplicaSetTestCase('test_update_host_map'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)

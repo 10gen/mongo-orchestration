@@ -84,13 +84,18 @@ class ReplicaSet(object):
         init_host = [member['host'] for member in config['members']
                      if not (member.get('arbiterOnly', False)
                              or member.get('priority', 1) == 0)][0]
-        if not self.wait_while_reachable([member['host'] for member in config['members']]):
+
+        hosts = [member['host'] for member in config['members']]
+        if not self.wait_while_reachable(hosts):
             logger.error("all hosts must be reachable")
             self.cleanup()
             return False
 
-        result = self.connection(init_host).admin.command("replSetInitiate", config)
-        logger.debug("replica init result: {result}".format(**locals()))
+        try:
+            result = self.connection(init_host).admin.command("replSetInitiate", config)
+            logger.debug("replica init result: {result}".format(**locals()))
+        except pymongo.errors.PyMongoError:
+            raise
         if int(result.get('ok', 0)) == 1:
             # wait while real state equals config
             return self.waiting_config_state()
@@ -258,7 +263,7 @@ class ReplicaSet(object):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=120):
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
         """return ReplicaSetConnection object if hostname specified
         return Connection object if hostname doesn't specified
         Args:
@@ -325,8 +330,12 @@ class ReplicaSet(object):
         while  True:
             try:
                 for host in hosts:
-                    if int(self.connection(hostname=host, timeout=5).server_info()['ok']) != 1:
+                    # TODO: use state code to check if host is reachable
+                    server_info = self.connection(hostname=host, timeout=5).server_info()
+                    logger.debug("server_info: {server_info}".format(server_info=server_info))
+                    if int(server_info['ok']) != 1:
                         raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
+                # logger.debug("rs status: {rs_status}".format(rs_status=self.run_command("rs.status()", is_eval=True)['members']))
                 return True
             except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 if time.time() - t_start > timeout:
