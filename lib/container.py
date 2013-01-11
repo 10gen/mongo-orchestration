@@ -54,7 +54,7 @@ class Container(object):
 
     def __bool__(self):
         # Python 3 compatibility
-        return self.__nonzero__()
+        return self.__nonzero__()  # pragma: no cover
 
     def cleanup(self):
         for key in self:
