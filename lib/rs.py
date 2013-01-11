@@ -86,7 +86,7 @@ class ReplicaSet(object):
                              or member.get('priority', 1) == 0)][0]
 
         hosts = [member['host'] for member in config['members']]
-        if not self.wait_while_reachable([member['host'] for member in config['members']]):
+        if not self.wait_while_reachable(hosts):
             logger.error("all hosts must be reachable")
             self.cleanup()
             return False
@@ -95,7 +95,6 @@ class ReplicaSet(object):
             result = self.connection(init_host).admin.command("replSetInitiate", config)
             logger.debug("replica init result: {result}".format(**locals()))
         except pymongo.errors.PyMongoError:
-            logger.debug("rs status: {rs_status}".format(rs_status=self.run_command("rs.status()", is_eval=True)))
             raise
         if int(result.get('ok', 0)) == 1:
             # wait while real state equals config
@@ -103,35 +102,6 @@ class ReplicaSet(object):
         else:
             self.cleanup()
             return False
-
-        # TODO: looks ugly, change it
-        attempts = 0
-        while attempts < 4:
-            attempts += 1
-            if not self.wait_while_reachable(hosts, timeout=90):
-                logger.warning("attemp {attempts}: not all hosts are reachable".format(**locals()))
-                continue
-            try:
-                result = self.connection(init_host).admin.command("replSetInitiate", config)
-                logger.debug("replica init result: {result}".format(**locals()))
-                if int(result.get('ok', 0)) == 1 and self.waiting_config_state():
-                    return True
-                    # wait while real state equals config
-                    return self.waiting_config_state()
-            except pymongo.errors.PyMongoError:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-                logger.error("Exception {exc_type} {exc_value}".format(**locals()))
-                logger.error(err_message)
-                logger.error("attempt {attempts}: {err_message}".format(**locals()))
-                # sometimes mongodb 2.0.7 has OperationFailure: all members and seeds must be reachable to initiate set
-                # to prevent this issue uses 3 attempts to init replica
-                if attempts < 4:
-                    time.sleep(3)
-                else:
-                    raise
-        self.cleanup()
-        return False
 
     def repl_update(self, config):
         """Reconfig Replicaset with new config"""
