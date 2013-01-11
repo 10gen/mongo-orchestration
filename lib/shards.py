@@ -10,6 +10,7 @@ from container import Container
 import tempfile
 from hosts import Hosts
 from rs import RS
+import pymongo
 
 
 class Shard(object):
@@ -18,20 +19,41 @@ class Shard(object):
     def __init__(self, params):
         """init configuration acording params"""
         self.id = params.get('id', None) or 'sh-' + str(uuid4())
+        self.login = params.get('login', '')
+        self.password = params.get('password', '')
+        self.auth_key = params.get('auth_key', None)
         self._configsvrs = []
         self._routers = []
         self._shards = {}
+        self.tags = {}
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
         for cfg in params.get('members', []):
-            self.member_add(cfg.get('id', None), cfg.get('shardParams', {}))
+            shard_params = cfg.get('shardParams', {})
+            shard_tags = shard_params.pop('tags', None)
+            info = self.member_add(cfg.get('id', None), shard_params)
+            if shard_tags:
+                self.tags[info['id']] = shard_tags
+
+        if self.tags:
+            for sh_id in self.tags:
+                for tag in self.tags[sh_id]:
+                    command = 'sh.addShardTag("{sh_id}", "{tag}")'.format(**locals())
+                    logger.debug(command)
+                    self.router_command(command=command, is_eval=True)
+
+        if self.login:
+            try:
+                self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
+            except pymongo.errors.OperationFailure:
+                pymongo.Connection(self.router['hostname']).admin.add_user(self.login, self.password)
 
     def __init_configsvr(self, params):
         """create and start config servers"""
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True))
+            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True, auth_key=self.auth_key))
 
     def __len__(self):
         return len(self._shards)
@@ -64,12 +86,33 @@ class Shard(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().create('mongos', params, autostart=True))
+        self._routers.append(Hosts().create('mongos', params, autostart=True, auth_key=self.auth_key))
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
+    def connection(self):
+        c = pymongo.Connection(self.router['hostname'])
+        self.login and self.password and c.admin.authenticate(self.login, self.password)
+        return c
+
     def router_command(self, command, arg=None, is_eval=False):
-        """run command on router host"""
-        return Hosts().db_command(self.router['id'], command, arg, is_eval=is_eval)
+        """run command on the router host
+
+        Args:
+            command - command string
+            arg - command argument
+            is_eval - if True execute command as eval
+
+        return command's result
+        """
+        mode = is_eval and 'eval' or 'command'
+
+        if isinstance(arg, tuple):
+            name, d = arg
+        else:
+            name, d = arg, {}
+
+        result = getattr(self.connection().admin, mode)(command, name, **d)
+        return result
 
     def _add(self, shard_uri, name):
         """execute addShard command"""
@@ -80,7 +123,9 @@ class Shard(object):
         member_id = member_id or str(uuid4())
         if 'members' in params:
             # is replica set
-            rs_id = RS().create(params)
+            rs_params = params.copy()
+            rs_params.update({'auth_key': self.auth_key})
+            rs_id = RS().create(rs_params)
             members = RS().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
             result = self._add(cfgs, member_id)
@@ -91,7 +136,10 @@ class Shard(object):
 
         else:
             # is single host
-            host_id = Hosts().create('mongod', params, autostart=True)
+            params.update({'autostart': True, 'auth_key': self.auth_key})
+            params['procParams'] = params.get('procParams', {})
+            logger.debug("hosts create params: {params}".format(**locals()))
+            host_id = Hosts().create('mongod', **params)
             result = self._add(Hosts().info(host_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isHost': True, '_id': host_id}
@@ -102,6 +150,7 @@ class Shard(object):
         """return info about member"""
         info = self._shards[member_id].copy()
         info['id'] = member_id
+        info['tags'] = self.tags.get(member_id, list())
         return info
 
     def _remove(self, shard_name):

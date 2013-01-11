@@ -142,6 +142,16 @@ class CmdRS(cmd.Cmd):
         r = requests.get(url)
         self.print_result(r)
 
+    def do_passives(self, rs_id):
+        url = "{url}rs/{rs_id}/passives".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
+
+    def do_hosts(self, rs_id):
+        url = "{url}rs/{rs_id}/hosts".format(url=self.api_url, rs_id=self.real_id(rs_id))
+        r = requests.get(url)
+        self.print_result(r)
+
     def do_exit(self, line):
         """EXIT"""
         return True

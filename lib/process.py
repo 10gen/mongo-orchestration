@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 HOME = os.environ.get('HOME')
 HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
 HOSTNAME = socket.gethostbyname_ex(HOSTNAME)[2][0]
+HOSTNAME = 'localhost'
 
 
 class PortPool(Singleton):
@@ -109,6 +110,7 @@ def wait_for(port_num, timeout):
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
     """
+    logger.debug("wait for {port_num}".format(**locals()))
     t_start = time.time()
     sleeps = 1
     while time.time() - t_start < timeout:
@@ -134,16 +136,26 @@ def mprocess(name, config_path, port=None, timeout=180):
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (pid, host) if process started, return (None, None) if not
     """
+
     logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
-    port = port or PortPool().port(check=True)
+    if not (config_path and isinstance(config_path, str) and os.path.exists(config_path)):
+        raise OSError("can't find config file {config_path}".format(**locals()))
+
+    cfg = read_config(config_path)
     cmd = [name, "--config", config_path]
-    host = HOSTNAME + ':' + str(port)
+
+    if cfg.get('port', None) is None or port:
+        port = port or PortPool().port(check=True)
+        cmd.extend(['--port', str(port)])
+    host = "{HOSTNAME}:{port}".format(HOSTNAME=HOSTNAME, port=port)
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
-        if not proc_alive(proc.pid):
+
+        if proc.poll() == 0:
+            logger.debug("process is not alive")
             raise OSError
     except (OSError, TypeError) as err:
         logger.debug("exception while executing process: {err}".format(**locals()))
@@ -154,9 +166,10 @@ def mprocess(name, config_path, port=None, timeout=180):
     elif timeout > 0:
         logger.debug("hasn't connected to pid={proc.pid} with host={host} during timeout {timeout} ".format(**locals()))
         logger.debug("terminate process with pid={proc.pid}".format(**locals()))
-        proc.terminate()
+        kill_mprocess(proc.pid)
         proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
-        raise OSError(errno.ETIMEDOUT, "could not connect to process during {timeout} seconds".format(timeout=timeout))
+        message = "could not connect to process during {timeout} seconds".format(timeout=timeout)
+        raise OSError(errno.ETIMEDOUT, message)
     return (proc.pid, host)
 
 
@@ -185,7 +198,7 @@ def cleanup_mprocess(config_path, cfg):
     """
     for key in ('keyFile', 'logPath', 'dbpath'):
         remove_path(cfg.get(key, None))
-    remove_path(config_path)
+    isinstance(config_path, str) and os.path.exists(config_path) and remove_path(config_path)
 
 
 def remove_path(path):
@@ -203,14 +216,16 @@ def remove_path(path):
             onerror(shutil.os.remove, path, None)
 
 
-def write_config(params):
+def write_config(params, config_path=None):
     """write mongo*'s config file
     Args:
        params - options wich file contains
+       config_path - path to the config_file, will create if None
     Return config_path
        where config_path - path to mongo*'s options file
     """
-    config_path = tempfile.mktemp(prefix="mongo-")
+    if config_path is None:
+        config_path = tempfile.mktemp(prefix="mongo-")
 
     cfg = params.copy()
     # fix boolean value
@@ -222,6 +237,20 @@ def write_config(params):
         data = reduce(lambda s, item: "{s}\n{key}={value}".format(s=s, key=item[0], value=item[1]), cfg.items(), '')
         fd.write(data)
     return config_path
+
+
+def read_config(config_path):
+    """read config_path and return options as dictionary"""
+    result = {}
+    with open(config_path, 'r') as fd:
+        for line in fd.readlines():
+            if '=' in line:
+                key, value = tuple(line.split('='))
+                try:
+                    result[key] = json.loads(value)
+                except ValueError:
+                    result[key] = value.rstrip('\n')
+    return result
 
 
 def proc_alive(pid):

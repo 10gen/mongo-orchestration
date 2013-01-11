@@ -36,40 +36,25 @@ class Host(object):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
 
-    def __init__(self, name, params, auth_key):
-        """Args:
-            name - name of process (mongod or mongos)
-            params - dictionary with params for mongo process
-            auth_key - authorization key
-        """
-        proc_name = os.path.split(name)[1].lower()
-        if proc_name.startswith('mongod'):
-            self.config_path, self.cfg = self.__init_mongod(params, auth_key)
+    def __init_mongod(self, params):
+        cfg = self.mongod_default.copy()
+        cfg.update(params)
 
-        elif proc_name.startswith('mongos'):
-            self.config_path, self.cfg = self.__init_mongos(params)
-
-        else:
-            self.config_path, self.cfg = None, {}
-
-        self.pid = None  # process pid
-        self.host = None  # hostname without port
-        self.port = self.cfg.get('port', None)  # connection port
-        self.hostname = None  # string like host:port
-        self.name = name  # name of process
-
-    def __init_mongod(self, params, auth_key):
-        cfg = params.copy()
-        for key in self.mongod_default:
-            if key not in cfg:
-                cfg[key] = self.mongod_default[key]
-
+        # create db folder
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
-        if auth_key:
-            cfg['keyFile'] = self.__init_auth_key(auth_key, cfg['dbpath'])
 
+        # use keyFile
+        if self.auth_key:
+            cfg['auth'] = True
+            cfg['keyFile'] = self.__init_auth_key(self.auth_key, cfg['dbpath'])
+
+        if self.login:
+            cfg['auth'] = True
+
+        # create logpath
         self.__init_logpath(cfg.get('logpath', None))
 
+        # find open port
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
@@ -80,14 +65,54 @@ class Host(object):
 
         self.__init_logpath(cfg.get('logpath', None))
 
+        # use keyFile
+        if self.auth_key:
+            cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
+
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
         return process.write_config(cfg), cfg
 
+    def __init__(self, name, procParams, auth_key=None, login='', password=''):
+        """Args:
+            name - name of process (mongod or mongos)
+            procParams - dictionary with params for mongo process
+            auth_key - authorization key
+            login - username for the  admin collection
+            password - password
+        """
+        logger.debug("Host.__init__({name}, {procParams}, {auth_key}, {login}, {password})".format(**locals()))
+        self.name = name  # name of process
+        self.login = login
+        self.password = password
+        self.auth_key = auth_key
+        self.admin_added = False
+        self.pid = None  # process pid
+        self.host = None  # hostname without port
+        self.hostname = None  # string like host:port
+        self.is_mongos = False
+
+        proc_name = os.path.split(name)[1].lower()
+        if proc_name.startswith('mongod'):
+            self.config_path, self.cfg = self.__init_mongod(procParams)
+
+        elif proc_name.startswith('mongos'):
+            self.is_mongos = True
+            self.config_path, self.cfg = self.__init_mongos(procParams)
+
+        else:
+            self.config_path, self.cfg = None, {}
+
+        self.port = self.cfg.get('port', None)  # connection port
+
     @property
     def connection(self):
-        return pymongo.Connection(self.hostname)
+        """return authenticated connection"""
+        c = pymongo.Connection(self.hostname)
+        if not self.is_mongos and (self.login and self.password):
+            c.admin.authenticate(self.login, self.password)
+        return c
 
     def run_command(self, command, arg=None, is_eval=False):
         """run command on the host
@@ -100,6 +125,7 @@ class Host(object):
         return command's result
         """
         mode = is_eval and 'eval' or 'command'
+
         if isinstance(arg, tuple):
             name, d = arg
         else:
@@ -108,21 +134,29 @@ class Host(object):
         result = getattr(self.connection.admin, mode)(command, name, **d)
         return result
 
+    @property
+    def is_alive(self):
+        return process.proc_alive(self.pid)
+
     def info(self):
         """return info about host as dict object"""
-        proc_info = {"name": self.name, "params": self.cfg, "alive": process.proc_alive(self.pid),
+        proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
                      "pid": self.pid, "optfile": self.config_path}
-
+        logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'])
+                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120)
                 server_info = c.server_info()
+                logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
-            except pymongo.errors.AutoReconnect:
-                pass
+                logger.debug("status_info: {status_info}".format(**locals()))
+            except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
+                server_info = {}
+                status_info = {}
 
+        logger.debug("return {d}".format(d={"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
         return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
 
     def start(self, timeout=300):
@@ -130,10 +164,14 @@ class Host(object):
         return True of False"""
         try:
             self.pid, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
         except OSError:
             return False
+        if not self.admin_added and self.login:
+            self._add_auth()
+            self.admin_added = True
         return True
 
     def stop(self):
@@ -146,6 +184,15 @@ class Host(object):
         """
         self.stop()
         return self.start(timeout)
+
+    def _add_auth(self):
+        try:
+            db = self.connection.admin
+            db.add_user(self.login, self.password)
+            db.logout()
+        except pymongo.errors.OperationFailure:
+            # user added successfuly but OperationFailure exception raises
+            pass
 
     def cleanup(self):
         """remove host data"""
@@ -168,12 +215,14 @@ class Hosts(Singleton, Container):
             for host_id in self._storage:
                 self.remove(host_id)
 
-    def create(self, name, params, auth_key=None, timeout=300, autostart=True):
+    def create(self, name, procParams, auth_key=None, login=None, password=None, timeout=300, autostart=True):
         """create new host
         Args:
            name - process name or path
-           params - dictionary with specific params for instance
+           procParams - dictionary with specific params for instance
            auth_key - authorization key
+           login - username for the  admin collection
+           password - password
            timeout -  specify how long, in seconds, a command can take before times out.
            autostart - (default: True), autostart instance
         Return host_id
@@ -181,7 +230,7 @@ class Hosts(Singleton, Container):
         """
         name = os.path.split(name)[1]
         try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), params, auth_key)
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), procParams, auth_key, login, password)
             if autostart:
                 if not host.start(timeout):
                     raise OSError
@@ -201,7 +250,9 @@ class Hosts(Singleton, Container):
 
     def db_command(self, host_id, command, arg=None, is_eval=False):
         host = self._storage[host_id]
-        return host.run_command(command, arg, is_eval)
+        result = host.run_command(command, arg, is_eval)
+        self._storage[host_id] = host
+        return result
 
     def command(self, host_id, command, *args):
         """run command
@@ -236,3 +287,6 @@ class Hosts(Singleton, Container):
         for host_id in self._storage:
             if self._storage[host_id].hostname == hostname:
                 return host_id
+
+    def is_alive(self, host_id):
+        return self._storage[host_id].is_alive

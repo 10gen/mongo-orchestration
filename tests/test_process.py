@@ -11,14 +11,18 @@ import subprocess
 import os
 import random
 import tempfile
-import time
+from nose.plugins.attrib import attr
 
 
+@attr('process')
+@attr('portpool')
+@attr('test')
 class PortPoolTestCase(unittest.TestCase):
+
     def setUp(self):
         self.hostname = process.HOSTNAME
         self.pp = process.PortPool()
-        self.pp.change_range(min_port=1025, max_port=1030)
+        self.pp.change_range(min_port=1025, max_port=1080)
         self.sockets = {}
 
     def tearDown(self):
@@ -45,13 +49,15 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertEqual(ports, _ports)
 
     def test_find_port(self):
-        self.pp.change_range(1040, 1040)
+        port = self.pp.port()
+        self.pp.change_range(port, port)
         port = self.pp.port()
         self.assertTrue(port > 0)
         self.listen_port(port)
         self.assertRaises(IndexError, self.pp.port)
 
     def test_port_with_check(self):
+        self.pp.change_range(min_port=1100, max_port=1200)
         port1, port2 = self.pp.port(check=True), self.pp.port(check=True)
         self.pp.change_range(port_sequence=[port1, port2])
         self.listen_port(port1, 0)
@@ -113,6 +119,8 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(ports == random_ports)
 
 
+@attr('process')
+@attr('test')
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
         self.hostname = process.HOSTNAME
@@ -120,10 +128,19 @@ class ProcessTestCase(unittest.TestCase):
         self.executable = sys.executable
         self.pp = process.PortPool(min_port=1025, max_port=2000)
         self.sockets = {}
+        self.tmp_files = list()
+        self.bin_path = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
+        self.db_path = tempfile.mkdtemp()
+        self.cfg = {"noprealloc": True, "smallfiles": True, "oplogSize": 10, 'dbpath': self.db_path}
 
     def tearDown(self):
         for s in self.sockets:
             self.sockets[s].close()
+        if self.cfg:
+            process.cleanup_mprocess('', self.cfg)
+        for item in self.tmp_files:
+            if os.path.exists(item):
+                os.remove(item)
 
     def listen_port(self, port, max_connection=0):
         if self.sockets.get(port, None):
@@ -141,15 +158,44 @@ class ProcessTestCase(unittest.TestCase):
         self.sockets.pop(port).close()
         self.assertFalse(process.wait_for(port, 1))
 
+    def test_mprocess_fail(self):
+        fd_cfg, config_path = tempfile.mkstemp()
+        self.tmp_files.append(config_path)
+        self.assertRaises(OSError, process.mprocess, 'fake-process_', config_path, None, 30)
+        process.write_config({"fake": True}, config_path)
+        self.assertRaises(OSError, process.mprocess, 'mongod', config_path, None, 30)
+
     def test_mprocess(self):
-        self.assertRaises(OSError, process.mprocess, 'fake_process_', '')
+        port = self.pp.port(check=True)
+        config_path = process.write_config(self.cfg)
+        self.tmp_files.append(config_path)
+        result = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
+        self.assertTrue(isinstance(result, tuple))
+        pid, host = result
+        self.assertTrue(isinstance(pid, int))
+        self.assertTrue(isinstance(host, str))
+        process.kill_mprocess(pid)
+
+    def test_mprocess_timeout(self):
+        port = self.pp.port()
+        config_path = process.write_config(self.cfg)
+        self.tmp_files.append(config_path)
+        pid, host = process.mprocess(self.bin_path, config_path, port, 0)
+        self.assertTrue(isinstance(pid, int))
+        self.assertTrue(isinstance(host, str))
+        process.kill_mprocess(pid)
+        self.assertRaises(OSError, process.mprocess, self.bin_path, config_path, port, 1)
+
+    def test_mprocess_busy_port(self):
+        config_path = process.write_config(self.cfg)
+        self.tmp_files.append(config_path)
         port = self.pp.port()
         self.listen_port(port, max_connection=0)
-        pid, host = process.mprocess(self.executable, '', port=port, timeout=2)
+        pid, host = process.mprocess(self.executable, config_path, port=port, timeout=2)
         self.assertTrue(pid > 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
         self.sockets.pop(port).close()
-        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 2)
+        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 1)
 
     def test_kill_mprocess(self):
         p = subprocess.Popen([self.executable])
@@ -196,16 +242,34 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue('objcheck=true' in config_data)
         process.cleanup_mprocess(config_path, cfg)
 
+    def test_write_config_with_specify_config_path(self):
+        cfg = {'port': 27017, 'objcheck': 'true'}
+        fd_key, file_path = tempfile.mkstemp()
+        config_path = process.write_config(cfg, file_path)
+        self.assertEqual(file_path, config_path)
+        process.cleanup_mprocess(config_path, cfg)
+
     def test_proc_alive(self):
         p = subprocess.Popen([self.executable])
         pid = p.pid
         self.assertTrue(process.proc_alive(pid))
         p.kill(), os.wait()
         self.assertFalse(process.proc_alive(pid))
-
         self.assertFalse(process.proc_alive(None))
         self.assertFalse(process.proc_alive('2333'))
 
+    def test_read_config(self):
+        cfg = {"noprealloc": True, "smallfiles": False, "oplogSize": 10, "other": "some string"}
+        config_path = process.write_config(cfg)
+        self.tmp_files.append(config_path)
+        self.assertEqual(process.read_config(config_path), cfg)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=3)
+    # suite = unittest.TestSuite()
+    # suite.addTest(ProcessTestCase('test_mprocess_fail'))
+    # suite.addTest(ProcessTestCase('test_mprocess'))
+    # suite.addTest(ProcessTestCase('test_mprocess_busy_port'))
+    # suite.addTest(ProcessTestCase('test_mprocess'))
+    # unittest.TextTestRunner(verbosity=2).run(suite)

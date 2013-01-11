@@ -5,11 +5,12 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 import json
+import traceback
 import sys
 
 sys.path.insert(0, '..')
 from lib.shards import Shards
-from bottle import route, request, response, abort, run
+from bottle import route, request, response, run
 
 
 def send_result(code, result=None):
@@ -20,77 +21,74 @@ def send_result(code, result=None):
             content = json.dumps(result)
             response.content_type = "application/json"
     response.status = code
-    if code > 399:
-        return abort(code, content)
     return content
 
 
+def error_wrap(f):
+    def wrap(*arg, **kwd):
+        f_name = f.func_name
+        logger.debug("{f_name}({arg}, {kwd})".format(**locals()))
+        try:
+            return f(*arg, **kwd)
+        except StandardError:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
+            logger.error("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
+            logger.error(err_message)
+            return send_result(500, err_message)
+        except Exception:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
+            logger.critical("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
+            logger.critical(err_message)
+            return send_result(500, err_message)
+
+    return wrap
+
+
 @route('/sh', method='POST')
+@error_wrap
 def sh_create():
     logger.debug("sh_create()")
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    try:
-        sh_id = Shards().create(data)
-        result = Shards().info(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while sh_create".format(**locals()))
-        return send_result(500)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    sh_id = Shards().create(data)
+    result = Shards().info(sh_id)
     return send_result(200, result)
 
 
 @route('/sh', method='GET')
+@error_wrap
 def sh_list():
     logger.debug("sh_list()")
-    try:
-        data = [info for info in Shards()]
-    except StandardError as e:
-        logger.error("Exception {e} while sh_list".format(**locals()))
-        return send_result(500)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    data = [info for info in Shards()]
     return send_result(200, data)
 
 
 @route('/sh/<sh_id>', method='GET')
+@error_wrap
 def info(sh_id):
     logger.debug("info({sh_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().info(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while info".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().info(sh_id)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>', method='DELETE')
+@error_wrap
 def sh_del(sh_id):
     logger.debug("sh_del({sh_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().remove(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while sh_del".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().remove(sh_id)
     return send_result(204, result)
 
 
 @route('/sh/<sh_id>/members', method='POST')
+@error_wrap
 def member_add(sh_id):
     logger.debug("member_add({sh_id})".format(**locals()))
     if sh_id not in Shards():
@@ -99,66 +97,42 @@ def member_add(sh_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    try:
-        result = Shards().member_add(sh_id, data)
-    except StandardError as e:
-        logger.error("Exception {e} while member_add".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().member_add(sh_id, data)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/members', method='GET')
+@error_wrap
 def members(sh_id):
     logger.debug("members({sh_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().members(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while members".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().members(sh_id)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/configservers', method='GET')
+@error_wrap
 def configservers(sh_id):
     logger.debug("configservers({sh_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().configservers(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while configservers".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().configservers(sh_id)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/routers', method='GET')
+@error_wrap
 def routers(sh_id):
     logger.debug("routers({sh_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().routers(sh_id)
-    except StandardError as e:
-        logger.error("Exception {e} while routers".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().routers(sh_id)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/routers', method='POST')
+@error_wrap
 def router_add(sh_id):
     logger.debug("router_add({sh_id})".format(**locals()))
     if sh_id not in Shards():
@@ -167,46 +141,27 @@ def router_add(sh_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    try:
-        result = Shards().router_add(sh_id, data)
-    except StandardError as e:
-        logger.error("Exception {e} while router_add".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().router_add(sh_id, data)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/members/<member_id>', method='GET')
+@error_wrap
 def member_info(sh_id, member_id):
     logger.debug("member_info({sh_id}, {member_id})".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().member_info(sh_id, member_id)
-    except StandardError as e:
-        logger.error("Exception {e} while member_info".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().member_info(sh_id, member_id)
     return send_result(200, result)
 
 
 @route('/sh/<sh_id>/members/<member_id>', method='DELETE')
+@error_wrap
 def member_del(sh_id, member_id):
     logger.debug("member_del({sh_id}), {member_id}".format(**locals()))
     if sh_id not in Shards():
         return send_result(404)
-    try:
-        result = Shards().member_del(sh_id, member_id)
-    except StandardError as e:
-        logger.error("Exception {e} while member_del".format(**locals()))
-        return send_result(400)
-    except Exception as e:
-        logger.critical("Unknown Exception {e}".format(**locals()))
-        return send_result(500)
+    result = Shards().member_del(sh_id, member_id)
     return send_result(200, result)
 
 
