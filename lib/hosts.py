@@ -147,7 +147,7 @@ class Host(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'])
+                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120)
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
