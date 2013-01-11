@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 import tempfile
 
-from lib import set_storage
+from lib import set_storage, cleanup_storage
 from lib.shards import Shard, Shards
 from lib.hosts import Hosts
 from lib.process import PortPool, HOSTNAME
@@ -42,7 +42,8 @@ class ShardsTestCase(unittest.TestCase):
         PortPool().change_range()
 
     def tearDown(self):
-        self.sh.cleanup()
+        # self.sh.cleanup()
+        cleanup_storage()
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
 
