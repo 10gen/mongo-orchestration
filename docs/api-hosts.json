@@ -1,0 +1,58 @@
+{
+  "apiVersion": "0.2",
+  "swaggerVersion": "1.1",
+  "basePath": "http://localhost:8889",
+  "resourcePath": "/hosts",
+  "apis": [
+    {
+      "path": "/hosts",
+      "description": "Operations about host",
+      "operations": [
+        {
+          "httpMethod": "POST",
+          "summary": "Creates and gets up new host",
+          "responseClass": "void",
+          "nickname": "createHost",
+          "parameters": [
+            {
+              "paramType": "body",
+              "required": true,
+              "allowMultiple": false,
+              "dataType": "Host"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "models": {
+    "Host": {
+        "id": "Host",
+        "properties": {
+            "name": {
+                "type": "string",
+                "allowableValues": {
+                    "valueType": "LIST",
+                    "values": ["mongod", "mongos"]
+                }
+            },
+            "login": {
+                "type": "string"
+            },
+            "password": {
+                "type": "string"
+            },
+            "auth_key": {
+                "type": "string"
+            },
+            "autostart": {
+                "type": "boolean"
+            },
+            "procParams": {
+                "type": "string"
+            }
+        }
+    }
+
+  }
+}

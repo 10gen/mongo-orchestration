@@ -15,6 +15,7 @@ from bottle import route, request, response, run
 def send_result(code, result=None):
     logger.debug("send_result({code}, {result})".format(**locals()))
     content = None
+    response.set_header('Access-Control-Allow-Origin', '*')
     response.content_type = None
     if result is not None:
             content = json.dumps(result)

@@ -57,6 +57,7 @@ def get_app():
     import apps.hosts
     import apps.rs
     import apps.sh
+    import apps.api
     app = default_app.pop()
     return app
 

@@ -1,0 +1,19 @@
+{
+  "apiVersion": "0.2",
+  "swaggerVersion": "1.1",
+  "basePath": "http://localhost:8889",
+  "apis": [
+    {
+      "path": "/api/hosts",
+      "description": ""
+    },
+    {
+      "path": "/api/rs",
+      "description": ""
+    },
+    {
+      "path": "/api/sh",
+      "description": ""
+    }
+  ]
+}
