@@ -17,7 +17,7 @@ class Host(object):
     """Class Host represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "nojournal": True, "smallfiles": True, "oplogSize": 10}
+    mongod_default = {"noprealloc": True, "nojournal": False, "smallfiles": True, "oplogSize": 10, "journal": True}
 
     def __init_db(self, dbpath):
         if not dbpath:

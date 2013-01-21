@@ -58,7 +58,7 @@ class HostsTestCase(unittest.TestCase):
         self.assertTrue(len(self.hosts) == 1)
         self.assertTrue(host_id in self.hosts)
         host_id2, host2 = 'host-id2', Host('mongod', {}, None)
-        host2.start(20)
+        host2.start(30)
         host2_pid = host2.info()['procInfo']['pid']
         self.hosts[host_id2] = host2
         self.assertTrue(self.hosts[host_id2]['procInfo']['pid'] == host2_pid)
@@ -186,7 +186,7 @@ class HostTestCase(unittest.TestCase):
     def test_mongos(self):
         self.host.cleanup()
         self.host = Host(self.mongod, {'configsvr': True})
-        self.host.start(20)
+        self.host.start(30)
         mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
         self.host2 = Host(mongos, {'configdb': self.host.info()['uri']})
         self.assertTrue(self.host2.start())
@@ -195,10 +195,10 @@ class HostTestCase(unittest.TestCase):
         self.host2.cleanup()
 
     def test_run_command(self):
-        self.host.start(10)
+        self.host.start(30)
 
     def test_info(self):
-        self.host.start(10)
+        self.host.start(30)
         info = self.host.info()
         for item in ("uri", "statuses", "serverInfo", "procInfo"):
             self.assertTrue(item in info)
@@ -207,7 +207,7 @@ class HostTestCase(unittest.TestCase):
         db_path = tempfile.mkdtemp()
         params = {'logPath': log_path, 'dbpath': db_path}
         host2 = Host('mongod', params, None)
-        host2.start(10)
+        host2.start(30)
         info2 = host2.info()
         for param, value in params.items():
             self.assertTrue(info2['procInfo']['params'].get(param, value) == value)
@@ -219,13 +219,13 @@ class HostTestCase(unittest.TestCase):
 
     def test_command(self):
         self.assertRaises(pymongo.errors.PyMongoError, self.host.run_command, 'serverStatus', None, False)
-        self.host.start(10)
+        self.host.start(30)
         self.assertEqual(self.host.run_command('serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
         self.assertEqual(self.host.run_command('db.getName()', arg=None, is_eval=True), 'admin')
 
     def test_start(self):
         self.assertTrue(self.host.info()['procInfo']['pid'] is None)
-        self.assertTrue(self.host.start(10))
+        self.assertTrue(self.host.start(30))
         self.assertTrue(self.host.info()['procInfo']['pid'] > 0)
 
         fake_host = Host('fake_proc_', {}, None)
@@ -241,13 +241,13 @@ class HostTestCase(unittest.TestCase):
         self.assertRaises(socket.error, s.connect, (host, self.host.cfg['port']))
 
     def test_restart(self):
-        self.assertTrue(self.host.start(20))
+        self.assertTrue(self.host.start(30))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = self.host.hostname.split(':')[0]
         s.connect((host, self.host.cfg['port']))
         s.shutdown(0)
         s.close()
-        self.assertTrue(self.host.restart(20))
+        self.assertTrue(self.host.restart(30))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, self.host.cfg['port']))
         s.shutdown(0)
@@ -290,7 +290,7 @@ class HostAuthTestCase(unittest.TestCase):
         self.host.stop()
         self.host.cleanup()
         self.host = Host(self.mongod, {'configsvr': True}, auth_key='secret')
-        self.host.start(20)
+        self.host.start(30)
         mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
         self.host2 = Host(mongos, {'configdb': self.host.info()['uri']}, auth_key='secret', login='admin', password='admin')
         self.host2.start()
