@@ -171,13 +171,13 @@ def mprocess(name, config_path, port=None, timeout=180):
     return (proc.pid, host)
 
 
-def kill_mprocess(pid, timeout=10):
+def kill_mprocess(pid, timeout=20):
     """kill process
     Args:
         pid - process pid
     """
     if pid and proc_alive(pid):
-        os.kill(pid, 15)
+        os.kill(pid, 2)
         try:
             os.wait()
         except OSError:
