@@ -56,27 +56,27 @@ Example: `create {"name": "mongod"}`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'id': u'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
- u'procInfo': {u'alive': True,
-               u'name': u'mongod',
-               u'optfile': u'/tmp/mongo-kGmDvJ',
-               u'params': {u'dbpath': u'/tmp/mongo-ehOPTO',
-                           u'nojournal': u'true',
-                           u'noprealloc': u'true',
-                           u'oplogSize': 10,
-                           u'port': 1035,
-                           u'smallfiles': u'true'},
-               u'pid': 31186},
- u'serverInfo': {u'bits': 64,
-                 u'debug': False,
-                 u'gitVersion': u'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
-                 u'maxBsonObjectSize': 16777216,
-                 u'ok': 1.0,
-                 u'sysInfo': u'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
-                 u'version': u'2.2.0',
-                 u'versionArray': [2, 2, 0, 0]},
- u'statuses': {u'locked': False, u'mongos': False, u'primary': True},
- u'uri': u'EPBYMINW0164T1:1035'}
+{'id': 'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
+ 'procInfo': {'alive': True,
+               'name': 'mongod',
+               'optfile': '/tmp/mongo-kGmDvJ',
+               'params': {'dbpath': '/tmp/mongo-ehOPTO',
+                           'nojournal': 'true',
+                           'noprealloc': 'true',
+                           'oplogSize': 10,
+                           'port': 1035,
+                           'smallfiles': 'true'},
+               'pid': 31186},
+ 'serverInfo': {'bits': 64,
+                 'debug': False,
+                 'gitVersion': 'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
+                 'maxBsonObjectSize': 16777216,
+                 'ok': 1.0,
+                 'sysInfo': 'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
+                 'version': '2.2.0',
+                 'versionArray': [2, 2, 0, 0]},
+ 'statuses': {'locked': False, 'mongos': False, 'primary': True},
+ 'uri': 'EPBYMINW0164T1:1035'}
 =================================
 ```
 + **info [host-id]**  - show information about host  
@@ -85,27 +85,27 @@ Example: `info 1`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'id': u'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
- u'procInfo': {u'alive': True,
-               u'name': u'mongod',
-               u'optfile': u'/tmp/mongo-kGmDvJ',
-               u'params': {u'dbpath': u'/tmp/mongo-ehOPTO',
-                           u'nojournal': u'true',
-                           u'noprealloc': u'true',
-                           u'oplogSize': 10,
-                           u'port': 1035,
-                           u'smallfiles': u'true'},
-               u'pid': 31186},
- u'serverInfo': {u'bits': 64,
-                 u'debug': False,
-                 u'gitVersion': u'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
-                 u'maxBsonObjectSize': 16777216,
-                 u'ok': 1.0,
-                 u'sysInfo': u'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
-                 u'version': u'2.2.0',
-                 u'versionArray': [2, 2, 0, 0]},
- u'statuses': {u'locked': False, u'mongos': False, u'primary': True},
- u'uri': u'EPBYMINW0164T1:1035'}
+{'id': 'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
+ 'procInfo': {'alive': True,
+               'name': 'mongod',
+               'optfile': '/tmp/mongo-kGmDvJ',
+               'params': {'dbpath': '/tmp/mongo-ehOPTO',
+                           'nojournal': 'true',
+                           'noprealloc': 'true',
+                           'oplogSize': 10,
+                           'port': 1035,
+                           'smallfiles': 'true'},
+               'pid': 31186},
+ 'serverInfo': {'bits': 64,
+                 'debug': False,
+                 'gitVersion': 'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
+                 'maxBsonObjectSize': 16777216,
+                 'ok': 1.0,
+                 'sysInfo': 'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
+                 'version': '2.2.0',
+                 'versionArray': [2, 2, 0, 0]},
+ 'statuses': {'locked': False, 'mongos': False, 'primary': True},
+ 'uri': 'EPBYMINW0164T1:1035'}
 =================================
 ```
 
@@ -115,7 +115,7 @@ Example: `list`
 ```javascript
 ========= Response data =========
 result code:  200
-[u'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8']
+['e42ec4e4-8ba9-4200-9ba5-375b4c490cf8']
 =================================
 1 e42ec4e4-8ba9-4200-9ba5-375b4c490cf8
 ```
@@ -126,7 +126,7 @@ Example: `stop 1`
 ```javascript
 ========= Response data =========
 result code:  200
-u''
+''
 =================================
 ```
 
@@ -143,7 +143,7 @@ Example: `javascriptrestart 1`
 ```
 ========= Response data =========
 result code:  200
-u''
+''
 =================================
 ```
 
@@ -153,7 +153,7 @@ Example: `delete 1`
 ```javascript
 ========= Response data =========
 result code:  204
-u''
+''
 =================================
 ```
 
@@ -176,14 +176,14 @@ Example: `create {"id":"default", "members": [{},{},{"rsParams": {"arbiterOnly":
 ```javascript
 ========= Response data =========
 result code:  200
-{u'auth_key': None,
- u'id': u'default',
- u'members': [{u'_id': 0, u'host': u'EPBYMINW0164T1:1025'},
-              {u'_id': 1, u'host': u'EPBYMINW0164T1:1026'},
-              {u'_id': 2, u'host': u'EPBYMINW0164T1:1027'},
-              {u'_id': 3, u'host': u'EPBYMINW0164T1:1028'}]}
+{'auth_key': None,
+ 'id': 'default',
+ 'members': [{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
+              {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
+              {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
+              {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]}
 =================================
-[u'default']
+['default']
 ```
 
 + **list** - show list of replicas , format: index replica-id  
@@ -192,7 +192,7 @@ Example: `list`
 ```javascript
 ========= Response data =========
 result code:  200
-[u'default']
+['default']
 =================================
 1 default
 ```
@@ -203,12 +203,12 @@ Example: `info 1`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'auth_key': None,
- u'id': u'default',
- u'members': [{u'_id': 0, u'host': u'EPBYMINW0164T1:1025'},
-              {u'_id': 1, u'host': u'EPBYMINW0164T1:1026'},
-              {u'_id': 2, u'host': u'EPBYMINW0164T1:1027'},
-              {u'_id': 3, u'host': u'EPBYMINW0164T1:1028'}]}
+{'auth_key': None,
+ 'id': 'default',
+ 'members': [{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
+              {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
+              {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
+              {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]}
 =================================
 ```
 
@@ -218,7 +218,7 @@ Example: `arbiters 1`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': 2, u'host': u'EPBYMINW0164T1:1027'}]
+[{'_id': 2, 'host': 'EPBYMINW0164T1:1027'}]
 =================================
 ```
 
@@ -228,7 +228,7 @@ Example: `hidden 1`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': 3, u'host': u'EPBYMINW0164T1:1028'}]
+[{'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
 =================================
 ```
 
@@ -238,8 +238,8 @@ Example: `secondaries [index or replica-id]`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': 1, u'host': u'EPBYMINW0164T1:1026'},
- {u'_id': 3, u'host': u'EPBYMINW0164T1:1028'}]
+[{'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
+ {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
 =================================
 ```
 
@@ -249,21 +249,21 @@ Example: `primary 1`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': 0,
- u'procInfo': {u'alive': True,
-               u'name': u'mongod',
-               u'optfile': u'/tmp/mongo-qiIHUz',
-               u'params': {u'dbpath': u'/tmp/mongo-tgT1tD',
-                           u'nojournal': u'true',
-                           u'noprealloc': u'true',
-                           u'oplogSize': 10,
-                           u'port': 1025,
-                           u'replSet': u'default',
-                           u'smallfiles': u'true'},
-               u'pid': 26806},
- u'rsInfo': {u'primary': True, u'secondary': False},
- u'statuses': {u'locked': False, u'mongos': False, u'primary': True},
- u'uri': u'EPBYMINW0164T1:1025'}
+{'_id': 0,
+ 'procInfo': {'alive': True,
+               'name': 'mongod',
+               'optfile': '/tmp/mongo-qiIHUz',
+               'params': {'dbpath': '/tmp/mongo-tgT1tD',
+                           'nojournal': 'true',
+                           'noprealloc': 'true',
+                           'oplogSize': 10,
+                           'port': 1025,
+                           'replSet': 'default',
+                           'smallfiles': 'true'},
+               'pid': 26806},
+ 'rsInfo': {'primary': True, 'secondary': False},
+ 'statuses': {'locked': False, 'mongos': False, 'primary': True},
+ 'uri': 'EPBYMINW0164T1:1025'}
 =================================
 ```
 
@@ -273,7 +273,7 @@ Example: `stepdown 1`
 ```javascript
 ========= Response data =========
 result code:  200
-u''
+''
 =================================
 ```
 
@@ -283,10 +283,10 @@ Example: `members [index or replica-id]`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': 0, u'host': u'EPBYMINW0164T1:1025'},
- {u'_id': 1, u'host': u'EPBYMINW0164T1:1026'},
- {u'_id': 2, u'host': u'EPBYMINW0164T1:1027'},
- {u'_id': 3, u'host': u'EPBYMINW0164T1:1028'}]
+[{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
+ {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
+ {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
+ {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
 =================================
 ```
 
@@ -296,11 +296,11 @@ Example: `member_add 1  {"rsParams": {"hidden": true, "priority": 0}}`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': 0, u'host': u'EPBYMINW0164T1:1025'},
- {u'_id': 1, u'host': u'EPBYMINW0164T1:1026'},
- {u'_id': 2, u'host': u'EPBYMINW0164T1:1027'},
- {u'_id': 3, u'host': u'EPBYMINW0164T1:1028'},
- {u'_id': 4, u'host': u'EPBYMINW0164T1:1030'}]
+[{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
+ {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
+ {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
+ {'_id': 3, 'host': 'EPBYMINW0164T1:1028'},
+ {'_id': 4, 'host': 'EPBYMINW0164T1:1030'}]
 =================================
 ```
 
@@ -310,21 +310,21 @@ Example: `member_info 1  4`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': 4,
- u'procInfo': {u'alive': True,
-               u'name': u'mongod',
-               u'optfile': u'/tmp/mongo-XDk4wy',
-               u'params': {u'dbpath': u'/tmp/mongo-1KL3aQ',
-                           u'nojournal': u'true',
-                           u'noprealloc': u'true',
-                           u'oplogSize': 10,
-                           u'port': 1030,
-                           u'replSet': u'default',
-                           u'smallfiles': u'true'},
-               u'pid': 28377},
- u'rsInfo': {u'hidden': True, u'primary': False, u'secondary': True},
- u'statuses': {u'locked': False, u'mongos': False, u'primary': False},
- u'uri': u'EPBYMINW0164T1:1030'}
+{'_id': 4,
+ 'procInfo': {'alive': True,
+               'name': 'mongod',
+               'optfile': '/tmp/mongo-XDk4wy',
+               'params': {'dbpath': '/tmp/mongo-1KL3aQ',
+                           'nojournal': 'true',
+                           'noprealloc': 'true',
+                           'oplogSize': 10,
+                           'port': 1030,
+                           'replSet': 'default',
+                           'smallfiles': 'true'},
+               'pid': 28377},
+ 'rsInfo': {'hidden': True, 'primary': False, 'secondary': True},
+ 'statuses': {'locked': False, 'mongos': False, 'primary': False},
+ 'uri': 'EPBYMINW0164T1:1030'}
 =================================
 ```
 
@@ -334,21 +334,21 @@ Example: `member_update 1  4  {"rsParams": {"hidden":false, "priority": 3}}`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': 4,
- u'procInfo': {u'alive': True,
-               u'name': u'mongod',
-               u'optfile': u'/tmp/mongo-XDk4wy',
-               u'params': {u'dbpath': u'/tmp/mongo-1KL3aQ',
-                           u'nojournal': u'true',
-                           u'noprealloc': u'true',
-                           u'oplogSize': 10,
-                           u'port': 1030,
-                           u'replSet': u'default',
-                           u'smallfiles': u'true'},
-               u'pid': 28377},
- u'rsInfo': {u'primary': True, u'secondary': False},
- u'statuses': {u'locked': False, u'mongos': False, u'primary': True},
- u'uri': u'EPBYMINW0164T1:1030'}
+{'_id': 4,
+ 'procInfo': {'alive': True,
+               'name': 'mongod',
+               'optfile': '/tmp/mongo-XDk4wy',
+               'params': {'dbpath': '/tmp/mongo-1KL3aQ',
+                           'nojournal': 'true',
+                           'noprealloc': 'true',
+                           'oplogSize': 10,
+                           'port': 1030,
+                           'replSet': 'default',
+                           'smallfiles': 'true'},
+               'pid': 28377},
+ 'rsInfo': {'primary': True, 'secondary': False},
+ 'statuses': {'locked': False, 'mongos': False, 'primary': True},
+ 'uri': 'EPBYMINW0164T1:1030'}
 =================================
 ```
 
@@ -358,7 +358,7 @@ Example: `member_command 1  4  stop`
 ```javascript
 ========= Response data =========
 result code:  200
-u''
+''
 =================================
 ```
 
@@ -378,7 +378,7 @@ Example: `delete 1`
 ```javascript
 ========= Response data =========
 result code:  204
-u''
+''
 =================================
 ```
 
@@ -406,22 +406,22 @@ create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "config
 ```javascript
 ========= Response data =========
 result code:  200
-{u'configsvrs': [{u'hostname': u'127.0.0.1:2315',
-                  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
- u'id': u'shard_cluster_1',
- u'members': [{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-               u'id': u'sh01',
-               u'isHost': True},
-              {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
-              {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
-               u'id': u'sh02',
-               u'isHost': True}],
- u'routers': [{u'hostname': u'127.0.0.1:2323',
-               u'id': u'9f6b743b-24d2-40eb-860f-1b0c474625da'},
-              {u'hostname': u'127.0.0.1:1025',
-               u'id': u'84c7a69d-ea44-4b54-9525-c394b143c799'}]}
+{'configsvrs': [{'hostname': '127.0.0.1:2315',
+                  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
+ 'id': 'shard_cluster_1',
+ 'members': [{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+               'id': 'sh01',
+               'isHost': True},
+              {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
+              {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
+               'id': 'sh02',
+               'isHost': True}],
+ 'routers': [{'hostname': '127.0.0.1:2323',
+               'id': '9f6b743b-24d2-40eb-860f-1b0c474625da'},
+              {'hostname': '127.0.0.1:1025',
+               'id': '84c7a69d-ea44-4b54-9525-c394b143c799'}]}
 =================================
-[u'shard_cluster_1']
+['shard_cluster_1']
 ```
 
 + **list** - show list of clusters , format: index cluster-id  
@@ -430,7 +430,7 @@ Example: `list`
 ```javascript
 ========= Response data =========
 result code:  200
-[u'shard_cluster_1']
+['shard_cluster_1']
 =================================
 1 shard_cluster_1
 ```
@@ -441,20 +441,20 @@ Example: `info 1`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'configsvrs': [{u'hostname': u'127.0.0.1:2315',
-                  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
- u'id': u'shard_cluster_1',
- u'members': [{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-               u'id': u'sh01',
-               u'isHost': True},
-              {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
-              {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
-               u'id': u'sh02',
-               u'isHost': True}],
- u'routers': [{u'hostname': u'127.0.0.1:2323',
-               u'id': u'9f6b743b-24d2-40eb-860f-1b0c474625da'},
-              {u'hostname': u'127.0.0.1:1025',
-               u'id': u'84c7a69d-ea44-4b54-9525-c394b143c799'}]}
+{'configsvrs': [{'hostname': '127.0.0.1:2315',
+                  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
+ 'id': 'shard_cluster_1',
+ 'members': [{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+               'id': 'sh01',
+               'isHost': True},
+              {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
+              {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
+               'id': 'sh02',
+               'isHost': True}],
+ 'routers': [{'hostname': '127.0.0.1:2323',
+               'id': '9f6b743b-24d2-40eb-860f-1b0c474625da'},
+              {'hostname': '127.0.0.1:1025',
+               'id': '84c7a69d-ea44-4b54-9525-c394b143c799'}]}
 =================================
 ```
 
@@ -464,8 +464,8 @@ Example: `configservers 1`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'hostname': u'127.0.0.1:2315',
-  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
+[{'hostname': '127.0.0.1:2315',
+  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
 =================================
 ```
 
@@ -475,8 +475,8 @@ Example: `routers 1`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'hostname': u'127.0.0.1:2315',
-  u'id': u'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
+[{'hostname': '127.0.0.1:2315',
+  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
 =================================
 ```
 
@@ -486,8 +486,8 @@ Example: `router_add [index or cluster-id]  {"port": 2525, "logpath": "/tmp/rout
 ```javascript
 ========= Response data =========
 result code:  200
-{u'hostname': u'127.0.0.1:2525',
- u'id': u'eae3af8c-c8b0-4e69-85f9-fab69ef51b32'}
+{'hostname': '127.0.0.1:2525',
+ 'id': 'eae3af8c-c8b0-4e69-85f9-fab69ef51b32'}
 =================================
 ```
 
@@ -497,13 +497,13 @@ Example: `members [index or cluster-id]`
 ```javascript
 ========= Response data =========
 result code:  200
-[{u'_id': u'31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-  u'id': u'sh01',
-  u'isHost': True},
- {u'_id': u'rs1', u'id': u'sh-rs-01', u'isReplicaSet': True},
- {u'_id': u'67806256-fdd3-475d-a33f-b68302e74636',
-  u'id': u'sh02',
-  u'isHost': True}]
+[{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
+  'id': 'sh01',
+  'isHost': True},
+ {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
+ {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
+  'id': 'sh02',
+  'isHost': True}]
 =================================
 ```
 
@@ -513,9 +513,9 @@ Example: `member_add 1  {"id": "shardX", "shardParams": {"port": 2527, "dbpath":
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': u'b380299e-6edf-4445-9f86-327a44fb9c1d',
- u'id': u'shardX',
- u'isHost': True}
+{'_id': 'b380299e-6edf-4445-9f86-327a44fb9c1d',
+ 'id': 'shardX',
+ 'isHost': True}
 =================================
 ```
 
@@ -525,7 +525,7 @@ Example: `member_add 1  {"id": "shard-rs", "shardParams": {"id": "repl-test", "m
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': u'repl-test', u'id': u'shard-rs', u'isReplicaSet': True}
+{'_id': 'repl-test', 'id': 'shard-rs', 'isReplicaSet': True}
 =================================
 ```
 
@@ -535,9 +535,9 @@ Example: `member_info 1  shardX`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': u'b380299e-6edf-4445-9f86-327a44fb9c1d',
- u'id': u'shardX',
- u'isHost': True}
+{'_id': 'b380299e-6edf-4445-9f86-327a44fb9c1d',
+ 'id': 'shardX',
+ 'isHost': True}
 =================================
 ```
 
@@ -547,7 +547,7 @@ Example: `member_info 1  shard-rs`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'_id': u'repl-test', u'id': u'shard-rs', u'isReplicaSet': True}
+{'_id': 'repl-test', 'id': 'shard-rs', 'isReplicaSet': True}
 =================================
 ```
 
@@ -557,10 +557,10 @@ Example: `member_delete 1  sh01`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'msg': u'draining started successfully',
- u'ok': 1.0,
- u'shard': u'sh01',
- u'state': u'started'}
+{'msg': 'draining started successfully',
+ 'ok': 1.0,
+ 'shard': 'sh01',
+ 'state': 'started'}
 =================================
 ```
 
@@ -570,10 +570,10 @@ Example: `member_delete 1  sh01`
 ```javascript
 ========= Response data =========
 result code:  200
-{u'msg': u'removeshard completed successfully',
- u'ok': 1.0,
- u'shard': u'sh01',
- u'state': u'completed'}
+{'msg': 'removeshard completed successfully',
+ 'ok': 1.0,
+ 'shard': 'sh01',
+ 'state': 'completed'}
 =================================
 ```
 
@@ -583,6 +583,6 @@ Example: `delete shard_cluster_1`
 ```javascript
 ========= Response data =========
 result code:  204
-u''
+''
 =================================
 ```
