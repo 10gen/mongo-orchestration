@@ -11,6 +11,7 @@ import subprocess
 import os
 import random
 import tempfile
+import time
 from nose.plugins.attrib import attr
 
 
@@ -158,6 +159,20 @@ class ProcessTestCase(unittest.TestCase):
         self.sockets.pop(port).close()
         self.assertFalse(process.wait_for(port, 1))
 
+    def test_repair(self):
+        port = self.pp.port(check=True)
+        self.cfg['journal'] = False
+        self.cfg['nojournal'] = True
+        lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
+        config_path = process.write_config(self.cfg)
+        self.tmp_files.append(config_path)
+        pid, host = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
+        os.kill(pid, 9)
+        self.assertTrue(os.path.exists(lock_file))
+        self.assertTrue(len(open(lock_file, 'r').read()) > 0)
+        process.repair_mongo(self.bin_path, self.cfg['dbpath'])
+        self.assertFalse(len(open(lock_file, 'r').read()) > 0)
+
     def test_mprocess_fail(self):
         fd_cfg, config_path = tempfile.mkstemp()
         self.tmp_files.append(config_path)
@@ -268,8 +283,5 @@ class ProcessTestCase(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main(verbosity=3)
     # suite = unittest.TestSuite()
-    # suite.addTest(ProcessTestCase('test_mprocess_fail'))
-    # suite.addTest(ProcessTestCase('test_mprocess'))
-    # suite.addTest(ProcessTestCase('test_mprocess_busy_port'))
-    # suite.addTest(ProcessTestCase('test_mprocess'))
+    # suite.addTest(ProcessTestCase('test_repair'))
     # unittest.TextTestRunner(verbosity=2).run(suite)

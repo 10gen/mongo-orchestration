@@ -232,6 +232,14 @@ class HostTestCase(unittest.TestCase):
         self.assertFalse(fake_host.start(5))
         fake_host.cleanup()
 
+    def test_start_with_repair(self):
+        self.host.cleanup()
+        self.host = Host(self.mongod, {"nojournal": True, "journal": False}, None)
+        self.host.start(30)
+        os.kill(self.host.pid, 9)
+        self.assertTrue(self.host._is_locked)
+        self.assertTrue(self.host.start(20))
+
     def test_stop(self):
         self.assertTrue(self.host.start(60))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -338,10 +346,5 @@ class HostAuthTestCase(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main(verbosity=3)
     # suite = unittest.TestSuite()
-    # suite.addTest(HostTestCase('test_command'))
-    # suite.addTest(HostsTestCase('test_db_command'))
-    # suite.addTest(HostTestCase('test_is_alive'))
-    # suite.addTest(HostAuthTestCase('test_auth_connection'))
-    # suite.addTest(HostAuthTestCase('test_auth_admin'))
-    # suite.addTest(HostAuthTestCase('test_mongos'))
+    # suite.addTest(HostTestCase('test_start_with_repair'))
     # unittest.TextTestRunner(verbosity=2).run(suite)

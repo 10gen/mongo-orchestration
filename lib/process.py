@@ -124,6 +124,21 @@ def wait_for(port_num, timeout):
     return False
 
 
+def repair_mongo(name, dbpath):
+    """repair mongodb after usafe shutdown"""
+    cmd = [name, "--dbpath", dbpath, "--repair"]
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+    timeout = 30
+    t_start = time.time()
+    while time.time() - t_start < timeout:
+        proc.stdout.flush()
+        if "dbexit: really exiting now" in proc.stdout.readline():
+            return
+    return
+
+
 def mprocess(name, config_path, port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
