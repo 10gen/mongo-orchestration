@@ -5,6 +5,29 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 
 **mongo-orchestration** - http server which provide rest api to management mongo's configurations
 
+##Features
+
+Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**  
+
+###Hosts
++ **setup** - setup host using options
++ **control** - start/stop/restart instance
++ **information*** - return information about host
+
+###ReplicaSet
++ **setup** - setup replica set using configuration structure
++ **configure** - add/remove members
++ **control** - start/stop/restart members
++ **information*** - return information about replicaset
++ **authentication**  - support authentication by keyFile
+
+
+##Shard Cluster
++ **setup** - setup shard cluster using configuration structure
++ **configure** - add/remove members
++ **information*** - return information about replicaset
++ **authentication**  - support authentication by keyFile
+
 ##Requires
 [Python 2.7](http://www.python.org/download/)  
 [requests](http://docs.python-requests.org/en/latest/user/install/#install)
