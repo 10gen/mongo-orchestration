@@ -168,7 +168,7 @@ class Host(object):
         """start host
         return True of False"""
         try:
-            if self._is_locked:
+            if self.cfg.get('dbpath', None) and self._is_locked:
                 # repair if needed
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
