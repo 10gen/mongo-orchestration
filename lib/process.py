@@ -15,9 +15,7 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
-HOME = os.environ.get('HOME')
-HOSTNAME = os.environ.get('HOSTNAME', socket.gethostname())
-HOSTNAME = socket.gethostbyname_ex(HOSTNAME)[2][0]
+
 HOSTNAME = 'localhost'
 
 
@@ -126,6 +124,21 @@ def wait_for(port_num, timeout):
     return False
 
 
+def repair_mongo(name, dbpath):
+    """repair mongodb after usafe shutdown"""
+    cmd = [name, "--dbpath", dbpath, "--repair"]
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+    timeout = 30
+    t_start = time.time()
+    while time.time() - t_start < timeout:
+        proc.stdout.flush()
+        if "dbexit: really exiting now" in proc.stdout.readline():
+            return
+    return
+
+
 def mprocess(name, config_path, port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
@@ -173,13 +186,13 @@ def mprocess(name, config_path, port=None, timeout=180):
     return (proc.pid, host)
 
 
-def kill_mprocess(pid, timeout=10):
+def kill_mprocess(pid, timeout=20):
     """kill process
     Args:
         pid - process pid
     """
     if pid and proc_alive(pid):
-        os.kill(pid, 15)
+        os.kill(pid, 2)
         try:
             os.wait()
         except OSError:

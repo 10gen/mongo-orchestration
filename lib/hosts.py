@@ -17,7 +17,7 @@ class Host(object):
     """Class Host represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "nojournal": True, "smallfiles": True, "oplogSize": 10}
+    mongod_default = {"noprealloc": True, "nojournal": False, "smallfiles": True, "oplogSize": 10, "journal": True}
 
     def __init_db(self, dbpath):
         if not dbpath:
@@ -159,10 +159,19 @@ class Host(object):
         logger.debug("return {d}".format(d={"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
         return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
 
+    @property
+    def _is_locked(self):
+        lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
+        return self.cfg.get('nojournal', False) and os.path.exists(lock_file) and len(open(lock_file, 'r').read()) > 0
+
     def start(self, timeout=300):
         """start host
         return True of False"""
         try:
+            if self.cfg.get('dbpath', None) and self._is_locked:
+                # repair if needed
+                process.repair_mongo(self.name, self.cfg['dbpath'])
+
             self.pid, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
