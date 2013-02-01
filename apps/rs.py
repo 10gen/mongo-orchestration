@@ -213,6 +213,25 @@ def member_command(rs_id, member_id, command):
     return send_result(400)
 
 
+@route('/rs/<rs_id>/members/<member_id>/freeze', method='PUT')
+@error_wrap
+def member_freeze(rs_id, member_id):
+    logger.debug("member_freeze({rs_id}, {member_id})".format(**locals()))
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+
+    result = RS().member_freeze(rs_id, member_id, data.get('timeout', 60))
+    if result:
+        return send_result(200)
+    return send_result(400)
+
+
 @route('/rs/<rs_id>/primary', method='GET')
 @error_wrap
 def rs_member_primary(rs_id):

@@ -281,6 +281,15 @@ class RSTestCase(unittest.TestCase):
         self.rs.member_command(repl_id, _id, 'restart')
         self.assertTrue(self.rs.member_info(repl_id, _id)['procInfo']['alive'])
 
+    def test_member_freeze(self):
+        repl_id = self.rs.create({'members': [{"rsParams": {"priority": 19}}, {"rsParams": {"priority": 5}}, {}]})
+        primary_next = self.rs.member_info(repl_id, 2)['uri']
+        self.assertTrue(self.rs.member_freeze(repl_id, 1, 30))
+        self.rs.member_command(repl_id, 0, 'stop')
+        self.assertEqual(self.rs.primary(repl_id)['uri'], primary_next)
+        time.sleep(40)
+        self.assertEqual(self.rs.primary(repl_id)['uri'], self.rs.member_info(repl_id, 1)['uri'])
+
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority":0, "hidden": True}}, {}]})
         hidden = self.rs.hidden(repl_id)[0]
@@ -456,6 +465,16 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
         self.repl.member_command(_id, 'restart')
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
+
+    def test_member_freeze(self):
+        self.repl_cfg = {"members": [{"rsParams": {"priority": 19}}, {"rsParams": {"priority": 7}}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+        primary_next = self.repl.member_info(2)['uri']
+        self.assertTrue(self.repl.member_freeze(1, 30))
+        self.repl.member_command(0, 'stop')
+        self.assertEqual(self.repl.primary(), primary_next)
+        time.sleep(40)
+        self.assertEqual(self.repl.primary(), self.repl.member_info(1)['uri'])
 
     def test_members(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -835,7 +854,8 @@ class RSSingleTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=3)
-    # suite = unittest.TestSuite()
-    # suite.addTest(ReplicaSetTestCase('test_update_host_map'))
-    # unittest.TextTestRunner(verbosity=2).run(suite)
+    # unittest.main(verbosity=3)
+    suite = unittest.TestSuite()
+    suite.addTest(ReplicaSetTestCase('test_member_freeze'))
+    suite.addTest(RSTestCase('test_member_freeze'))
+    unittest.TextTestRunner(verbosity=2).run(suite)

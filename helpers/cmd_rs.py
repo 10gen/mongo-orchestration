@@ -117,6 +117,14 @@ class CmdRS(cmd.Cmd):
         r = requests.put(url)
         self.print_result(r)
 
+    def do_member_freeze(self, args):
+        args = args.split('  ')
+        rs_id = args[0]
+        member_id = args[1]
+        url = "{url}rs/{rs_id}/members/{member_id}/freeze".format(url=self.api_url, rs_id=self.real_id(rs_id), member_id=member_id)
+        r = requests.put(url, '{"timeout": %s}' % args[2])
+        self.print_result(r)
+
     def do_stepdown(self, args):
         args = map(lambda item: item.strip(' '), args.split('  '))
         rs_id = args[0]
