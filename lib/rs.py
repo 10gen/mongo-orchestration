@@ -154,6 +154,7 @@ class ReplicaSet(object):
         if isinstance(member_id, int):
             hostname = self.id2host(member_id)
         result = getattr(self.connection(hostname=hostname).admin, mode)(command, arg)
+        logger.debug("command result: {result}".format(result=result))
         return result
 
     @property
@@ -231,6 +232,18 @@ class ReplicaSet(object):
         """
         host_id = self._hosts.id_by_hostname(self.id2host(member_id))
         return self._hosts.command(host_id, command)
+
+    def member_freeze(self, member_id, timeout):
+        """apply command (start/stop/restart) to member instance of replica set
+        Args:
+            member_id - member index
+            timeout - duration of this operation
+
+        return True if operation success otherwise False
+        """
+        # return self.run_command("rs.freeze({timeout})".format(timeout=timeout), is_eval=True, member_id=member_id)
+        # result = c.admin.command("replSetFreeze", 10)
+        return self.run_command("replSetFreeze", timeout, is_eval=False, member_id=member_id)
 
     def members(self):
         """return list of members information"""
@@ -524,6 +537,20 @@ class RS(Singleton, Container):
         """
         repl = self[repl_id]
         result = repl.member_command(member_id, command)
+        self[repl_id] = repl
+        return result
+
+    def member_freeze(self, repl_id, member_id, timeout):
+        """apply command 'freeze' to the member of replica set
+        Args:
+            repl_id - replica set identity
+            member_id - member index
+            timeout - duration of this operation
+
+        return True if operation success otherwise False
+        """
+        repl = self[repl_id]
+        result = repl.member_freeze(member_id, timeout)
         self[repl_id] = repl
         return result
 
