@@ -21,21 +21,22 @@ logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
 
 
 def read_env():
+    """return command-line arguments"""
     parser = argparse.ArgumentParser(description='mongo-orchestration server')
     parser.add_argument('-f', '--config', action='store', default=cfg_file, type=str, dest='config')
     parser.add_argument('-e', '--env', action='store', type=str, dest='env', default='default')
     parser.add_argument(action='store', type=str, dest='command', default='start', choices=('start', 'stop', 'restart'))
     parser.add_argument('--no-fork', action='store_true', dest='no_fork', default=False)
     parser.add_argument('-p', '--port', action='store', dest='port', default=DEFAULT_PORT)
-    args = parser.parse_args()
+    cli_args = parser.parse_args()
 
-    if args.command == 'stop':
-        return args
+    if cli_args.command == 'stop':
+        return cli_args
     try:
         # read config
-        config = json.loads(open(args.config, 'r').read())
-        args.release_path = config['releases'][args.env]
-        return args
+        config = json.loads(open(cli_args.config, 'r').read())
+        cli_args.release_path = config['releases'][cli_args.env]
+        return cli_args
     except (IOError):
         print "config file not found"
         sys.exit(1)
@@ -45,13 +46,14 @@ def read_env():
 
 
 def setup(release_path):
+    """setup storages"""
     from lib import set_storage, cleanup_storage
-    db = pids_file
-    set_storage(db, release_path)
+    set_storage(pids_file, release_path)
     atexit.register(cleanup_storage)
 
 
 def get_app():
+    """return bottle app that includes all sub-apps"""
     from bottle import default_app
     default_app.push()
     import apps.hosts
@@ -62,6 +64,7 @@ def get_app():
 
 
 class MyDaemon(Daemon):
+    """class uses to run server as daemon"""
 
     def __init__(self, *args, **kwd):
         super(MyDaemon, self).__init__(*args, **kwd)
