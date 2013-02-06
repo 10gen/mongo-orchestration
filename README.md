@@ -385,6 +385,15 @@ result code:  200
 =================================
 ```
 
++ **member_freeze [index or replica-id]  [member-id]  [timeout]** - Forces the current node to become ineligible to become primary for the period specified  
+Example: `member_freeze 1  1  60`  
+
+```javascript
+========= Response data =========
+result code:  200
+=================================
+```
+
 + **member_delete [index or replcia-id]  [member-id]** - remove host from replica set  
 Example: `member_delete 1  4`  
 
