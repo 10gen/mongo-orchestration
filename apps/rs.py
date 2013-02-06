@@ -18,8 +18,8 @@ def send_result(code, result=None):
     content = None
     response.content_type = None
     if result is not None:
-            content = json.dumps(result)
-            response.content_type = "application/json"
+        content = json.dumps(result)
+        response.content_type = "application/json"
     response.status = code
     return content
 
