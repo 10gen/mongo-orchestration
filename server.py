@@ -38,10 +38,10 @@ def read_env():
         cli_args.release_path = config['releases'][cli_args.env]
         return cli_args
     except (IOError):
-        print "config file not found"
+        print("config file not found")
         sys.exit(1)
     except (ValueError):
-        print "config file is corrupted"
+        print("config file is corrupted")
         sys.exit(1)
 
 

@@ -20,16 +20,16 @@ class CmdHosts(cmd.Cmd):
             return host_id
 
     def print_result(self, r):
-        print "========= Response data ========="
+        print("========= Response data =========")
         obj = None
         try:
             obj = json.loads(r.text)
         except Exception:
             obj = r.text
-        print "result code: ", r.status_code
+        print("result code: {0}".format(r.status_code))
         if obj is not None:
             pprint.pprint(obj)
-        print "================================="
+        print("=================================")
 
     def do_list(self, args):
         """list
@@ -39,7 +39,7 @@ class CmdHosts(cmd.Cmd):
         if r.status_code == 200:
             self.hosts = json.loads(r.text)
         for n, item in enumerate(self.hosts, 1):
-            print n, item
+            print("{0} {1}".format(n, item))
 
     def do_create(self, params):
         """create param
@@ -60,7 +60,7 @@ class CmdHosts(cmd.Cmd):
         """start id
         start host by id, where id is host_id or item number in list command"""
         r = requests.put(self.api_url + "hosts/" + self.real_id(host_id) + "/start")
-        print r.status_code, r.text
+        print(r.status_code, r.text)
 
     def do_stop(self, host_id):
         """stop id
