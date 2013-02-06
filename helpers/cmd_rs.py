@@ -126,7 +126,7 @@ class CmdRS(cmd.Cmd):
         self.print_result(r)
 
     def do_stepdown(self, args):
-        args = map(lambda item: item.strip(' '), args.split('  '))
+        args = [item.strip(' ') for item in args.split('  ')]
         rs_id = args[0]
         params = "{}"
         if len(args) > 1:
