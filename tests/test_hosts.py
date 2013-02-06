@@ -68,7 +68,8 @@ class HostsTestCase(unittest.TestCase):
 
         operator.delitem(self.hosts, host_id2)
         self.assertFalse(host_id2 in self.hosts)
-        host2.stop(), host2.cleanup()
+        host2.stop()
+        host2.cleanup()
 
     def test_cleanup(self):
         self.hosts.create('mongod', {}, autostart=False)
@@ -90,11 +91,11 @@ class HostsTestCase(unittest.TestCase):
         self.assertRaises(OSError, self.hosts.create, 'fake_process_', {})
 
     def test_new_host_with_auth(self):
-        host_id = self.hosts.create('mongod', {}, login='adminko', password='XXX', autostart=True)
+        host_id = self.hosts.create('mongod', {}, login='adminko', password='password', autostart=True)
         hostname = self.hosts.hostname(host_id)
         c = pymongo.Connection(hostname)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
-        self.assertTrue(c.admin.authenticate('adminko', 'XXX'))
+        self.assertTrue(c.admin.authenticate('adminko', 'password'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
         self.assertTrue(c.admin.logout() is None)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)

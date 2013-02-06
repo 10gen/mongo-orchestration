@@ -11,7 +11,6 @@ import subprocess
 import os
 import random
 import tempfile
-import time
 from nose.plugins.attrib import attr
 
 
@@ -94,7 +93,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(len(self.pp._PortPool__ports) == 1)
 
     def test_refresh_only_closed(self):
-        ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        ports = set([random.randint(1025, 2000) for _ in xrange(15)])
         self.pp.change_range(port_sequence=ports)
         closed_num = len(self.pp._PortPool__closed)
         self.pp.port(), self.pp.port()
