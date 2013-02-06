@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# encode
+# coding=utf-8
 import sys
 import os
 import time
@@ -35,8 +35,8 @@ class Daemon(object):
                 sys.stdout.write("child process started successfully, parent exiting after {timeout} seconds\n".format(timeout=self.timeout))
                 time.sleep(self.timeout)
                 sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+        except OSError, error:
+            sys.stderr.write("fork #1 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
         # decouple from parent environment
@@ -50,8 +50,8 @@ class Daemon(object):
             if pid > 0:
                 # exit from second parent
                 sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+        except OSError, error:
+            sys.stderr.write("fork #2 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
         # redirect standard file descriptors
@@ -59,12 +59,12 @@ class Daemon(object):
         sys.stdout.flush()
         sys.stderr.flush()
 
-        si = file(self.stdin, 'r')
-        so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        stdin_fd = file(self.stdin, 'r')
+        stdout_fd = file(self.stdout, 'a+')
+        stderr_fd = file(self.stderr, 'a+', 0)
+        os.dup2(stdin_fd.fileno(), sys.stdin.fileno())
+        os.dup2(stdout_fd.fileno(), sys.stdout.fileno())
+        os.dup2(stderr_fd.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
@@ -72,6 +72,7 @@ class Daemon(object):
         file(self.pidfile, 'w+').write("%s\n" % pid)
 
     def delpid(self):
+        """remove pidfile"""
         os.remove(self.pidfile)
 
     def start(self):
@@ -80,9 +81,9 @@ class Daemon(object):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pf = file(self.pidfile, 'r')
-            pid = int(pf.read().strip())
-            pf.close()
+            pidfile_fd = file(self.pidfile, 'r')
+            pid = int(pidfile_fd.read().strip())
+            pidfile_fd.close()
         except IOError:
             pid = None
 
@@ -101,9 +102,9 @@ class Daemon(object):
         """
         # Get the pid from the pidfile
         try:
-            pf = file(self.pidfile, 'r')
-            pid = int(pf.read().strip())
-            pf.close()
+            pidfile_fd = file(self.pidfile, 'r')
+            pid = int(pidfile_fd.read().strip())
+            pidfile_fd.close()
         except IOError:
             pid = None
 
