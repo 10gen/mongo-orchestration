@@ -20,16 +20,16 @@ class CmdRS(cmd.Cmd):
             return rs_id
 
     def print_result(self, r):
-        print "========= Response data ========="
+        print("========= Response data =========")
         obj = None
         try:
             obj = json.loads(r.text)
         except Exception:
             obj = r.text
-        print "result code: ", r.status_code
+        print("result code: " + r.status_code)
         if obj is not None:
             pprint.pprint(obj)
-        print "================================="
+        print("=================================")
 
     def do_list(self, args):
         """list
@@ -39,7 +39,7 @@ class CmdRS(cmd.Cmd):
         if r.status_code == 200:
             self.rs = json.loads(r.text)
         for n, item in enumerate(self.rs, 1):
-            print n, item
+            print("{0} {1}".format(n, item))
 
     def do_create(self, params):
         """create param
@@ -49,7 +49,7 @@ class CmdRS(cmd.Cmd):
         self.print_result(r)
         if r.status_code == 200:
             self.rs.append(json.loads(r.text)['id'])
-            print self.rs
+            print(self.rs)
 
     def do_info(self, rs_id):
         """info id
@@ -126,7 +126,7 @@ class CmdRS(cmd.Cmd):
         self.print_result(r)
 
     def do_stepdown(self, args):
-        args = map(lambda item: item.strip(' '), args.split('  '))
+        args = [item.strip(' ') for item in args.split('  ')]
         rs_id = args[0]
         params = "{}"
         if len(args) > 1:

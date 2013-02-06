@@ -4,12 +4,12 @@
 import logging
 logger = logging.getLogger(__name__)
 from uuid import uuid4
-from singleton import Singleton
-from container import Container
+from lib.singleton import Singleton
+from lib.container import Container
 import pymongo
-from hosts import Hosts
+from lib.hosts import Hosts
 import time
-import errors
+import lib.errors
 import tempfile
 import sys
 import traceback
@@ -41,7 +41,7 @@ class ReplicaSet(object):
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
-            raise errors.ReplicaSetError("replica can't started")
+            raise lib.errors.ReplicaSetError("replica can't started")
 
         if self.login:
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
@@ -132,7 +132,7 @@ class ReplicaSet(object):
         repl_config['members'].append(member_config)
         if not self.repl_update(repl_config):
             self.member_del(member_id, reconfig=True)
-            raise errors.MongoOrchestrationError()
+            raise lib.errors.MongoOrchestrationError()
         return member_id
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
@@ -218,7 +218,7 @@ class ReplicaSet(object):
             for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
-            result['rsInfo']['primary'] = (repl['ismaster'] == True)
+            result['rsInfo']['primary'] = repl.get('ismaster', False)
 
         return result
 
@@ -340,7 +340,7 @@ class ReplicaSet(object):
             hosts - list of hosts
         """
         t_start = time.time()
-        while  True:
+        while True:
             try:
                 for host in hosts:
                     # TODO: use state code to check if host is reachable
@@ -426,7 +426,7 @@ class RS(Singleton, Container):
         """
         repl_id = rs_params.get('id', None)
         if repl_id is not None and repl_id in self:
-            raise errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
+            raise lib.errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
         repl = ReplicaSet(rs_params)
         self[repl.repl_id] = repl
         return repl.repl_id

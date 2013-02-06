@@ -5,10 +5,10 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 from uuid import uuid4
-from singleton import Singleton
-from container import Container
+from lib.singleton import Singleton
+from lib.container import Container
 import tempfile
-from hosts import Hosts
+from lib.hosts import Hosts
 from rs import RS
 import pymongo
 

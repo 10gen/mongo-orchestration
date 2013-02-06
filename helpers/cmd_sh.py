@@ -20,16 +20,16 @@ class CmdSH(cmd.Cmd):
             return sh_id
 
     def print_result(self, r):
-        print "========= Response data ========="
+        print("========= Response data =========")
         obj = None
         try:
             obj = json.loads(r.text)
         except Exception:
             obj = r.text
-        print "result code: ", r.status_code
+        print("result code: {0}".format(r.status_code))
         if obj is not None:
             pprint.pprint(obj)
-        print "================================="
+        print("=================================")
 
     def do_list(self, args):
         """list
@@ -39,7 +39,7 @@ class CmdSH(cmd.Cmd):
         if r.status_code == 200:
             self.sh = json.loads(r.text)
         for n, item in enumerate(self.sh, 1):
-            print n, item
+            print("{0} {1}".format(n, item))
 
     def do_create(self, params):
         """create param
@@ -49,7 +49,7 @@ class CmdSH(cmd.Cmd):
         self.print_result(r)
         if r.status_code == 200:
             self.sh.append(json.loads(r.text)['id'])
-            print self.sh
+            print(self.sh)
 
     def do_info(self, sh_id):
         """info id

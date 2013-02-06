@@ -6,7 +6,7 @@ import subprocess
 import time
 import os
 import errno
-from singleton import Singleton
+from lib.singleton import Singleton
 import tempfile
 import shutil
 import stat
