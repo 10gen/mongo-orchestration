@@ -3,10 +3,10 @@
 
 import logging
 logger = logging.getLogger(__name__)
-import process
+import lib.process
 from uuid import uuid4
-from singleton import Singleton
-from container import Container
+from lib.singleton import Singleton
+from lib.container import Container
 import pymongo
 import os
 import tempfile
@@ -56,9 +56,9 @@ class Host(object):
 
         # find open port
         if 'port' not in cfg:
-            cfg['port'] = process.PortPool().port(check=True)
+            cfg['port'] = lib.process.PortPool().port(check=True)
 
-        return process.write_config(cfg), cfg
+        return lib.process.write_config(cfg), cfg
 
     def __init_mongos(self, params):
         cfg = params.copy()
@@ -70,9 +70,9 @@ class Host(object):
             cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
 
         if 'port' not in cfg:
-            cfg['port'] = process.PortPool().port(check=True)
+            cfg['port'] = lib.process.PortPool().port(check=True)
 
-        return process.write_config(cfg), cfg
+        return lib.process.write_config(cfg), cfg
 
     def __init__(self, name, procParams, auth_key=None, login='', password=''):
         """Args:
@@ -136,7 +136,7 @@ class Host(object):
 
     @property
     def is_alive(self):
-        return process.proc_alive(self.pid)
+        return lib.process.proc_alive(self.pid)
 
     def info(self):
         """return info about host as dict object"""
@@ -170,9 +170,9 @@ class Host(object):
         try:
             if self.cfg.get('dbpath', None) and self._is_locked:
                 # repair if needed
-                process.repair_mongo(self.name, self.cfg['dbpath'])
+                lib.process.repair_mongo(self.name, self.cfg['dbpath'])
 
-            self.pid, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.pid, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
@@ -185,7 +185,7 @@ class Host(object):
 
     def stop(self):
         """stop host"""
-        return process.kill_mprocess(self.pid)
+        return lib.process.kill_mprocess(self.pid)
 
     def restart(self, timeout=300):
         """restart host: stop() and start()
@@ -205,7 +205,7 @@ class Host(object):
 
     def cleanup(self):
         """remove host data"""
-        process.cleanup_mprocess(self.config_path, self.cfg)
+        lib.process.cleanup_mprocess(self.config_path, self.cfg)
 
 
 class Hosts(Singleton, Container):
