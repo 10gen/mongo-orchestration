@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # coding=utf-8
 
-from hosts import Hosts
-from rs import RS
-from shards import Shards
+from lib.hosts import Hosts
+from lib.rs import RS
+from lib.shards import Shards
 
 
 def set_storage(storage_path, bin_path=''):
