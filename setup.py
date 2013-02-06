@@ -11,13 +11,13 @@ import sys
 
 if not sys.platform.startswith('java'):
     if sys.version_info < (2, 7):
-        requiredPacks = ['nose-testconfig==0.6', 'simplejson==2.1.0', 'multiprocessing==2.6.2.1', 'unittest2']
+        REQUIRED_PACKS = ['nose-testconfig==0.6', 'simplejson==2.1.0', 'multiprocessing==2.6.2.1', 'unittest2']
     elif sys.version_info >= (3,):
-        requiredPacks = ['nose-testconfig==0.9']
+        REQUIRED_PACKS = ['nose-testconfig==0.9']
     else:
-        requiredPacks = ['nose-testconfig==0.8']
+        REQUIRED_PACKS = ['nose-testconfig==0.8']
 else:
-    requiredPacks = ['nose-testconfig==0.6', 'simplejson==2.1.0', 'unittest2']
+    REQUIRED_PACKS = ['nose-testconfig==0.6', 'simplejson==2.1.0', 'unittest2']
 
 setup(
     name='pymongo-orchestration',
@@ -27,5 +27,5 @@ setup(
     setup_requires=[
         'pymongo>=2.4',
         'nose>=1.2'
-    ] + requiredPacks
+    ] + REQUIRED_PACKS
 )
