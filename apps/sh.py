@@ -18,8 +18,8 @@ def send_result(code, result=None):
     content = None
     response.content_type = None
     if result is not None:
-            content = json.dumps(result)
-            response.content_type = "application/json"
+        content = json.dumps(result)
+        response.content_type = "application/json"
     response.status = code
     return content
 
@@ -63,7 +63,7 @@ def sh_create():
 @error_wrap
 def sh_list():
     logger.debug("sh_list()")
-    data = [info for info in Shards()]
+    data = [sh_info for sh_info in Shards()]
     return send_result(200, data)
 
 
