@@ -170,7 +170,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(lock_file))
         self.assertTrue(len(open(lock_file, 'r').read()) > 0)
         process.repair_mongo(self.bin_path, self.cfg['dbpath'])
-        self.assertFalse(len(open(lock_file, 'r').read()) > 0)
+        self.assertFalse(len(open(lock_file, 'r').read()) > 0, "lock_file contains: {0}".format(open(lock_file, 'r').read()))
 
     def test_mprocess_fail(self):
         fd_cfg, config_path = tempfile.mkstemp()
