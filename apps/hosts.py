@@ -26,7 +26,7 @@ def send_result(code, result=None):
 def error_wrap(f):
     def wrap(*arg, **kwd):
         f_name = f.func_name
-        logger.debug("{f_name}({arg}, {kwd})".format(**locals()))
+        logger.debug("{f_name}({arg}, {kwd})".format(f_name=f_name, arg=arg, kwd=kwd))
         try:
             return f(*arg, **kwd)
         except StandardError:
