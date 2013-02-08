@@ -660,25 +660,25 @@ class RSSingleTestCase(unittest.TestCase):
             time.sleep(sleep)
         return True
 
-    def test_rs(self):
+    def check_singleton(self):
         # test singleton
         self.assertEqual(id(self.rs), id(RS()))
 
+    def check_set_settings(self):
         # test set_settings
         print("test set_setting")
         self.assertEqual(self.path, self.rs.pids_file)
 
+    def check_bool(self):
         # test bool
         print("test bool")
         self.assertEqual(True, bool(self.rs))
 
-        # TODO: test_operations
-        # TODO: test_operations2
-
+    def check_rs_preinit(self):
         # rs_new
-        print("test bool")
         self.assertEqual(self.repl_id, 'testRs')
 
+    def check_rs_new_with_auth(self):
         # rs_new_with_auth
         print("rs_new_with_auth")
         host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
@@ -691,6 +691,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         c.close()
 
+    def check_info_with_auth(self):
         # info_with_auth
         print("info_with_auth")
         info = self.rs.info(self.repl_id)
@@ -698,6 +699,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertEqual(info['id'], self.repl_id)
         self.assertEqual(len(info['members']), 9)
 
+    def check_primary(self):
         # primary
         print("primary")
         primary = self.rs.primary(self.repl_id)['uri']
@@ -705,6 +707,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertTrue(c.is_primary)
         c.close()
 
+    def check_members(self):
         # members
         print("members")
         host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
@@ -713,31 +716,37 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertTrue(host1 in [member['host'] for member in members])
         self.assertTrue(host2 in [member['host'] for member in members])
 
+    def check_secondaries(self):
         # secondaries
         print("secondaries")
         secondaries = self.rs.secondaries(self.repl_id)
         self.assertEqual(len(secondaries), 6)
 
+    def check_arbiters(self):
         # arbiters
         print("arbiters")
         arbiters = self.rs.arbiters(self.repl_id)
         self.assertEqual(len(arbiters), 2)
 
+    def check_hidden(self):
         # hidden
         print("hidden")
         hidden = self.rs.hidden(self.repl_id)
         self.assertEqual(len(hidden), 2)
 
+    def check_passives(self):
         # passives
         print("passives")
         passives = self.rs.passives(self.repl_id)
         self.assertEqual(len(passives), 1)
 
+    def check_hosts(self):
         # hosts
         print("hosts")
         hosts = self.rs.hosts(self.repl_id)
         self.assertEqual(len(hosts), 3)
 
+    def check_compare_passives_and_hosts(self):
         # compare_passives_and_hosts
         print("compare_passives_and_hosts")
         passives = [host['host'] for host in self.rs.passives(self.repl_id)]
@@ -748,6 +757,7 @@ class RSSingleTestCase(unittest.TestCase):
         for item in hosts:
             self.assertTrue(item not in passives)
 
+    def check_member_info(self):
         # member_info
         print("member_info")
         info = self.rs.member_info(self.repl_id, 0)
@@ -771,6 +781,7 @@ class RSSingleTestCase(unittest.TestCase):
             self.assertEqual(info['_id'], _id)
             self.assertTrue(info['rsInfo']['hidden'])
 
+    def check_tagging(self):
         # tagging
         print("tagging")
         print(self.rs.primary(self.repl_id))
@@ -778,6 +789,7 @@ class RSSingleTestCase(unittest.TestCase):
         for hidden in self.rs.hidden(self.repl_id):
             self.assertEqual(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('tags', None), self.tags_hidden)
 
+    def check_stepdown(self):
         # stepdown
         print("stepdown")
         time.sleep(5)
@@ -786,6 +798,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertTrue(self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.primary(self.repl_id)['uri']))
         self.assertNotEqual(primary, self.rs.primary(self.repl_id)['uri'])
 
+    def check_member_update(self):
         # member_update
         print("member_update")
         h_count = len(self.rs.hidden(self.repl_id))
@@ -796,6 +809,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertEqual(len(self.rs.hidden(self.repl_id)), h_count - 1)
         self.assertFalse(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
+    def check_member_del(self):
         # member_del
         print("member_del")
         mb_count = len(self.rs.members(self.repl_id))
@@ -809,6 +823,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertEqual(len(self.rs.members(self.repl_id)), mb_count - 1)
         self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member_del['host'])
 
+    def check_member_add(self):
         # member_add
         print("member_add")
         mb_count = len(self.rs.members(self.repl_id))
@@ -817,6 +832,7 @@ class RSSingleTestCase(unittest.TestCase):
         info = self.rs.member_info(self.repl_id, member_id)
         self.assertTrue(info['rsInfo']['hidden'])
 
+    def check_member_command(self):
         # member_command
         print("member_command")
         _id = self.rs.secondaries(self.repl_id)[0]['_id']
@@ -828,6 +844,7 @@ class RSSingleTestCase(unittest.TestCase):
         self.rs.member_command(self.repl_id, _id, 'restart')
         self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
 
+    def check_rs_del(self):
         # rs_del
         print("rs_del")
         rs_count = len(self.rs)
@@ -840,6 +857,7 @@ class RSSingleTestCase(unittest.TestCase):
         for member in members:
             self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member['host'])
 
+    def check_rs_create(self):
         # rs_create
         print("rs_create")
         rs_count = len(self.rs)
@@ -847,10 +865,63 @@ class RSSingleTestCase(unittest.TestCase):
         self.rs.create({'id': 'test-rs-create-2', 'members': [{}, {}]})
         self.assertTrue(len(self.rs) == rs_count + 2)
 
+    def check_cleanup(self):
         # cleanup
         print("cleanup")
         self.rs.cleanup()
         self.assertTrue(len(self.rs) == 0)
+
+    def test_rs(self):
+        self.check_singleton()
+
+        self.check_set_settings()
+
+        self.check_bool()
+
+        # TODO: test_operations
+        # TODO: test_operations2
+
+        self.check_rs_preinit()
+
+        self.check_rs_new_with_auth()
+
+        self.check_info_with_auth()
+
+        self.check_primary()
+
+        self.check_members()
+
+        self.check_secondaries()
+
+        self.check_arbiters()
+
+        self.check_hidden()
+
+        self.check_passives()
+
+        self.check_hosts()
+
+        self.check_compare_passives_and_hosts()
+
+        self.check_member_info()
+
+        self.check_tagging()
+
+        self.check_stepdown()
+
+        self.check_member_update()
+
+        self.check_member_del()
+
+        self.check_member_add()
+
+        self.check_member_command()
+
+        self.check_rs_del()
+
+        self.check_rs_create()
+
+        self.check_cleanup()
 
 
 if __name__ == '__main__':
