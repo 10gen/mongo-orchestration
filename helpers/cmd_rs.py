@@ -26,7 +26,7 @@ class CmdRS(cmd.Cmd):
             obj = json.loads(r.text)
         except Exception:
             obj = r.text
-        print("result code: " + r.status_code)
+        print("result code: {0}".format(r.status_code))
         if obj is not None:
             pprint.pprint(obj)
         print("=================================")

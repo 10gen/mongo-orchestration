@@ -171,7 +171,7 @@ def mprocess(name, config_path, port=None, timeout=180):
             logger.debug("process is not alive")
             raise OSError
     except (OSError, TypeError) as err:
-        logger.debug("exception while executing process: {err}".format(**locals()))
+        logger.debug("exception while executing process: {err}".format(err=err))
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
         logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
