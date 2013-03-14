@@ -26,6 +26,8 @@ class Shard(object):
         self._routers = []
         self._shards = {}
         self.tags = {}
+        self.sslParams = params.get('sslParams', {})
+        self.ssl = not not self.sslParams
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
         for cfg in params.get('members', []):
@@ -46,14 +48,16 @@ class Shard(object):
             try:
                 self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
             except pymongo.errors.OperationFailure:
-                pymongo.Connection(self.router['hostname']).admin.add_user(self.login, self.password)
+                pymongo.Connection(self.router['hostname'], ssl=self.ssl).admin.add_user(self.login, self.password)
 
     def __init_configsvr(self, params):
         """create and start config servers"""
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Hosts().create('mongod', cfg, autostart=True, auth_key=self.auth_key))
+            ssl_params = self.sslParams
+            ssl_params.update(cfg.get("sslParams", {}))
+            self._configsvrs.append(Hosts().create('mongod', cfg, sslParams=ssl_params, autostart=True, auth_key=self.auth_key))
 
     def __len__(self):
         return len(self._shards)
@@ -86,11 +90,13 @@ class Shard(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().create('mongos', params, autostart=True, auth_key=self.auth_key))
+        ssl_params = self.sslParams
+        ssl_params.update(params.get("sslParams", {}))
+        self._routers.append(Hosts().create('mongos', params, sslParams=ssl_params, autostart=True, auth_key=self.auth_key))
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
     def connection(self):
-        c = pymongo.Connection(self.router['hostname'])
+        c = pymongo.Connection(self.router['hostname'], ssl=self.ssl)
         self.login and self.password and c.admin.authenticate(self.login, self.password)
         return c
 
@@ -125,6 +131,7 @@ class Shard(object):
             # is replica set
             rs_params = params.copy()
             rs_params.update({'auth_key': self.auth_key})
+            rs_params.update({'sslParams': self.sslParams})
             rs_id = RS().create(rs_params)
             members = RS().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
@@ -136,7 +143,7 @@ class Shard(object):
 
         else:
             # is single host
-            params.update({'autostart': True, 'auth_key': self.auth_key})
+            params.update({'autostart': True, 'auth_key': self.auth_key, 'sslParams': self.sslParams})
             params['procParams'] = params.get('procParams', {})
             logger.debug("hosts create params: {params}".format(**locals()))
             host_id = Hosts().create('mongod', **params)
