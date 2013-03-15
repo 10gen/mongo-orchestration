@@ -36,9 +36,10 @@ class Host(object):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
 
-    def __init_mongod(self, params):
+    def __init_mongod(self, params, ssl):
         cfg = self.mongod_default.copy()
         cfg.update(params)
+        cfg.update(ssl)
 
         # create db folder
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
@@ -60,8 +61,9 @@ class Host(object):
 
         return lib.process.write_config(cfg), cfg
 
-    def __init_mongos(self, params):
+    def __init_mongos(self, params, ssl):
         cfg = params.copy()
+        cfg.update(ssl)
 
         self.__init_logpath(cfg.get('logpath', None))
 
@@ -74,7 +76,7 @@ class Host(object):
 
         return lib.process.write_config(cfg), cfg
 
-    def __init__(self, name, procParams, auth_key=None, login='', password=''):
+    def __init__(self, name, procParams, sslParams={}, auth_key=None, login='', password=''):
         """Args:
             name - name of process (mongod or mongos)
             procParams - dictionary with params for mongo process
@@ -82,7 +84,7 @@ class Host(object):
             login - username for the  admin collection
             password - password
         """
-        logger.debug("Host.__init__({name}, {procParams}, {auth_key}, {login}, {password})".format(**locals()))
+        logger.debug("Host.__init__({name}, {procParams}, {sslParams}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
         self.login = login
         self.password = password
@@ -92,14 +94,18 @@ class Host(object):
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
+        self.kwargs = {}
+
+        if not not sslParams:
+            self.kwargs['ssl'] = True
 
         proc_name = os.path.split(name)[1].lower()
         if proc_name.startswith('mongod'):
-            self.config_path, self.cfg = self.__init_mongod(procParams)
+            self.config_path, self.cfg = self.__init_mongod(procParams, sslParams)
 
         elif proc_name.startswith('mongos'):
             self.is_mongos = True
-            self.config_path, self.cfg = self.__init_mongos(procParams)
+            self.config_path, self.cfg = self.__init_mongos(procParams, sslParams)
 
         else:
             self.config_path, self.cfg = None, {}
@@ -109,7 +115,7 @@ class Host(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.Connection(self.hostname)
+        c = pymongo.Connection(self.hostname, **self.kwargs)
         if not self.is_mongos and (self.login and self.password):
             c.admin.authenticate(self.login, self.password)
         return c
@@ -147,7 +153,7 @@ class Host(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120)
+                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120, **self.kwargs)
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
@@ -224,7 +230,7 @@ class Hosts(Singleton, Container):
             for host_id in self._storage:
                 self.remove(host_id)
 
-    def create(self, name, procParams, auth_key=None, login=None, password=None, timeout=300, autostart=True):
+    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True):
         """create new host
         Args:
            name - process name or path
@@ -239,7 +245,7 @@ class Hosts(Singleton, Container):
         """
         name = os.path.split(name)[1]
         try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), procParams, auth_key, login, password)
+            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
             if autostart:
                 if not host.start(timeout):
                     raise OSError
