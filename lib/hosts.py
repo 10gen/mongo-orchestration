@@ -99,7 +99,7 @@ class Host(object):
         if not not sslParams:
             self.kwargs['ssl'] = True
 
-            if 'sslClientPEMKeyFile' in sslParams:
+            """if 'sslClientPEMKeyFile' in sslParams:
                 self.kwargs['ssl_certfile'] = sslParams['sslClientPEMKeyFile']
                 del sslParams['sslClientPEMKeyFile']
 
@@ -108,7 +108,7 @@ class Host(object):
                 del sslParams['sslKeyFile']
 
             if 'sslCAFile' in sslParams:
-                self.kwargs['ssl_ca_certs'] = sslParams['sslCAFile']
+                self.kwargs['ssl_ca_certs'] = sslParams['sslCAFile']"""
 
         proc_name = os.path.split(name)[1].lower()
         if proc_name.startswith('mongod'):

@@ -33,7 +33,7 @@ class Shard(object):
         if not not self.sslParams:
             self.kwargs['ssl'] = True
 
-            if 'sslClientPEMKeyFile' in self.sslParams:
+            """if 'sslClientPEMKeyFile' in self.sslParams:
                 self.kwargs['ssl_certfile'] = self.sslParams['sslClientPEMKeyFile']
                 del self.sslParams['sslClientPEMKeyFile']
 
@@ -42,7 +42,7 @@ class Shard(object):
                 del self.sslParams['sslKeyFile']
 
             if 'sslCAFile' in self.sslParams:
-                self.kwargs['ssl_ca_certs'] = self.sslParams['sslCAFile']
+                self.kwargs['ssl_ca_certs'] = self.sslParams['sslCAFile']"""
 
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
