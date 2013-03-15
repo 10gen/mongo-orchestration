@@ -60,9 +60,7 @@ class Shard(object):
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            ssl_params = self.sslParams.clone()
-            ssl_params.update(cfg.get("sslParams", {}))
-            self._configsvrs.append(Hosts().create('mongod', cfg, sslParams=ssl_params, autostart=True, auth_key=self.auth_key))
+            self._configsvrs.append(Hosts().create('mongod', cfg, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
 
     def __len__(self):
         return len(self._shards)
@@ -95,9 +93,7 @@ class Shard(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        ssl_params = self.sslParams
-        ssl_params.update(params.get("sslParams", {}))
-        self._routers.append(Hosts().create('mongos', params, sslParams=ssl_params, autostart=True, auth_key=self.auth_key))
+        self._routers.append(Hosts().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
     def connection(self):

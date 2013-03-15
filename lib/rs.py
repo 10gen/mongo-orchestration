@@ -181,10 +181,7 @@ class ReplicaSet(object):
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
 
-        ssl_params = self.sslParams.clone()
-        ssl_params.update(params.get('sslParams', {}))
-
-        host_id = self._hosts.create('mongod', proc_params, ssl_params, self.auth_key)
+        host_id = self._hosts.create('mongod', proc_params, self.sslParams, self.auth_key)
         member_config.update({"_id": member_id, "host": self._hosts.info(host_id)['uri']})
         return member_config
 
