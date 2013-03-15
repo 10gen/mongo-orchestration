@@ -36,7 +36,21 @@ class ReplicaSet(object):
         self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
 
         self.sslParams = rs_params.get('sslParams', {})
-        self.ssl = not not self.sslParams
+        self.kwargs = {}
+
+        if not not self.sslParams:
+            self.kwargs['ssl'] = True
+
+            if 'sslClientPEMKeyFile' in self.sslParams:
+                self.kwargs['ssl_certfile'] = self.sslParams['sslClientPEMKeyFile']
+                del self.sslParams['sslClientPEMKeyFile']
+
+            if 'sslKeyFile' in self.sslParams:
+                self.kwargs['ssl_keyfile'] = self.sslParams['sslKeyFile']
+                del self.sslParams['sslKeyFile']
+
+            if 'sslCAFile' in self.sslParams:
+                self.kwargs['ssl_ca_certs'] = self.sslParams['sslCAFile']
 
         config = {"_id": self.repl_id, "members": [
                   self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
@@ -298,14 +312,14 @@ class ReplicaSet(object):
         while True:
             try:
                 if hostname is None:
-                    c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20, ssl=self.ssl)
+                    c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20, **self.kwargs)
                     if c.primary:
                         self.login and self.password and c.admin.authenticate(self.login, self.password)
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     logger.debug("connection to the {hosts}".format(**locals()))
-                    c = pymongo.Connection(hosts, network_timeout=20, ssl=self.ssl)
+                    c = pymongo.Connection(hosts, network_timeout=20, **self.kwargs)
                     if self.login and self.password:
                         c.admin.authenticate(self.login, self.password)
                     return c

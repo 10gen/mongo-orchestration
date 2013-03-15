@@ -26,8 +26,24 @@ class Shard(object):
         self._routers = []
         self._shards = {}
         self.tags = {}
+
         self.sslParams = params.get('sslParams', {})
-        self.ssl = not not self.sslParams
+        self.kwargs = {}
+
+        if not not self.sslParams:
+            self.kwargs['ssl'] = True
+
+            if 'sslClientPEMKeyFile' in self.sslParams:
+                self.kwargs['ssl_certfile'] = self.sslParams['sslClientPEMKeyFile']
+                del self.sslParams['sslClientPEMKeyFile']
+
+            if 'sslKeyFile' in self.sslParams:
+                self.kwargs['ssl_keyfile'] = self.sslParams['sslKeyFile']
+                del self.sslParams['sslKeyFile']
+
+            if 'sslCAFile' in self.sslParams:
+                self.kwargs['ssl_ca_certs'] = self.sslParams['sslCAFile']
+
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
         for cfg in params.get('members', []):
@@ -48,7 +64,7 @@ class Shard(object):
             try:
                 self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
             except pymongo.errors.OperationFailure:
-                pymongo.Connection(self.router['hostname'], ssl=self.ssl).admin.add_user(self.login, self.password)
+                pymongo.Connection(self.router['hostname'], **self.kwargs).admin.add_user(self.login, self.password)
 
     def __init_configsvr(self, params):
         """create and start config servers"""
@@ -96,7 +112,7 @@ class Shard(object):
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
     def connection(self):
-        c = pymongo.Connection(self.router['hostname'], ssl=self.ssl)
+        c = pymongo.Connection(self.router['hostname'], **self.kwargs)
         self.login and self.password and c.admin.authenticate(self.login, self.password)
         return c
 

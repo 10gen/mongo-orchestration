@@ -94,7 +94,21 @@ class Host(object):
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
-        self.ssl = not not sslParams
+        self.kwargs = {}
+
+        if not not sslParams:
+            self.kwargs['ssl'] = True
+
+            if 'sslClientPEMKeyFile' in sslParams:
+                self.kwargs['ssl_certfile'] = sslParams['sslClientPEMKeyFile']
+                del sslParams['sslClientPEMKeyFile']
+
+            if 'sslKeyFile' in sslParams:
+                self.kwargs['ssl_keyfile'] = sslParams['sslKeyFile']
+                del sslParams['sslKeyFile']
+
+            if 'sslCAFile' in sslParams:
+                self.kwargs['ssl_ca_certs'] = sslParams['sslCAFile']
 
         proc_name = os.path.split(name)[1].lower()
         if proc_name.startswith('mongod'):
@@ -112,7 +126,7 @@ class Host(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.Connection(self.hostname, ssl=self.ssl)
+        c = pymongo.Connection(self.hostname, **self.kwargs)
         if not self.is_mongos and (self.login and self.password):
             c.admin.authenticate(self.login, self.password)
         return c
@@ -150,7 +164,7 @@ class Host(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120, ssl=self.ssl)
+                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120, **self.kwargs)
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
