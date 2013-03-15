@@ -33,17 +33,6 @@ class Shard(object):
         if not not self.sslParams:
             self.kwargs['ssl'] = True
 
-            """if 'sslClientPEMKeyFile' in self.sslParams:
-                self.kwargs['ssl_certfile'] = self.sslParams['sslClientPEMKeyFile']
-                del self.sslParams['sslClientPEMKeyFile']
-
-            if 'sslKeyFile' in self.sslParams:
-                self.kwargs['ssl_keyfile'] = self.sslParams['sslKeyFile']
-                del self.sslParams['sslKeyFile']
-
-            if 'sslCAFile' in self.sslParams:
-                self.kwargs['ssl_ca_certs'] = self.sslParams['sslCAFile']"""
-
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
         for cfg in params.get('members', []):
@@ -71,7 +60,7 @@ class Shard(object):
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            ssl_params = self.sslParams
+            ssl_params = self.sslParams.clone()
             ssl_params.update(cfg.get("sslParams", {}))
             self._configsvrs.append(Hosts().create('mongod', cfg, sslParams=ssl_params, autostart=True, auth_key=self.auth_key))
 
