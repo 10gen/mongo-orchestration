@@ -523,6 +523,17 @@ result code:  200
 =================================
 ```
 
++ **router_delete** - delete router
+Example: `router_add [index or cluster-id] [router-id]`
+
+```javascript
+========= Response data =========
+result code:  200
+{'ok': 1,
+ 'routers': [u'e5858165-929b-48bc-ac0d-87cf31655ea8', u'302ed013-5ce7-45e0-b5ba-132e6d52caec']}
+=================================
+```
+
 + **members** - show cluster's members  
 Example: `members [index or cluster-id]`  
 

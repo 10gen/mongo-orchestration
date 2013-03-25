@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#!/usr/bin/python
 # coding=utf-8
 
 import requests
@@ -110,6 +111,14 @@ class CmdSH(cmd.Cmd):
         params = args[1]
         url = "{url}sh/{sh_id}/routers".format(url=self.api_url, sh_id=self.real_id(sh_id))
         r = requests.post(url, data=params)
+        self.print_result(r)
+
+    def do_router_delete(self, args):
+        args = args.split('  ')
+        sh_id = args[0]
+        router_id = args[1]
+        url = "{url}sh/{sh_id}/routers/{router_id}".format(url=self.api_url, sh_id=self.real_id(sh_id), router_id=router_id)
+        r = requests.delete(url)
         self.print_result(r)
 
     def do_exit(self, line):

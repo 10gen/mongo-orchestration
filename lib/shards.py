@@ -121,6 +121,12 @@ class Shard(object):
         result = getattr(self.connection().admin, mode)(command, name, **d)
         return result
 
+    def router_remove(self, router_id):
+        """remove """
+        result = Hosts().remove(router_id)
+        del self._routers[ self._routers.index(router_id) ]
+        return { "ok": 1, "routers": self._routers }
+
     def _add(self, shard_uri, name):
         """execute addShard command"""
         return self.router_command("addShard", (shard_uri, {"name": name}), is_eval=False)
@@ -265,6 +271,13 @@ class Shards(Singleton, Container):
         """add new router"""
         shard = self._storage[shard_id]
         result = shard.router_add(params)
+        self._storage[shard_id] = shard
+        return result
+
+    def router_del(self, shard_id, router_id):
+        """remove router from shard cluster"""
+        shard = self._storage[shard_id]
+        result = shard.router_remove(router_id)
         self._storage[shard_id] = shard
         return result
 

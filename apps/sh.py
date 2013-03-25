@@ -144,6 +144,14 @@ def router_add(sh_id):
     result = Shards().router_add(sh_id, data)
     return send_result(200, result)
 
+@route('/sh/<sh_id>/routers/<router_id>', method='DELETE')
+@error_wrap
+def router_del(sh_id, router_id):
+    logger.debug("router_del({sh_id}), {router_id}".format(**locals()))
+    if sh_id not in Shards():
+        return send_result(404)
+    result = Shards().router_del(sh_id, router_id)
+    return send_result(200, result)
 
 @route('/sh/<sh_id>/members/<member_id>', method='GET')
 @error_wrap
