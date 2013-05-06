@@ -115,8 +115,8 @@ class Host(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.Connection(self.hostname, **self.kwargs)
-        if not self.is_mongos and (self.login and self.password):
+        c = pymongo.MongoClient(self.hostname, **self.kwargs)
+        if not self.is_mongos and self.admin_added and (self.login and self.password):
             c.admin.authenticate(self.login, self.password)
         return c
 
@@ -182,7 +182,8 @@ class Host(object):
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
-        except OSError:
+        except OSError as e:
+            logger.error("Error: {0}".format(e))
             return False
         if not self.admin_added and self.login:
             self._add_auth()
@@ -203,9 +204,11 @@ class Host(object):
     def _add_auth(self):
         try:
             db = self.connection.admin
+            logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
             db.add_user(self.login, self.password)
             db.logout()
-        except pymongo.errors.OperationFailure:
+        except pymongo.errors.OperationFailure as e:
+            logger.error("Error: {0}".format(e))
             # user added successfuly but OperationFailure exception raises
             pass
 
