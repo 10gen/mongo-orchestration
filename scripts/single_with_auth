@@ -1,0 +1,25 @@
+#!/bin/bash
+
+WORKSPACE=/code/tmp
+LOGPATH=$WORKSPACE/mongod.log
+DBPATH=$WORKSPACE
+
+rm -r $WORKSPACE
+mkdir $WORKSPACE
+
+BASE_URL=http://localhost:8889
+
+echo "DBPATH:$DBPATH"
+echo "LOGPATH:$LOGPATH"
+params="{\"login\":\"bob\", \"password\": \"pwd123\", \"auth_key\": \"secret\",\"name\": \"mongod\", \"procParams\": {\"port\": 27017, \"dbpath\": \"$DBPATH\", \"logpath\":\"$LOGPATH\", \"ipv6\":true, \"verbose\":\"vvvvv\", \"logappend\":true, \"nojournal\":false}}"
+echo curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
+echo ""
+curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
+echo ""
+echo curl -i -H "Accept: application/json" -X GET $BASE_URL/hosts 
+echo ""
+curl -i -H "Accept: application/json" -X GET $BASE_URL/hosts
+echo ""
+
+tail -f $LOGPATH
+
