@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKSPACE=/code/tmp
+WORKSPACE=~/tmp
 DATAPATH=$WORKSPACE
 
 rm -r $WORKSPACE
@@ -9,7 +9,7 @@ mkdir $WORKSPACE
 BASE_URL=http://localhost:8889
 
 echo "$DATAPATH:$DATAPATH"
-params="{\"routers\": [{\"port\": 27017, \"logpath\": \"$DATAPATH/ruter27017.log\"}], \"configsvrs\": [{\"port\": 27020, \"dbpath\": \"$DATAPATH/db27020\", \"logpath\": \"$DATAPATH/configsvr21020.log\"}], \"id\": \"shard_cluster_1\", \"members\": [{\"id\": \"sh01\", \"shardParams\": {\"procParams\":{\"port\": 27018, \"dbpath\": \"$DATAPATH/db27018\", \"logpath\": \"$DATAPATH/sh01.log\"}}}, {\"shardParams\": {\"procParams\":{\"port\": 27019, \"dbpath\":\"$DATAPATH/db27019\", \"logpath\": \"$DATAPATH/sh02.log\"}}, \"id\": \"sh02\"}]}"
+params="{\"routers\": [{\"port\": 27017, \"logpath\": \"$DATAPATH/router27017.log\"}, {\"port\": 27018, \"logpath\": \"$DATAPATH/router27018.log\"}], \"configsvrs\": [{\"port\": 29017, \"dbpath\": \"$DATAPATH/db29017\", \"logpath\": \"$DATAPATH/configsvr29017.log\"}], \"id\": \"shard_cluster_1\", \"members\": [{\"id\": \"sh01\", \"shardParams\": {\"procParams\":{\"port\": 28017, \"dbpath\": \"$DATAPATH/db28017\", \"logpath\": \"$DATAPATH/sh01.log\"}}}, {\"shardParams\": {\"procParams\":{\"port\": 28018, \"dbpath\":\"$DATAPATH/db28018\", \"logpath\": \"$DATAPATH/sh02.log\"}}, \"id\": \"sh02\"}]}"
 echo curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
 echo ""
 curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
