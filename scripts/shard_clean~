@@ -1,0 +1,20 @@
+#!/bin/bash
+
+WORKSPACE=~/tmp/orchestration
+DATAPATH=$WORKSPACE
+
+rm -r $WORKSPACE
+mkdir $WORKSPACE
+
+BASE_URL=http://localhost:8889
+
+echo "$DATAPATH:$DATAPATH"
+params="{\"routers\": [{\"port\": 27017, \"logpath\": \"$DATAPATH/router27017.log\"}, {\"port\": 27018, \"logpath\": \"$DATAPATH/router27018.log\"}], \"configsvrs\": [{\"port\": 29017, \"dbpath\": \"$DATAPATH/db29017\", \"logpath\": \"$DATAPATH/configsvr29017.log\"}], \"id\": \"shard_cluster_1\", \"members\": [{\"id\": \"sh01\", \"shardParams\": {\"procParams\":{\"port\": 28017, \"dbpath\": \"$DATAPATH/db28017\", \"logpath\": \"$DATAPATH/sh01.log\"}}}, {\"shardParams\": {\"procParams\":{\"port\": 28018, \"dbpath\":\"$DATAPATH/db28018\", \"logpath\": \"$DATAPATH/sh02.log\"}}, \"id\": \"sh02\"}]}"
+echo curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
+echo ""
+curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/sh
+echo ""
+echo curl -i -H "Accept: application/json" -X GET $BASE_URL/sh/shard_cluster_1
+echo ""
+curl -i -H "Accept: application/json" -X GET $BASE_URL/sh/shard_cluster_1
+echo ""
