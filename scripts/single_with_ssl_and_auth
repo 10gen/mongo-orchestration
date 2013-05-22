@@ -13,7 +13,7 @@ BASE_URL=http://localhost:8889
 echo "DBPATH:$DBPATH"
 echo "LOGPATH:$LOGPATH"
 ssl_params="\"sslParams\":{\"sslOnNormalPorts\": true,\"sslPEMKeyFile\":\"$SSL_FILES/server.pem\",\"sslCAFile\":\"$SSL_FILES/ca.pem\",\"sslWeakCertificateValidation\":true},"
-params="{$ssl_params \"name\": \"mongod\", \"procParams\": {\"port\": 27017, \"dbpath\": \"$DBPATH\", \"logpath\":\"$LOGPATH\", \"ipv6\":true, \"verbose\":\"vvvvv\", \"logappend\":true, \"nojournal\":false}}"
+params="{$ssl_params \"login\":\"bob\", \"password\": \"pwd123\", \"auth_key\": \"secret\",\"name\": \"mongod\", \"procParams\": {\"port\": 27017, \"dbpath\": \"$DBPATH\", \"logpath\":\"$LOGPATH\", \"ipv6\":true, \"verbose\":\"vvvvv\", \"logappend\":true, \"nojournal\":false}}"
 echo curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
 echo ""
 curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/hosts
