@@ -1,0 +1,26 @@
+#!/bin/bash
+
+WORKSPACE=~/tmp/orchestration
+LOGPATH=$WORKSPACE/mongod.log
+DATAPATH=$WORKSPACE
+
+rm -r $WORKSPACE
+mkdir $WORKSPACE
+
+BASE_URL=http://localhost:8889
+
+echo "DBPATH:$DBPATH"
+echo "LOGPATH:$LOGPATH"
+params="{\"id\": \"repl0\", \"members\":[{\"rsParams\":{\"priority\": 99}, \"procParams\": {\"dbpath\":\"$DATAPATH/db27017\", \"port\": 27017, \"logpath\":\"$LOGPATH/db27017.log\", \"nojournal\":false, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vv\", \"ipv6\": true}}, {\"rsParams\": {\"priority\": 1.1}, \"procParams\":{\"dbpath\":\"$DATAPATH/db27018\", \"port\": 27018, \"logpath\":\"$LOGPATH/db27018.log\", \"nojournal\":false, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vv\", \"ipv6\": true}}, {\"procParams\":{\"dbpath\":\"$DATAPATH/db27019\", \"port\": 27019, \"logpath\":\"$LOGPATH/27019.log\", \"nojournal\":false, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"verbose\": \"vv\", \"ipv6\": true}}]}" 
+
+echo curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/rs
+echo ""
+curl -H "Accept: application/json" -X POST -d "$params" $BASE_URL/rs
+echo ""
+echo curl -i -H "Accept: application/json" -X GET $BASE_URL/rs 
+echo ""
+curl -i -H "Accept: application/json" -X GET $BASE_URL/rs
+echo ""
+
+tail -f $LOGPATH
+
