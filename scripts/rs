@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WORKSPACE=~/tmp/orchestration
-LOGPATH=$WORKSPACE/mongod.log
+LOGPATH=$WORKSPACE
 DATAPATH=$WORKSPACE
 
 rm -r $WORKSPACE
@@ -22,5 +22,5 @@ echo ""
 curl -i -H "Accept: application/json" -X GET $BASE_URL/rs
 echo ""
 
-tail -f $LOGPATH
+tail -f $LOGPATH/db27017.log
 
