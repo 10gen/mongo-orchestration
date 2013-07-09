@@ -29,8 +29,9 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 + **authentication**  - support authentication by keyFile
 
 ##Requires
-[Python 2.7](http://www.python.org/download/)  
-[requests](http://docs.python-requests.org/en/latest/user/install/#install)
+- [Python 2.7](http://www.python.org/download/)  
+- [requests](http://docs.python-requests.org/en/latest/user/install/#install)
+- [PyMongo 2.4.2](http://api.mongodb.org/python/2.4.2/)
 
 ##Installing
 
@@ -60,6 +61,30 @@ Arguments:
 + tested on Ubuntu 12.04 and OS X 10.8.2
 + does not support Windows
 + authorization hasn't implemented
+
+## Predefined configurations
+There is a set of predefined configurations in repository. They can be started with '#' script from root folder. 
+
+To start a single node without ssl or auth:
+```bash
+./# configurations/hosts/clean.json 
+```
+
+To start a single node with ssl, but no auth:
+```bash
+./# configurations/hosts/ssl.json 
+```
+
+To start a replica set with ssl and auth:
+```bash
+./# configurations/rs/ssl_auth.json 
+```
+
+To start a sharded cluster with auth:
+```bash
+./# configurations/sh/auth.json 
+```
+
 
 ## Command line scripts
   
