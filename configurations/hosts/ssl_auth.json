@@ -1,0 +1,21 @@
+{
+    "auth_key": "secret", 
+    "login": "bob", 
+    "name": "mongod", 
+    "password": "pwd123", 
+    "procParams": {
+        "dbpath": "$DBPATH", 
+        "ipv6": true, 
+        "logappend": true, 
+        "logpath": "$LOGPATH/mongod.log", 
+        "nojournal": false, 
+        "port": 27017, 
+        "verbose": "vvvvv"
+    }, 
+    "sslParams": {
+        "sslCAFile": "$SSL_FILES/ca.pem", 
+        "sslOnNormalPorts": true, 
+        "sslPEMKeyFile": "$SSL_FILES/server.pem", 
+        "sslWeakCertificateValidation": true
+    }
+}

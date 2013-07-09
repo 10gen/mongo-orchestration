@@ -1,0 +1,12 @@
+{
+    "name": "mongod", 
+    "procParams": {
+        "dbpath": "$DBPATH", 
+        "ipv6": true, 
+        "logappend": true, 
+        "logpath": "$LOGPATH/mongod.log", 
+        "nojournal": false, 
+        "port": 27017, 
+        "verbose": "vvvvv"
+    }
+}
