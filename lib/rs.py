@@ -300,14 +300,20 @@ class ReplicaSet(object):
                 if hostname is None:
                     c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20, **self.kwargs)
                     if c.primary:
-                        self.login and self.password and c.admin.authenticate(self.login, self.password)
+                        try:
+                            self.login and self.password and c.admin.authenticate(self.login, self.password)
+                        except:
+                            pass
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     logger.debug("connection to the {hosts}".format(**locals()))
                     c = pymongo.Connection(hosts, network_timeout=20, **self.kwargs)
                     if self.login and self.password:
-                        c.admin.authenticate(self.login, self.password)
+                        try:
+                            c.admin.authenticate(self.login, self.password)
+                        except:
+                            pass
                     return c
             except (pymongo.errors.PyMongoError):
                 exc_type, exc_value, exc_tb = sys.exc_info()

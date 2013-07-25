@@ -117,7 +117,10 @@ class Host(object):
         """return authenticated connection"""
         c = pymongo.MongoClient(self.hostname, **self.kwargs)
         if not self.is_mongos and self.admin_added and (self.login and self.password):
-            c.admin.authenticate(self.login, self.password)
+            try:
+                c.admin.authenticate(self.login, self.password)
+            except:
+                pass
         return c
 
     def run_command(self, command, arg=None, is_eval=False):
