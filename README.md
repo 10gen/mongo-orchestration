@@ -31,7 +31,7 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 ##Requires
 - [Python 2.7](http://www.python.org/download/)  
 - [requests](http://docs.python-requests.org/en/latest/user/install/#install)
-- [PyMongo 2.4.2](http://api.mongodb.org/python/2.4.2/)
+- [PyMongo 2.5.2](http://api.mongodb.org/python/2.5.2/)
 
 ##Installing
 

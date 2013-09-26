@@ -109,7 +109,7 @@ class ShardsTestCase(unittest.TestCase):
         shard_id = self.sh.create(config)
         self.assertEqual(shard_id, 'shard_cluster_1')
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
-        c = pymongo.Connection(host)
+        c = pymongo.MongoClient(host)
         result = c.admin.command("listShards")
         for shard in result['shards']:
             shard['_id'] in ('sh01', 'sh02', 'sh-rs-01')
@@ -129,7 +129,7 @@ class ShardsTestCase(unittest.TestCase):
         }
         self.sh.create(config)
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
-        c = pymongo.Connection(host)
+        c = pymongo.MongoClient(host)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
         c.admin.authenticate('admin', 'adminpass')
         self.assertTrue(isinstance(c.admin.command("listShards"), dict))
@@ -235,7 +235,7 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
 
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
-        c = pymongo.Connection(host)
+        c = pymongo.MongoClient(host)
         result = c.admin.command("listShards")
 
         self.assertEqual(len(result['shards']), 3)
@@ -268,7 +268,7 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
 
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
-        c = pymongo.Connection(host)
+        c = pymongo.MongoClient(host)
 
         self.assertEqual(len(c.admin.command("listShards")['shards']), 0)
         result = self.sh.member_add(sh_id, {'id': 'test1', 'shardParams': {}})
@@ -326,7 +326,7 @@ class ShardTestCase(unittest.TestCase):
             'members': [{'id': 'sh01'}, {'id': 'sh02'}]
         }
         self.sh = Shard(config)
-        c = pymongo.Connection(self.sh.router['hostname'])
+        c = pymongo.MongoClient(self.sh.router['hostname'])
         for item in c.admin.command("listShards")['shards']:
             self.assertTrue(item['_id'] in ('sh01', 'sh02'))
 
@@ -343,7 +343,7 @@ class ShardTestCase(unittest.TestCase):
             'members': [{'id': 'sh01'}, {'id': 'sh02'}]
         }
         self.sh = Shard(config)
-        c = pymongo.Connection(self.sh.router['hostname'])
+        c = pymongo.MongoClient(self.sh.router['hostname'])
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
         c.admin.authenticate('admin', 'adminpass')
         self.assertTrue(isinstance(c.admin.command("listShards"), dict))

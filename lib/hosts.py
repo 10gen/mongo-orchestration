@@ -156,7 +156,7 @@ class Host(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.Connection(self.hostname.split(':')[0], self.cfg['port'], network_timeout=120, **self.kwargs)
+                c = pymongo.MongoClient(self.hostname.split(':')[0], self.cfg['port'], socketTimeoutMS=120000, **self.kwargs)
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
@@ -208,7 +208,11 @@ class Host(object):
         try:
             db = self.connection.admin
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
-            db.add_user(self.login, self.password)
+            db.add_user(self.login, self.password,
+                        roles=['clusterAdmin',
+                               'dbAdminAnyDatabase',
+                               'readWriteAnyDatabase',
+                               'userAdminAnyDatabase'])
             db.logout()
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))

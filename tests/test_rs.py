@@ -99,7 +99,7 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(repl_id, 'test-rs-1')
         host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
         host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
-        c = pymongo.Connection([host1, host2], replicaSet=repl_id)
+        c = pymongo.MongoClient([host1, host2], replicaSet=repl_id)
         self.assertEqual(c.admin.eval("rs.conf()")['_id'], repl_id)
         c.close()
 
@@ -113,7 +113,7 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(repl_id, 'test-rs-1')
         host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
         host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
-        c = pymongo.Connection([host1, host2], replicaSet=repl_id)
+        c = pymongo.MongoClient([host1, host2], replicaSet=repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -138,7 +138,7 @@ class RSTestCase(unittest.TestCase):
     def test_primary(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
         primary = self.rs.primary(repl_id)['uri']
-        c = pymongo.Connection(primary)
+        c = pymongo.MongoClient(primary)
         self.assertTrue(c.is_primary)
         c.close()
 
@@ -154,10 +154,10 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.create({'members': [{}, {}]})
         self.assertEqual(len(self.rs), 2)
         primary = self.rs.primary(repl_id)['uri']
-        self.assertTrue(pymongo.Connection(primary))
+        self.assertTrue(pymongo.MongoClient(primary))
         self.rs.remove(repl_id)
         self.assertEqual(len(self.rs), 1)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, primary)
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, primary)
 
     def test_members(self):
         port1, port2 = PortPool().port(check=True), PortPool().port(check=True)
@@ -257,10 +257,10 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
         self.assertEqual(len(self.rs.members(repl_id)), 3)
         secondary = self.rs.secondaries(repl_id)[0]
-        self.assertTrue(pymongo.Connection(secondary['host']))
+        self.assertTrue(pymongo.MongoClient(secondary['host']))
         self.assertTrue(self.rs.member_del(repl_id, secondary['_id']))
         self.assertEqual(len(self.rs.members(repl_id)), 2)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, secondary['host'])
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, secondary['host'])
 
     def test_member_add(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}]})
@@ -586,11 +586,11 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 
     def test_auth_connection(self):
         self.assertTrue(isinstance(self.repl.connection().admin.collection_names(), list))
-        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        c = pymongo.MongoReplicaSetClient(self.repl.primary(), replicaSet=self.repl.repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
     def test_auth_admin(self):
-        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        c = pymongo.MongoReplicaSetClient(self.repl.primary(), replicaSet=self.repl.repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -598,10 +598,10 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
     def test_auth_collection(self):
-        c = pymongo.ReplicaSetConnection(self.repl.primary(), replicaSet=self.repl.repl_id)
+        c = pymongo.MongoReplicaSetClient(self.repl.primary(), replicaSet=self.repl.repl_id)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         db = c.test_auth
-        db.add_user('user', 'userpass')
+        db.add_user('user', 'userpass', roles=['readWrite'])
         c.admin.logout()
 
         self.assertTrue(db.authenticate('user', 'userpass'))
@@ -683,7 +683,7 @@ class RSSingleTestCase(unittest.TestCase):
         print("rs_new_with_auth")
         host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
         host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
-        c = pymongo.Connection([host1, host2], replicaSet=self.repl_id)
+        c = pymongo.MongoClient([host1, host2], replicaSet=self.repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -703,7 +703,7 @@ class RSSingleTestCase(unittest.TestCase):
         # primary
         print("primary")
         primary = self.rs.primary(self.repl_id)['uri']
-        c = pymongo.Connection(primary)
+        c = pymongo.MongoClient(primary)
         self.assertTrue(c.is_primary)
         c.close()
 
@@ -818,10 +818,10 @@ class RSSingleTestCase(unittest.TestCase):
         logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
         member_del = self.rs.secondaries(self.repl_id)[0]
         logger.debug("member to remove: {member_del}".format(member_del=member_del))
-        self.assertTrue(pymongo.Connection(member_del['host']))
+        self.assertTrue(pymongo.MongoClient(member_del['host']))
         self.assertTrue(self.rs.member_del(self.repl_id, member_del['_id']))
         self.assertEqual(len(self.rs.members(self.repl_id)), mb_count - 1)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member_del['host'])
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member_del['host'])
 
     def check_member_add(self):
         # member_add
@@ -851,11 +851,11 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertTrue(rs_count > 0)
         members = self.rs.members(self.repl_id)
         for member in members:
-            self.assertTrue(pymongo.errors.PyMongoError, pymongo.Connection, member['host'])
+            self.assertTrue(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
         self.rs.remove(self.repl_id)
         self.assertEqual(len(self.rs), rs_count - 1)
         for member in members:
-            self.assertRaises(pymongo.errors.PyMongoError, pymongo.Connection, member['host'])
+            self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
 
     def check_rs_create(self):
         # rs_create

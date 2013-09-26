@@ -12,8 +12,7 @@
                 "nssize": 1, 
                 "oplogSize": 150, 
                 "port": 27017, 
-                "smallfiles": true, 
-                "verbose": "vv"
+                "smallfiles": true
             }, 
             "rsParams": {
                 "priority": 99
@@ -30,8 +29,7 @@
                 "nssize": 1, 
                 "oplogSize": 150, 
                 "port": 27018, 
-                "smallfiles": true, 
-                "verbose": "vv"
+                "smallfiles": true
             }, 
             "rsParams": {
                 "priority": 1.1
@@ -48,8 +46,7 @@
                 "nssize": 1, 
                 "oplogSize": 150, 
                 "port": 27019, 
-                "smallfiles": true, 
-                "verbose": "vv"
+                "smallfiles": true
             }
         }
     ], 

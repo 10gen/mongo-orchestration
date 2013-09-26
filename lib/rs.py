@@ -53,7 +53,11 @@ class ReplicaSet(object):
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
             try:
                 c = self.connection()
-                c.admin.add_user(self.login, self.password)
+                c.admin.add_user(self.login, self.password,
+                                 roles=['clusterAdmin',
+                                        'dbAdminAnyDatabase',
+                                        'readWriteAnyDatabase',
+                                        'userAdminAnyDatabase'])
             except pymongo.errors.OperationFailure:
                 pass
             finally:
@@ -284,8 +288,8 @@ class ReplicaSet(object):
         return [member['name'] for member in members if member['state'] == state]
 
     def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return ReplicaSetConnection object if hostname specified
-        return Connection object if hostname doesn't specified
+        """return MongoReplicaSetClient object if hostname specified
+        return MongoClient object if hostname doesn't specified
         Args:
             hostname - connection uri
             read_preference - default PRIMARY
@@ -298,7 +302,7 @@ class ReplicaSet(object):
         while True:
             try:
                 if hostname is None:
-                    c = pymongo.ReplicaSetConnection(hosts, replicaSet=self.repl_id, read_preference=read_preference, network_timeout=20, **self.kwargs)
+                    c = pymongo.MongoReplicaSetClient(hosts, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
                     if c.primary:
                         try:
                             self.login and self.password and c.admin.authenticate(self.login, self.password)
@@ -308,7 +312,7 @@ class ReplicaSet(object):
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     logger.debug("connection to the {hosts}".format(**locals()))
-                    c = pymongo.Connection(hosts, network_timeout=20, **self.kwargs)
+                    c = pymongo.MongoClient(hosts, socketTimeoutMS=20000, **self.kwargs)
                     if self.login and self.password:
                         try:
                             c.admin.authenticate(self.login, self.password)

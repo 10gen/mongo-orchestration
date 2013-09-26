@@ -1,4 +1,4 @@
 nose>=1.2
 coverage>=3.5
-pymongo>=2.4
+pymongo>=2.5.2
 requests>=1.1

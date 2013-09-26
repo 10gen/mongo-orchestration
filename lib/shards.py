@@ -10,7 +10,9 @@ from lib.container import Container
 import tempfile
 from lib.hosts import Hosts
 from rs import RS
-import pymongo
+
+from pymongo import MongoClient
+from pymongo.errors import OperationFailure
 
 
 class Shard(object):
@@ -52,8 +54,13 @@ class Shard(object):
         if self.login:
             try:
                 self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
-            except pymongo.errors.OperationFailure:
-                pymongo.Connection(self.router['hostname'], **self.kwargs).admin.add_user(self.login, self.password)
+            except OperationFailure:
+                client = MongoClient(self.router['hostname'], **self.kwargs)
+                client.admin.add_user(self.login, self.password,
+                                      roles=['clusterAdmin',
+                                             'dbAdminAnyDatabase',
+                                             'readWriteAnyDatabase',
+                                             'userAdminAnyDatabase'])
 
     def __init_configsvr(self, params):
         """create and start config servers"""
@@ -97,7 +104,7 @@ class Shard(object):
         return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
 
     def connection(self):
-        c = pymongo.Connection(self.router['hostname'], **self.kwargs)
+        c = MongoClient(self.router['hostname'], **self.kwargs)
         try:
             self.login and self.password and c.admin.authenticate(self.login, self.password)
         except:

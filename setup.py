@@ -25,7 +25,7 @@ setup(
     author='Mikhail Mamrouski',
     author_email='mmamrouski@gmail.com',
     setup_requires=[
-        'pymongo>=2.4',
+        'pymongo>=2.5.2',
         'nose>=1.2'
     ] + REQUIRED_PACKS
 )

@@ -6,8 +6,7 @@
         "logappend": true, 
         "logpath": "$LOGPATH/mongod.log", 
         "nojournal": false, 
-        "port": 27017, 
-        "verbose": "vvvvv"
+        "port": 27017
     }, 
     "sslParams": {
         "sslCAFile": "$SSL_FILES/ca.pem", 

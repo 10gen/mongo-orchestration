@@ -258,7 +258,7 @@ def read_config(config_path):
     with open(config_path, 'r') as fd:
         for line in fd.readlines():
             if '=' in line:
-                key, value = tuple(line.split('='))
+                key, value = line.split('=', 1)
                 try:
                     result[key] = json.loads(value)
                 except ValueError:

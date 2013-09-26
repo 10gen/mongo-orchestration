@@ -93,7 +93,7 @@ class HostsTestCase(unittest.TestCase):
     def test_new_host_with_auth(self):
         host_id = self.hosts.create('mongod', {}, login='adminko', password='password', autostart=True)
         hostname = self.hosts.hostname(host_id)
-        c = pymongo.Connection(hostname)
+        c = pymongo.MongoClient(hostname)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('adminko', 'password'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -305,7 +305,7 @@ class HostAuthTestCase(unittest.TestCase):
         self.host2.start()
 
         for host in (self.host, self.host2):
-            c = pymongo.Connection(host.host, host.port)
+            c = pymongo.MongoClient(host.host, host.port)
             self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
             self.assertTrue(c.admin.authenticate('admin', 'admin'))
             self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -317,14 +317,14 @@ class HostAuthTestCase(unittest.TestCase):
 
     def test_auth_connection(self):
         self.assertTrue(isinstance(self.host.connection.admin.collection_names(), list))
-        c = pymongo.Connection(self.host.host, self.host.port)
+        c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.host.restart()
-        c = pymongo.Connection(self.host.host, self.host.port)
+        c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
     def test_auth_admin(self):
-        c = pymongo.Connection(self.host.host, self.host.port)
+        c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -332,10 +332,10 @@ class HostAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
 
     def test_auth_collection(self):
-        c = pymongo.Connection(self.host.host, self.host.port)
+        c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         db = c.test_host_auth
-        db.add_user('user', 'userpass')
+        db.add_user('user', 'userpass', roles=['readWrite'])
         c.admin.logout()
 
         self.assertTrue(db.authenticate('user', 'userpass'))
