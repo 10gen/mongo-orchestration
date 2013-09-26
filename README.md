@@ -60,7 +60,6 @@ Arguments:
 ##Notes
 + tested on Ubuntu 12.04 and OS X 10.8.2
 + does not support Windows
-+ authorization hasn't implemented
 
 ## Predefined configurations
 There is a set of predefined configurations in repository. They can be started with '#' script from root folder. 
