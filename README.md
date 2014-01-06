@@ -36,7 +36,7 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 ##Installing
 
 ###Ubuntu
-`sudo apt-get installpython-pip && sudo pip install pymongo==2.3 requests>=0.12`
+`sudo apt-get install python-pip && sudo pip install pymongo==2.3 requests>=0.12`
 
 ###OSX
 
