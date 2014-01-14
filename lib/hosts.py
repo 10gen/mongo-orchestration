@@ -209,7 +209,8 @@ class Host(object):
             db = self.connection.admin
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
             db.add_user(self.login, self.password,
-                        roles=['clusterAdmin',
+                        roles=['__system',
+                               'clusterAdmin',
                                'dbAdminAnyDatabase',
                                'readWriteAnyDatabase',
                                'userAdminAnyDatabase'])

@@ -57,7 +57,8 @@ class Shard(object):
             except OperationFailure:
                 client = MongoClient(self.router['hostname'], **self.kwargs)
                 client.admin.add_user(self.login, self.password,
-                                      roles=['clusterAdmin',
+                                      roles=['__system',
+                                             'clusterAdmin',
                                              'dbAdminAnyDatabase',
                                              'readWriteAnyDatabase',
                                              'userAdminAnyDatabase'])

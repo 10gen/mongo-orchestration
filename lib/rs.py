@@ -54,7 +54,8 @@ class ReplicaSet(object):
             try:
                 c = self.connection()
                 c.admin.add_user(self.login, self.password,
-                                 roles=['clusterAdmin',
+                                 roles=['__system',
+                                        'clusterAdmin',
                                         'dbAdminAnyDatabase',
                                         'readWriteAnyDatabase',
                                         'userAdminAnyDatabase'])
