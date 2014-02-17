@@ -52,16 +52,13 @@ class Shard(object):
                     self.router_command(command=command, is_eval=True)
 
         if self.login:
-            try:
-                self.router_command(command="db.addUser('{login}', '{password}');".format(login=self.login, password=self.password), is_eval=True)
-            except OperationFailure:
-                client = MongoClient(self.router['hostname'], **self.kwargs)
-                client.admin.add_user(self.login, self.password,
-                                      roles=['__system',
-                                             'clusterAdmin',
-                                             'dbAdminAnyDatabase',
-                                             'readWriteAnyDatabase',
-                                             'userAdminAnyDatabase'])
+            client = MongoClient(self.router['hostname'], **self.kwargs)
+            client.admin.add_user(self.login, self.password,
+                                  roles=['__system',
+                                         'clusterAdmin',
+                                         'dbAdminAnyDatabase',
+                                         'readWriteAnyDatabase',
+                                         'userAdminAnyDatabase'])
 
     def __init_configsvr(self, params):
         """create and start config servers"""
