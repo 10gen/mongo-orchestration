@@ -244,13 +244,10 @@ class Shards(Singleton, Container):
         Return shard_id
            where shard_id - id which can use to take the shard from hosts collection
         """
-        try:
-            params['id'] = params.get('id', str(uuid4()))
-            shard = Shard(params)
-            self[shard.id] = shard
-            return shard.id
-        except:
-            raise
+        params['id'] = params.get('id', str(uuid4()))
+        shard = Shard(params)
+        self[shard.id] = shard
+        return shard.id
 
     def remove(self, shard_id):
         """remove shard and data stuff
