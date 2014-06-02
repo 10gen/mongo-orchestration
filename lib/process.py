@@ -217,7 +217,7 @@ def cleanup_mprocess(config_path, cfg):
 def remove_path(path):
     """remove path from file system
     If path is None - do nothing"""
-    errFunction = lambda func, filepath, exc_info: (time.sleep(2), os.chmod(filepath, stat.S_IWUSR), func(filepath))
+    errFunction = lambda func, filepath, exc_info: (time.sleep(2), os.chmod(filepath, stat.S_IWRITE | stat.S_IREAD), func(filepath))
     if path is None or not os.path.exists(path):
         return
     if os.path.isdir(path):
@@ -226,8 +226,6 @@ def remove_path(path):
         try:
             shutil.os.remove(path)
         except OSError as err:
-            oct(os.stat(path).st_mode & 0777)
-            print err
             errFunction(shutil.os.remove, path, None)
 
 
