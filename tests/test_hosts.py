@@ -57,7 +57,7 @@ class HostsTestCase(unittest.TestCase):
         host_id = self.hosts.create('mongod', {}, autostart=False)
         self.assertTrue(len(self.hosts) == 1)
         self.assertTrue(host_id in self.hosts)
-        host_id2, host2 = 'host-id2', Host('mongod', {}, None)
+        host_id2, host2 = 'host-id2', Host('mongod', {})
         host2.start(30)
         host2_pid = host2.info()['procInfo']['pid']
         self.hosts[host_id2] = host2
@@ -162,7 +162,7 @@ class HostTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         self.mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        self.host = Host(self.mongod, {}, None)
+        self.host = Host(self.mongod, {})
 
     def tearDown(self):
         if hasattr(self, 'host'):
@@ -207,7 +207,7 @@ class HostTestCase(unittest.TestCase):
         fd_log, log_path = tempfile.mkstemp()
         db_path = tempfile.mkdtemp()
         params = {'logPath': log_path, 'dbpath': db_path}
-        host2 = Host('mongod', params, None)
+        host2 = Host('mongod', params)
         host2.start(30)
         info2 = host2.info()
         for param, value in params.items():
@@ -229,13 +229,13 @@ class HostTestCase(unittest.TestCase):
         self.assertTrue(self.host.start(30))
         self.assertTrue(self.host.info()['procInfo']['pid'] > 0)
 
-        fake_host = Host('fake_proc_', {}, None)
+        fake_host = Host('fake_proc_', {})
         self.assertFalse(fake_host.start(5))
         fake_host.cleanup()
 
     def test_start_with_repair(self):
         self.host.cleanup()
-        self.host = Host(self.mongod, {"journal": False}, None)
+        self.host = Host(self.mongod, {"journal": False})
         self.host.start(30)
         os.kill(self.host.pid, 9)
         self.assertTrue(self.host._is_locked)
@@ -287,7 +287,7 @@ class HostAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         self.mongod = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
-        self.host = Host(self.mongod, {}, 'secret', login='admin', password='admin')
+        self.host = Host(self.mongod, {}, auth_key='secret', login='admin', password='admin')
         self.host.start()
 
     def tearDown(self):
