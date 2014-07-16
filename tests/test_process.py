@@ -161,7 +161,6 @@ class ProcessTestCase(unittest.TestCase):
     def test_repair(self):
         port = self.pp.port(check=True)
         self.cfg['journal'] = False
-        self.cfg['nojournal'] = True
         lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)

@@ -8,7 +8,7 @@
         "ipv6": true, 
         "logappend": true, 
         "logpath": "$LOGPATH/mongod.log", 
-        "nojournal": false, 
+        "journal": true,
         "port": 27017
     }, 
     "sslParams": {

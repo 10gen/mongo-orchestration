@@ -235,7 +235,7 @@ class HostTestCase(unittest.TestCase):
 
     def test_start_with_repair(self):
         self.host.cleanup()
-        self.host = Host(self.mongod, {"nojournal": True, "journal": False}, None)
+        self.host = Host(self.mongod, {"journal": False}, None)
         self.host.start(30)
         os.kill(self.host.pid, 9)
         self.assertTrue(self.host._is_locked)
