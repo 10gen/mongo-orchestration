@@ -17,7 +17,7 @@ class Host(object):
     """Class Host represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 10, "journal": True}
+    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
 
     def __init_db(self, dbpath):
         if not dbpath:
@@ -171,7 +171,10 @@ class Host(object):
     @property
     def _is_locked(self):
         lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
-        return (not self.cfg.get('journal', True)) and os.path.exists(lock_file) and len(open(lock_file, 'r').read()) > 0
+        # If neither journal nor nojournal is specified, assume nojournal=True
+        journaling_enabled = (self.cfg.get('journal') or
+                              not self.cfg.get('nojournal', True))
+        return (not journaling_enabled and os.path.exists(lock_file) and len(open(lock_file, 'r').read())) > 0
 
     def start(self, timeout=300):
         """start host
