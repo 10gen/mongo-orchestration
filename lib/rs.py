@@ -129,7 +129,7 @@ class ReplicaSet(object):
 
     def info(self):
         """return information about replica set"""
-        return {"id": self.repl_id, "auth_key": self.auth_key, "members": self.members()}
+        return {"id": self.repl_id, "auth_key": self.auth_key, "members": self.members(), "uri": ','.join(x['host'] for x in self.members())}
 
     def repl_member_add(self, params):
         """create new mongod instances and add it to the replica set.
