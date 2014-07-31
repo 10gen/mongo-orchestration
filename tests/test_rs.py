@@ -132,6 +132,7 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(info['id'], repl_id)
         self.assertEqual(len(info['members']), 2)
         self.assertTrue(info['uri'].find(','))
+        self.assertTrue(info['uri'].find('replicaSet=' + repl_id))
 
     def test_info_with_auth(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]})
