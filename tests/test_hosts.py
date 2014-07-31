@@ -201,7 +201,7 @@ class HostTestCase(unittest.TestCase):
     def test_info(self):
         self.host.start(30)
         info = self.host.info()
-        for item in ("uri", "statuses", "serverInfo", "procInfo"):
+        for item in ("uri", "statuses", "serverInfo", "procInfo", "orchestration"):
             self.assertTrue(item in info)
 
         fd_log, log_path = tempfile.mkstemp()
@@ -216,6 +216,7 @@ class HostTestCase(unittest.TestCase):
         info = host2.info()
         self.assertEqual(len(info['serverInfo']), 0)
         self.assertEqual(len(info['statuses']), 0)
+        self.assertEqual(info['orchestration'], 'hosts')
         host2.cleanup()
 
     def test_command(self):

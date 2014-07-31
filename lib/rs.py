@@ -132,7 +132,8 @@ class ReplicaSet(object):
         return {"id": self.repl_id,
                 "auth_key": self.auth_key,
                 "members": self.members(),
-                "uri": ','.join(x['host'] for x in self.members()) + '/?replicaSet=' + self.repl_id}
+                "uri": ','.join(x['host'] for x in self.members()) + '/?replicaSet=' + self.repl_id,
+                "orchestration": 'rs'}
 
     def repl_member_add(self, params):
         """create new mongod instances and add it to the replica set.

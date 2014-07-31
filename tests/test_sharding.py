@@ -153,15 +153,14 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
         info = self.sh.info(sh_id)
         self.assertTrue(isinstance(info, dict))
-        self.assertTrue('members' in info)
-        self.assertTrue('configsvrs' in info)
-        self.assertTrue('routers' in info)
-        self.assertTrue('uri' in info)
+        for item in ("members", "configsvrs", "routers", "uri", "orchestration"):
+            self.assertTrue(item in info)
 
         self.assertEqual(len(info['members']), 2)
         self.assertEqual(len(info['configsvrs']), 3)
         self.assertEqual(len(info['routers']), 3)
         self.assertTrue(info['uri'].find(','))
+        self.assertEqual(info['orchestration'], 'sh')
 
     def test_configservers(self):
         config = {}

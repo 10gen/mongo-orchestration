@@ -166,7 +166,7 @@ class Host(object):
                 status_info = {}
 
         logger.debug("return {d}".format(d={"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
-        return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}
+        return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'hosts'}
 
     @property
     def _is_locked(self):
