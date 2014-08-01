@@ -195,7 +195,9 @@ class Shard(object):
         return {'id': self.id,
                 'members': self.members,
                 'configsvrs': self.configsvrs,
-                'routers': self.routers}
+                'routers': self.routers,
+                'uri': ','.join(x['hostname'] for x in self.routers),
+                'orchestration': 'sh'}
 
     def cleanup(self):
         """cleanup configuration: stop and remove all hosts"""

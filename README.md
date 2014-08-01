@@ -36,7 +36,7 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 ##Installing
 
 ###Ubuntu
-`sudo apt-get install python-pip && sudo pip install pymongo==2.3 requests>=0.12`
+`sudo apt-get install python-pip && sudo pip install pymongo\>=2.7.2 requests\>=0.12`
 
 ###OSX
 
@@ -653,3 +653,21 @@ result code:  204
 ''
 =================================
 ```
+
+##Tests
+
+###Run all tests
+
+`nosetests tests`
+
+###Run a test file example
+
+`nosetests tests/test_hosts.py`
+
+###Run a single test example
+
+`nosetests tests/test_hosts.py:HostTestCase.test_info`
+
+###Run a single test example for debugging with verbose and immediate stdout output
+
+`nosetests -vs tests/test_hosts.py:HostTestCase.test_info`

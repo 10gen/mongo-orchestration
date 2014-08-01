@@ -58,7 +58,8 @@ def host_create():
                              data.get('auth_key', ''),
                              data.get('login', ''), data.get('password', ''),
                              data.get('timeout', 300),
-                             data.get('autostart', True))
+                             data.get('autostart', True),
+                             data.get('id', None))
     result = Hosts().info(host_id)
     return send_result(200, result)
 

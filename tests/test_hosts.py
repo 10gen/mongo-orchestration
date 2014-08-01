@@ -155,6 +155,10 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(self.hosts.db_command(h_id, 'serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
         self.assertEqual(self.hosts.db_command(h_id, 'db.getName()', arg=None, is_eval=True), 'admin')
 
+    def test_id_specified(self):
+        id = 'xyzzy'
+        h_id = self.hosts.create('mongod', {}, autostart=False, host_id=id)
+        self.assertEqual(id, h_id)
 
 @attr('hosts')
 @attr('test')
@@ -201,7 +205,7 @@ class HostTestCase(unittest.TestCase):
     def test_info(self):
         self.host.start(30)
         info = self.host.info()
-        for item in ("uri", "statuses", "serverInfo", "procInfo"):
+        for item in ("uri", "statuses", "serverInfo", "procInfo", "orchestration"):
             self.assertTrue(item in info)
 
         fd_log, log_path = tempfile.mkstemp()
@@ -216,6 +220,7 @@ class HostTestCase(unittest.TestCase):
         info = host2.info()
         self.assertEqual(len(info['serverInfo']), 0)
         self.assertEqual(len(info['statuses']), 0)
+        self.assertEqual(info['orchestration'], 'hosts')
         host2.cleanup()
 
     def test_command(self):
