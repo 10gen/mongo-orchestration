@@ -244,7 +244,7 @@ class Hosts(Singleton, Container):
             for host_id in self._storage:
                 self.remove(host_id)
 
-    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True):
+    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True, host_id=None):
         """create new host
         Args:
            name - process name or path
@@ -259,7 +259,9 @@ class Hosts(Singleton, Container):
         """
         name = os.path.split(name)[1]
         try:
-            host_id, host = str(uuid4()), Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+            host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+            if host_id is None:
+                host_id = str(uuid4())
             if autostart:
                 if not host.start(timeout):
                     raise OSError

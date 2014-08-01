@@ -155,6 +155,10 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(self.hosts.db_command(h_id, 'serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
         self.assertEqual(self.hosts.db_command(h_id, 'db.getName()', arg=None, is_eval=True), 'admin')
 
+    def test_id_specified(self):
+        id = 'xyzzy'
+        h_id = self.hosts.create('mongod', {}, autostart=False, host_id=id)
+        self.assertEqual(id, h_id)
 
 @attr('hosts')
 @attr('test')

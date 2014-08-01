@@ -668,6 +668,6 @@ result code:  204
 
 `nosetests tests/test_hosts.py:HostTestCase.test_info`
 
-###Run a single test example for debugging with immediate and verbose output
+###Run a single test example for debugging with verbose and immediate stdout output
 
 `nosetests -vs tests/test_hosts.py:HostTestCase.test_info`
