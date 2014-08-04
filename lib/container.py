@@ -18,7 +18,8 @@ class Container(object):
     def set_settings(self, pids_file, bin_path=None):
         """set path to storage"""
         if self._storage is None or getattr(self, "pids_file", "") != pids_file:
-            self._storage = Storage(pids_file, self._name)
+#            self._storage = Storage(pids_file, self._name)
+            self._storage = {}
             self.pids_file = pids_file
             self.bin_path = bin_path or ''
             logger.debug("Storage({pids_file}, {bin_path}".format(**locals()))

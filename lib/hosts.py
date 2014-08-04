@@ -91,6 +91,7 @@ class Host(object):
         self.auth_key = auth_key
         self.admin_added = False
         self.pid = None  # process pid
+        self.proc = None # Popen object
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
@@ -145,12 +146,13 @@ class Host(object):
 
     @property
     def is_alive(self):
-        return lib.process.proc_alive(self.pid)
+        return lib.process.proc_alive(self.proc)
 
     def info(self):
         """return info about host as dict object"""
         proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
-                     "pid": self.pid, "optfile": self.config_path}
+                     "pid": self.pid if self.proc else None,
+                     "optfile": self.config_path}
         logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
@@ -184,7 +186,8 @@ class Host(object):
                 # repair if needed
                 lib.process.repair_mongo(self.name, self.cfg['dbpath'])
 
-            self.pid, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.proc, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
@@ -198,7 +201,7 @@ class Host(object):
 
     def stop(self):
         """stop host"""
-        return lib.process.kill_mprocess(self.pid)
+        return lib.process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300):
         """restart host: stop() and start()

@@ -16,6 +16,10 @@ import pymongo
 from nose.plugins.attrib import attr
 
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig()
+
 @attr('hosts')
 @attr('test')
 class HostsTestCase(unittest.TestCase):
@@ -43,10 +47,9 @@ class HostsTestCase(unittest.TestCase):
         self.assertEqual(id(self.hosts), id(Hosts()))
 
     def test_set_settings(self):
-        path = tempfile.mktemp(prefix="test-set-settings-")
-        self.hosts.set_settings(path)
+        self.path = tempfile.mktemp(prefix="test-set-settings-")
+        self.hosts.set_settings(self.path)
         self.assertEqual(path, self.hosts.pids_file)
-        self.remove_path(path)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.hosts))
@@ -57,7 +60,8 @@ class HostsTestCase(unittest.TestCase):
         host_id = self.hosts.create('mongod', {}, autostart=False)
         self.assertTrue(len(self.hosts) == 1)
         self.assertTrue(host_id in self.hosts)
-        host_id2, host2 = 'host-id2', Host('mongod', {})
+        host_id2 = 'host-id2'
+        host2 = Host(os.path.join(os.environ.get('MONGOBIN', ''), 'mongod'), {})
         host2.start(30)
         host2_pid = host2.info()['procInfo']['pid']
         self.hosts[host_id2] = host2
@@ -209,10 +213,11 @@ class HostTestCase(unittest.TestCase):
             self.assertTrue(item in info)
 
         fd_log, log_path = tempfile.mkstemp()
+        os.close(fd_log)
         db_path = tempfile.mkdtemp()
-        params = {'logPath': log_path, 'dbpath': db_path}
-        host2 = Host('mongod', params)
-        host2.start(30)
+        params = {'logpath': log_path, 'dbpath': db_path}
+        host2 = Host(self.mongod, params)
+        host2.start()
         info2 = host2.info()
         for param, value in params.items():
             self.assertTrue(info2['procInfo']['params'].get(param, value) == value)
@@ -297,7 +302,7 @@ class HostAuthTestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'host'):
-            self.host.stop()
+            assert self.host.stop()
             self.host.cleanup()
 
     def test_mongos(self):
@@ -324,6 +329,7 @@ class HostAuthTestCase(unittest.TestCase):
         self.assertTrue(isinstance(self.host.connection.admin.collection_names(), list))
         c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+        time.sleep(1)
         self.host.restart()
         c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)

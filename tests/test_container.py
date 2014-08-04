@@ -23,6 +23,8 @@ class ContainerTestCase(unittest.TestCase):
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
+        # Disconnect SQlite from the database before deleting it.
+        self.container._storage.disconnect()
         if os.path.isfile(path):
             try:
                 os.remove(path)
@@ -35,10 +37,9 @@ class ContainerTestCase(unittest.TestCase):
         self.remove_path(self.path)
 
     def test_set_settings(self):
-        path = tempfile.mktemp(prefix="test-set-settings-")
-        self.container.set_settings(path)
-        self.assertEqual(path, self.container.pids_file)
-        self.remove_path(path)
+        self.path = tempfile.mktemp(prefix="test-set-settings-")
+        self.container.set_settings(self.path)
+        self.assertEqual(self.path, self.container.pids_file)
 
     def test_getitem(self):
         self.container['key'] = 'value'
