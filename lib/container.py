@@ -6,7 +6,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 from storage import Storage
-import operator
 
 
 class Container(object):
@@ -34,12 +33,7 @@ class Container(object):
             raise ValueError
 
     def __delitem__(self, key):
-        obj = self._storage[key]
-        operator.delitem(self._storage, key)
-        del(obj)
-
-    def __del__(self):
-        self.cleanup()
+        return self._storage.pop(key)
 
     def __contains__(self, item):
         return item in self._storage
@@ -59,8 +53,7 @@ class Container(object):
         return self.__nonzero__()  # pragma: no cover
 
     def cleanup(self):
-        for key in self:
-            operator.delitem(self, key)
+        self._storage.clear()
 
     def create(self):
         raise NotImplementedError("Please Implement this method")
