@@ -1,0 +1,33 @@
+#!/bin/bash
+
+function p() {
+    local params=$(sed -e 's|["]|\\\"|g' $1)
+    echo $(eval echo \"$params\")
+} 
+
+function r() {
+    echo $1| cut -d'/' -f 2
+}
+
+function a() {
+    echo $(cd $(dirname $1); pwd)/$(basename $1)
+}
+
+WORKSPACE=~/tmp/orchestrations
+LOGPATH=$WORKSPACE
+DBPATH=$WORKSPACE
+
+rm -fr $WORKSPACE
+mkdir $WORKSPACE
+
+SSL_FILES=$(a ./ssl-files)
+BASE_URL=http://localhost:8889
+
+echo "DBPATH:$DBPATH"
+echo "LOGPATH:$LOGPATH" 
+
+echo "Posting a request from $1 to $BASE_URL..."
+curl -H "Accept: application/json" -X POST -d "$(p $1)" $BASE_URL/$(r $1)
+echo ""
+curl -i -H "Accept: application/json" -X GET $BASE_URL/$(r $1)
+echo ""
