@@ -52,7 +52,8 @@ def error_wrap(f):
 @error_wrap
 def base_uri():
     logger.debug("base_uri()")
-    data = [{"mongo-orchestration": {"version": __version__}}]
+    data = {"service": "mongo-orchestration",
+            "version": __version__}
     return send_result(200, data)
 
 
