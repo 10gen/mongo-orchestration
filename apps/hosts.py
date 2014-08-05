@@ -12,6 +12,9 @@ from lib.hosts import Hosts
 from bottle import route, request, response, run
 
 
+__version__ = '0.9'
+
+
 def send_result(code, result=None):
     logger.debug("send_result({code}, {result})".format(**locals()))
     content = None
@@ -43,6 +46,14 @@ def error_wrap(f):
             return send_result(500, err_message)
 
     return wrap
+
+
+@route('/', method='GET')
+@error_wrap
+def base_uri():
+    logger.debug("base_uri()")
+    data = [{"mongo-orchestration": {"version": __version__}}]
+    return send_result(200, data)
 
 
 @route('/hosts', method='POST')
