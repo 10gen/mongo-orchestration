@@ -66,22 +66,22 @@ There is a set of predefined configurations in repository. They can be started w
 
 To start a single node without ssl or auth:
 ```bash
-./# configurations/hosts/clean.json 
+scripts/mo configurations/hosts/clean.json 
 ```
 
 To start a single node with ssl, but no auth:
 ```bash
-./# configurations/hosts/ssl.json 
+scripts/mo configurations/hosts/ssl.json 
 ```
 
 To start a replica set with ssl and auth:
 ```bash
-./# configurations/rs/ssl_auth.json 
+scripts/mo configurations/rs/ssl_auth.json 
 ```
 
 To start a sharded cluster with auth:
 ```bash
-./# configurations/sh/auth.json 
+scripts/mo configurations/sh/auth.json 
 ```
 
 
