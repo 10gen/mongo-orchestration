@@ -13,13 +13,12 @@ function a() {
     echo $(cd $(dirname $1); pwd)/$(basename $1)
 }
 
-WORKSPACE=~/tmp/orchestration
+WORKSPACE=~/tmp/orchestrations
 LOGPATH=$WORKSPACE
-DATAPATH=$WORKSPACE
+DBPATH=$WORKSPACE
 
-rm -r $WORKSPACE
+rm -fr $WORKSPACE
 mkdir $WORKSPACE
-
 
 SSL_FILES=$(a ./ssl-files)
 BASE_URL=http://localhost:8889
