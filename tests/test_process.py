@@ -9,8 +9,12 @@ import socket
 import sys
 import subprocess
 import os
+import platform
 import random
 import tempfile
+import time
+
+from unittest.case import SkipTest
 from nose.plugins.attrib import attr
 
 
@@ -160,19 +164,26 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_repair(self):
         port = self.pp.port(check=True)
-        self.cfg['journal'] = False
+        # Assume we're testing on 64-bit machines.
+        self.cfg['nojournal'] = True
         lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        pid, host = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
-        os.kill(pid, 9)
+        proc, host = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
         self.assertTrue(os.path.exists(lock_file))
-        self.assertTrue(len(open(lock_file, 'r').read()) > 0)
+        if platform.system() == 'Windows':
+            # mongod.lock cannot be read by any external process on Windows.
+            with self.assertRaises(IOError):
+                open(lock_file, 'r')
+        else:
+            self.assertTrue(len(open(lock_file, 'r').read()) > 0)
+        proc.terminate()
         process.repair_mongo(self.bin_path, self.cfg['dbpath'])
         self.assertFalse(len(open(lock_file, 'r').read()) > 0, "lock_file contains: {0}".format(open(lock_file, 'r').read()))
 
     def test_mprocess_fail(self):
         fd_cfg, config_path = tempfile.mkstemp()
+        os.close(fd_cfg)
         self.tmp_files.append(config_path)
         self.assertRaises(OSError, process.mprocess, 'fake-process_', config_path, None, 30)
         process.write_config({"fake": True}, config_path)
@@ -184,20 +195,28 @@ class ProcessTestCase(unittest.TestCase):
         self.tmp_files.append(config_path)
         result = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
         self.assertTrue(isinstance(result, tuple))
-        pid, host = result
-        self.assertTrue(isinstance(pid, int))
+        proc, host = result
+        self.assertTrue(isinstance(proc, subprocess.Popen))
         self.assertTrue(isinstance(host, str))
-        process.kill_mprocess(pid)
+        process.kill_mprocess(proc)
 
     def test_mprocess_timeout(self):
         port = self.pp.port()
-        config_path = process.write_config(self.cfg)
+        cfg = self.cfg.copy()
+        cfg.pop('noprealloc')
+        cfg.pop('smallfiles')
+        cfg['journal'] = True
+        config_path = process.write_config(cfg)
         self.tmp_files.append(config_path)
-        pid, host = process.mprocess(self.bin_path, config_path, port, 0)
-        self.assertTrue(isinstance(pid, int))
+        proc, host = process.mprocess(self.bin_path, config_path, port, 0)
+        self.assertTrue(isinstance(proc, subprocess.Popen))
         self.assertTrue(isinstance(host, str))
-        process.kill_mprocess(pid)
-        self.assertRaises(OSError, process.mprocess, self.bin_path, config_path, port, 1)
+        process.kill_mprocess(proc)
+        if platform.system() == 'Windows':
+            raise SkipTest("Cannot test mongod startup timeout on Windows.")
+        with self.assertRaises(OSError):
+            result = process.mprocess(self.bin_path, config_path, port, 0.1)
+            print(result)
 
     def test_mprocess_busy_port(self):
         config_path = process.write_config(self.cfg)
@@ -212,10 +231,9 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_kill_mprocess(self):
         p = subprocess.Popen([self.executable])
-        pid = p.pid
-        self.assertTrue(process.proc_alive(pid))
-        process.kill_mprocess(pid)
-        self.assertFalse(process.proc_alive(pid))
+        self.assertTrue(process.proc_alive(p))
+        process.kill_mprocess(p)
+        self.assertFalse(process.proc_alive(p))
 
     def test_cleanup_process(self):
         fd_cfg, config_path = tempfile.mkstemp()
@@ -227,6 +245,12 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(log_path))
         self.assertTrue(os.path.exists(db_path))
         os.fdopen(fd_cfg, 'w').write("keyFile={key_file}\nlogPath={log_path}\ndbpath={db_path}".format(**locals()))
+        for fd in (fd_cfg, fd_key, fd_log):
+            try:
+                os.close(fd)
+            except OSError:
+                # fd_cfg may be closed already if fdopen() didn't raise
+                pass
         cfg = {'keyFile': key_file, 'logPath': log_path, 'dbpath': db_path}
         process.cleanup_mprocess(config_path, cfg)
         self.assertFalse(os.path.exists(config_path))
@@ -236,12 +260,14 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_remove_path(self):
         fd, file_path = tempfile.mkstemp()
+        os.close(fd)
         self.assertTrue(os.path.exists(file_path))
         process.remove_path(file_path)
         self.assertFalse(os.path.exists(file_path))
 
         dir_path = tempfile.mkdtemp()
         fd, file_path = tempfile.mkstemp(dir=dir_path)
+        os.close(fd)
         process.remove_path(dir_path)
         self.assertFalse(os.path.exists(file_path))
         self.assertFalse(os.path.exists(dir_path))
@@ -258,18 +284,18 @@ class ProcessTestCase(unittest.TestCase):
     def test_write_config_with_specify_config_path(self):
         cfg = {'port': 27017, 'objcheck': 'true'}
         fd_key, file_path = tempfile.mkstemp()
+        os.close(fd_key)
         config_path = process.write_config(cfg, file_path)
         self.assertEqual(file_path, config_path)
         process.cleanup_mprocess(config_path, cfg)
 
     def test_proc_alive(self):
         p = subprocess.Popen([self.executable])
-        pid = p.pid
-        self.assertTrue(process.proc_alive(pid))
-        p.kill(), os.wait()
-        self.assertFalse(process.proc_alive(pid))
+        self.assertTrue(process.proc_alive(p))
+        p.terminate()
+        p.wait()
+        self.assertFalse(process.proc_alive(p))
         self.assertFalse(process.proc_alive(None))
-        self.assertFalse(process.proc_alive('2333'))
 
     def test_read_config(self):
         cfg = {"noprealloc": True, "smallfiles": False, "oplogSize": 10, "other": "some string"}

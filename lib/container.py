@@ -14,14 +14,11 @@ class Container(object):
     _name = 'container'
     _obj_type = object
 
-    def set_settings(self, pids_file, bin_path=None):
+    def set_settings(self, bin_path=None):
         """set path to storage"""
-        if self._storage is None or getattr(self, "pids_file", "") != pids_file:
-#            self._storage = Storage(pids_file, self._name)
+        if self._storage is None or getattr(self, 'bin_path', '') != bin_path:
             self._storage = {}
-            self.pids_file = pids_file
             self.bin_path = bin_path or ''
-            logger.debug("Storage({pids_file}, {bin_path}".format(**locals()))
 
     def __getitem__(self, key):
         return self._storage[key]
@@ -39,8 +36,8 @@ class Container(object):
         return item in self._storage
 
     def __iter__(self):
-        for item in self._storage:
-            yield item
+        # Iterate over a copy of storage's keys
+        return iter(self._storage.keys())
 
     def __len__(self):
         return len(self._storage)

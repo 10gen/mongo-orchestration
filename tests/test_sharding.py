@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 import tempfile
 
-from lib import set_storage, cleanup_storage
+from lib import set_bin_path, cleanup_storage
 from lib.shards import Shard, Shards
 from lib.hosts import Hosts
 from lib.process import PortPool, HOSTNAME
@@ -37,24 +37,20 @@ MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
         self.sh = Shards()
-        fd, self.db_path = tempfile.mkstemp(prefix='test-shard', suffix='shard.db')
-        set_storage(self.db_path, os.environ.get('MONGOBIN', None))
+        set_bin_path(os.environ.get('MONGOBIN', None))
         PortPool().change_range()
 
     def tearDown(self):
         # self.sh.cleanup()
         cleanup_storage()
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(Shards()))
 
     def test_set_settings(self):
-        self.db_path = tempfile.mktemp(prefix="test-set-settings-")
-        self.sh._storage.disconnect()
-        self.sh.set_settings(self.db_path)
-        self.assertEqual(self.db_path, self.sh.pids_file)
+        path = os.path.join(os.getcwd(), 'bin')
+        self.sh.set_settings(path)
+        self.assertEqual(path, self.sh.bin_path)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.sh))
@@ -296,16 +292,13 @@ class ShardTestCase(unittest.TestCase):
             return m.groups()
 
     def setUp(self):
-        fd, self.db_path = tempfile.mkstemp(prefix='test-shard', suffix='shard.db')
         self.bin_path = os.environ.get('MONGOBIN', '')
-        set_storage(self.db_path, self.bin_path)
+        set_bin_path(self.bin_path)
         PortPool().change_range()
 
     def tearDown(self):
         if hasattr(self, 'sh') and self.sh is not None:
             self.sh.cleanup()
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
 
     def test_len(self):
         config = {}

@@ -91,11 +91,14 @@ class Shard(object):
         """return first available router"""
         for host in self._routers:
             info = Hosts().info(host)
+            logger.debug("router(): info=%r" % info)
             if info['procInfo'].get('alive', False):
                 return {'id': host, 'hostname': Hosts().hostname(host)}
+        logger.debug("router(): self._routers=%r" % self._routers)
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
+        logger.debug("router_add: %r" % params)
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
         self._routers.append(Hosts().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
@@ -225,19 +228,18 @@ class Shards(Singleton, Container):
     bin_path = ''
     pids_file = tempfile.mktemp(prefix="mongo-")
 
-    def set_settings(self, pids_file, bin_path=None):
+    def set_settings(self, bin_path=None):
         """set path to storage"""
-        super(Shards, self).set_settings(pids_file, bin_path)
-        RS().set_settings(pids_file, bin_path)
+        super(Shards, self).set_settings(bin_path)
+        RS().set_settings(bin_path)
 
     def __getitem__(self, key):
         return self.info(key)
 
     def cleanup(self):
         """remove all hosts with their data"""
-        if self._storage:
-            for shard_id in self._storage:
-                self.remove(shard_id)
+        for host in self:
+            self.remove(host)
 
     def create(self, params):
         """create new shard

@@ -139,7 +139,9 @@ def repair_mongo(name, dbpath):
     t_start = time.time()
     while time.time() - t_start < timeout:
         proc.stdout.flush()
-        if "dbexit: really exiting now" in proc.stdout.readline():
+        output = proc.stdout.readline()
+        print(output)
+        if "dbexit: really exiting now" in output:
             return
     return
 

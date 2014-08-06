@@ -118,5 +118,5 @@ def host_command(host_id, command):
 
 if __name__ == '__main__':
     hs = Hosts()
-    hs.set_settings('/tmp/mongo-orchestration.hs-storage', '')
+    hs.set_settings()
     run(host='localhost', port=8889, debug=True, reloader=False)

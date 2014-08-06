@@ -27,7 +27,7 @@ class HostsTestCase(unittest.TestCase):
         PortPool().change_range()
         self.path = tempfile.mktemp(prefix="test-storage")
         self.hosts = Hosts()
-        self.hosts.set_settings(self.path, os.environ.get('MONGOBIN', ""))
+        self.hosts.set_settings(os.environ.get('MONGOBIN', ""))
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
@@ -40,16 +40,15 @@ class HostsTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.hosts.cleanup()
-        self.hosts._storage.disconnect()
         self.remove_path(self.path)
 
     def test_singleton(self):
         self.assertEqual(id(self.hosts), id(Hosts()))
 
     def test_set_settings(self):
-        self.path = tempfile.mktemp(prefix="test-set-settings-")
-        self.hosts.set_settings(self.path)
-        self.assertEqual(path, self.hosts.pids_file)
+        path = os.path.join(os.getcwd(), 'bin')
+        self.hosts.set_settings(path)
+        self.assertEqual(path, self.hosts.bin_path)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.hosts))

@@ -10,7 +10,6 @@ from daemon import Daemon
 work_dir = os.path.split(os.path.join(os.getcwd(), __file__))[0]
 
 pid_file = os.path.join(work_dir, 'server.pid')
-pids_file = os.path.join(work_dir, 'mongo-pids')
 log_file = os.path.join(work_dir, 'server.log')
 cfg_file = os.path.join(work_dir, 'mongo-orchestration.config')
 
@@ -47,8 +46,8 @@ def read_env():
 
 def setup(release_path):
     """setup storages"""
-    from lib import set_storage, cleanup_storage
-    set_storage(pids_file, release_path)
+    from lib import set_bin_path, cleanup_storage
+    set_bin_path(release_path)
     atexit.register(cleanup_storage)
 
 

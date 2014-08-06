@@ -17,29 +17,16 @@ from nose.plugins.attrib import attr
 @attr('test')
 class ContainerTestCase(unittest.TestCase):
     def setUp(self):
-        self.path = tempfile.mktemp(prefix="test-storage")
         self.container = Container()
-        self.container.set_settings(self.path, None)
-
-    def remove_path(self, path):
-        onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
-        # Disconnect SQlite from the database before deleting it.
-        self.container._storage.disconnect()
-        if os.path.isfile(path):
-            try:
-                os.remove(path)
-            except OSError:
-                time.sleep(2)
-                onerror(os.remove, path, None)
+        self.container.set_settings()
 
     def tearDown(self):
         self.container.cleanup()
-        self.remove_path(self.path)
 
     def test_set_settings(self):
-        self.path = tempfile.mktemp(prefix="test-set-settings-")
-        self.container.set_settings(self.path)
-        self.assertEqual(self.path, self.container.pids_file)
+        path = os.path.join(os.getcwd(), 'bin')
+        self.container.set_settings(path)
+        self.assertEqual(path, self.container.bin_path)
 
     def test_getitem(self):
         self.container['key'] = 'value'
