@@ -35,7 +35,15 @@ def read_env():
     try:
         # read config
         config = json.loads(open(cli_args.config, 'r').read())
-        cli_args.release_path = config['releases'][cli_args.env]
+        if not 'releases' in config:
+            print("No releases defined in %s" % cli_args.config)
+            sys.exit(1)
+        releases = config['releases']
+        if not cli_args.env in releases:
+            print("Release '%s' is not defined in %s"
+                  % (cli_args.env, cli_args.config))
+            sys.exit(1)
+        cli_args.release_path = releases[cli_args.env]
         return cli_args
     except (IOError):
         print("config file not found")
