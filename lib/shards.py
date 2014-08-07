@@ -91,14 +91,11 @@ class Shard(object):
         """return first available router"""
         for host in self._routers:
             info = Hosts().info(host)
-            logger.debug("router(): info=%r" % info)
             if info['procInfo'].get('alive', False):
                 return {'id': host, 'hostname': Hosts().hostname(host)}
-        logger.debug("router(): self._routers=%r" % self._routers)
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
-        logger.debug("router_add: %r" % params)
         cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
         self._routers.append(Hosts().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))

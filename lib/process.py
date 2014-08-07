@@ -114,9 +114,6 @@ def wait_for(port_num, timeout, proc=None):
     t_start = time.time()
     sleeps = 1
     while time.time() - t_start < timeout:
-        if proc and proc.poll() is not None:
-            logger.debug("process died for some reason: %r" % proc.poll())
-            return False
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
@@ -139,9 +136,7 @@ def repair_mongo(name, dbpath):
     t_start = time.time()
     while time.time() - t_start < timeout:
         proc.stdout.flush()
-        output = proc.stdout.readline()
-        print(output)
-        if "dbexit: really exiting now" in output:
+        if "dbexit: really exiting now" in proc.stdout.readline():
             return
     return
 
@@ -193,22 +188,14 @@ def mprocess(name, config_path, port=None, timeout=180):
     return (proc, host)
 
 
-def kill_mprocess(process, timeout=20):
+def kill_mprocess(process):
     """kill process
     Args:
         process - Popen object for process
     """
-    t_start = time.time()
-    while process and proc_alive(process):
-        try:
-            process.terminate()
-            if not proc_alive(process):
-                return True
-        except OSError:
-            logger.exception("Could not terminate process")
-        if time.time() - t_start >= timeout:
-            break
-        time.sleep(1.5)
+    if process and proc_alive(process):
+        process.terminate()
+        process.communicate()
     return not proc_alive(process)
 
 
@@ -278,7 +265,5 @@ def read_config(config_path):
 
 
 def proc_alive(process):
-    """check if process is alive
-    Return True or False"""
-
+    """Check if process is alive. Return True or False."""
     return process.poll() is None if process else False

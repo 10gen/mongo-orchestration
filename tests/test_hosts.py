@@ -16,10 +16,6 @@ import pymongo
 from nose.plugins.attrib import attr
 
 
-import logging
-logger = logging.getLogger(__name__)
-logging.basicConfig()
-
 @attr('hosts')
 @attr('test')
 class HostsTestCase(unittest.TestCase):
@@ -301,7 +297,7 @@ class HostAuthTestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'host'):
-            assert self.host.stop()
+            self.host.stop()
             self.host.cleanup()
 
     def test_mongos(self):
@@ -328,7 +324,6 @@ class HostAuthTestCase(unittest.TestCase):
         self.assertTrue(isinstance(self.host.connection.admin.collection_names(), list))
         c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
-        time.sleep(1)
         self.host.restart()
         c = pymongo.MongoClient(self.host.host, self.host.port)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)

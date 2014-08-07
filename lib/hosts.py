@@ -18,6 +18,7 @@ from lib.container import Container
 
 logger = logging.getLogger(__name__)
 
+
 class Host(object):
     """Class Host represents behaviour of  mongo instances """
 
