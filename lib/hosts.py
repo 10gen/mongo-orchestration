@@ -234,7 +234,8 @@ class Host(object):
                                'clusterAdmin',
                                'dbAdminAnyDatabase',
                                'readWriteAnyDatabase',
-                               'userAdminAnyDatabase'])
+                               'userAdminAnyDatabase'],
+                        writeConcern={'fsync': True})
             db.logout()
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))
