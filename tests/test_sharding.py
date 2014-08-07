@@ -12,8 +12,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-import tempfile
-
 from lib import set_bin_path, cleanup_storage
 from lib.shards import Shard, Shards
 from lib.hosts import Hosts

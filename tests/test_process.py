@@ -12,7 +12,6 @@ import os
 import platform
 import random
 import tempfile
-import time
 
 from unittest.case import SkipTest
 from nose.plugins.attrib import attr
