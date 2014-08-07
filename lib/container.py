@@ -32,6 +32,9 @@ class Container(object):
     def __delitem__(self, key):
         return self._storage.pop(key)
 
+    def __del__(self):
+        self.cleanup()
+
     def __contains__(self, item):
         return item in self._storage
 
