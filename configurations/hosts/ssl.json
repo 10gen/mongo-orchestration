@@ -1,5 +1,6 @@
 {
-    "name": "mongod", 
+    "id" : "standalone",
+    "name": "mongod",
     "procParams": {
         "dbpath": "$DBPATH", 
         "ipv6": true, 
