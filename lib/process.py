@@ -1,24 +1,28 @@
 #!/usr/bin/python
 # coding=utf-8
 
+import errno
+import json
+import logging
+import os
 import platform
+import shutil
+import stat
 import socket
 import subprocess
 import time
-import os
-import errno
-from lib.singleton import Singleton
 import tempfile
-import shutil
-import stat
-import json
 
-import logging
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = open(os.devnull, 'wb')
+
+from lib.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
-
 HOSTNAME = 'localhost'
-DEVNULL = open(os.devnull, 'wb')
 
 
 class PortPool(Singleton):
@@ -103,7 +107,7 @@ class PortPool(Singleton):
         self.__init_range(min_port, max_port, port_sequence)
 
 
-def wait_for(port_num, timeout, proc=None):
+def wait_for(port_num, timeout):
     """waits while process starts.
     Args:
         port_num    - port number
@@ -175,7 +179,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     except (OSError, TypeError) as err:
         logger.debug("exception while executing process: {err}".format(err=err))
         raise OSError
-    if timeout > 0 and wait_for(port, timeout, proc=proc):
+    if timeout > 0 and wait_for(port, timeout):
         logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
         return (proc, host)
     elif timeout > 0:

@@ -184,9 +184,7 @@ class Host(object):
                               not self.cfg.get('nojournal', True))
         try:
             with open(lock_file, 'r') as fd:
-                return (not journaling_enabled and
-                        os.path.exists(lock_file) and
-                        len(fd.read())) > 0
+                return (not journaling_enabled and len(fd.read())) > 0
         except IOError as e:
             # Permission denied -- mongod holds the lock on the file.
             if platform.system() == 'Windows' and e.errno == errno.EACCES:
