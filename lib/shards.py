@@ -46,10 +46,10 @@ class Shard(object):
 
         if self.tags:
             for sh_id in self.tags:
-                for tag in self.tags[sh_id]:
-                    command = 'sh.addShardTag("{sh_id}", "{tag}")'.format(**locals())
-                    logger.debug(command)
-                    self.router_command(command=command, is_eval=True)
+                logger.debug('Add tags %r to %s' % (self.tags[sh_id], sh_id))
+                self.connection().config.shards.update(
+                    {'_id': sh_id},
+                    {'$addToSet': {'$each': self.tags[sh_id]}})
 
         if self.login:
             client = MongoClient(self.router['hostname'], **self.kwargs)

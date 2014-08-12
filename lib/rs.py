@@ -179,7 +179,7 @@ class ReplicaSet(object):
     @property
     def config(self):
         """return replica set config, use rs.conf() command"""
-        config = self.run_command("rs.conf()", is_eval=True)
+        config = self.connection().local.system.replset.find_one()
         return config
 
     def member_create(self, params, member_id):
@@ -261,8 +261,6 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        # return self.run_command("rs.freeze({timeout})".format(timeout=timeout), is_eval=True, member_id=member_id)
-        # result = c.admin.command("replSetFreeze", 10)
         return self.run_command("replSetFreeze", timeout, is_eval=False, member_id=member_id)
 
     def members(self):
@@ -374,7 +372,6 @@ class ReplicaSet(object):
                     logger.debug("server_info: {server_info}".format(server_info=server_info))
                     if int(server_info['ok']) != 1:
                         raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
-                # logger.debug("rs status: {rs_status}".format(rs_status=self.run_command("rs.status()", is_eval=True)['members']))
                 return True
             except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 if time.time() - t_start > timeout:
