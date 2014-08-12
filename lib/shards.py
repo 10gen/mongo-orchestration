@@ -147,6 +147,8 @@ class Shard(object):
             rs_params = params.copy()
             rs_params.update({'auth_key': self.auth_key})
             rs_params.update({'sslParams': self.sslParams})
+            if self.login and self.password:
+                rs_params.update({'login': self.login, 'password': self.password})
             rs_id = RS().create(rs_params)
             members = RS().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
