@@ -260,5 +260,5 @@ def primary_stepdown(rs_id):
 
 if __name__ == '__main__':
     rs = RS()
-    rs.set_settings('/tmp/mongo-orchestration.rs-storage', '')
+    rs.set_settings()
     run(host='localhost', port=8889, debug=True, reloader=False)

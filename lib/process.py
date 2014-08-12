@@ -1,20 +1,26 @@
 #!/usr/bin/python
 # coding=utf-8
 
+import errno
+import json
+import logging
+import os
+import platform
+import shutil
+import stat
 import socket
 import subprocess
 import time
-import os
-import errno
-from lib.singleton import Singleton
 import tempfile
-import shutil
-import stat
-import json
 
-import logging
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = open(os.devnull, 'wb')
+
+from lib.singleton import Singleton
+
 logger = logging.getLogger(__name__)
-
 
 HOSTNAME = 'localhost'
 
@@ -147,7 +153,7 @@ def mprocess(name, config_path, port=None, timeout=180):
         port - process's port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
-    return tuple (pid, host) if process started, return (None, None) if not
+    return tuple (Popen object, host) if process started, return (None, None) if not
     """
 
     logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
@@ -164,10 +170,10 @@ def mprocess(name, config_path, port=None, timeout=180):
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
+                                stdout=DEVNULL,
                                 stderr=subprocess.STDOUT)
 
-        if proc.poll() == 0:
+        if proc.poll() is not None:
             logger.debug("process is not alive")
             raise OSError
     except (OSError, TypeError) as err:
@@ -175,32 +181,26 @@ def mprocess(name, config_path, port=None, timeout=180):
         raise OSError
     if timeout > 0 and wait_for(port, timeout):
         logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
-        return (proc.pid, host)
+        return (proc, host)
     elif timeout > 0:
         logger.debug("hasn't connected to pid={proc.pid} with host={host} during timeout {timeout} ".format(**locals()))
         logger.debug("terminate process with pid={proc.pid}".format(**locals()))
-        kill_mprocess(proc.pid)
-        proc_alive(proc.pid) and time.sleep(3)  # wait while process stoped
+        kill_mprocess(proc)
+        proc_alive(proc) and time.sleep(3)  # wait while process stoped
         message = "could not connect to process during {timeout} seconds".format(timeout=timeout)
         raise OSError(errno.ETIMEDOUT, message)
-    return (proc.pid, host)
+    return (proc, host)
 
 
-def kill_mprocess(pid, timeout=20):
+def kill_mprocess(process):
     """kill process
     Args:
-        pid - process pid
+        process - Popen object for process
     """
-    if pid and proc_alive(pid):
-        os.kill(pid, 2)
-        try:
-            os.wait()
-        except OSError:
-            pass
-        t_start = time.time()
-        while proc_alive(pid) and time.time() - t_start < timeout:
-            time.sleep(1.5)
-    return not proc_alive(pid)
+    if process and proc_alive(process):
+        process.terminate()
+        process.communicate()
+    return not proc_alive(process)
 
 
 def cleanup_mprocess(config_path, cfg):
@@ -219,6 +219,9 @@ def remove_path(path):
     If path is None - do nothing"""
     if path is None or not os.path.exists(path):
         return
+    if platform.system() == 'Windows':
+        # Need to have write permission before deleting the file.
+        os.chmod(path, stat.S_IWRITE)
     if os.path.isdir(path):
         shutil.rmtree(path)
     if os.path.isfile(path):
@@ -265,12 +268,6 @@ def read_config(config_path):
     return result
 
 
-def proc_alive(pid):
-    """check if process with pid is alive
-    Return True or False"""
-
-    try:
-        os.kill(pid, 0)
-        return True
-    except (OSError, TypeError):
-        return False
+def proc_alive(process):
+    """Check if process is alive. Return True or False."""
+    return process.poll() is None if process else False

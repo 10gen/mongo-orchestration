@@ -430,10 +430,10 @@ class RS(Singleton, Container):
     bin_path = ''
     pids_file = tempfile.mktemp(prefix="mongo-")
 
-    def set_settings(self, pids_file, bin_path=''):
+    def set_settings(self, bin_path=''):
         """set path to storage"""
-        super(RS, self).set_settings(pids_file, bin_path)
-        Hosts().set_settings(pids_file, bin_path)
+        super(RS, self).set_settings(bin_path)
+        Hosts().set_settings(bin_path)
 
     def cleanup(self):
         """remove all hosts with their data"""

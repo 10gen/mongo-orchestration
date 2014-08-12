@@ -28,15 +28,11 @@ from nose.plugins.skip import SkipTest
 class RSTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        self.path = tempfile.mktemp(prefix="test-rs")
         self.rs = RS()
-        self.rs.set_settings(self.path, os.environ.get('MONGOBIN', None))
+        self.rs.set_settings(os.environ.get('MONGOBIN', None))
 
     def tearDown(self):
         self.rs.cleanup()
-        self.rs._storage.disconnect()
-        if os.path.exists(self.path):
-            os.remove(self.path)
 
     def waiting(self, fn, timeout=300, sleep=10):
         t_start = time.time()
@@ -50,10 +46,9 @@ class RSTestCase(unittest.TestCase):
         self.assertEqual(id(self.rs), id(RS()))
 
     def test_set_settings(self):
-        path = tempfile.mktemp(prefix="test-set-settings-")
-        self.rs._storage.disconnect()
+        path = os.path.join(os.getcwd(), 'bin')
         self.rs.set_settings(path)
-        self.assertEqual(path, self.rs.pids_file)
+        self.assertEqual(path, self.rs.bin_path)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.rs))
@@ -321,17 +316,14 @@ class RSTestCase(unittest.TestCase):
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
         self.hosts = Hosts()
-        self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
+        self.hosts.set_settings(os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}, {'rsParams': {'arbiterOnly': True}}]}
         # self.repl = ReplicaSet(self.repl_cfg)
 
     def tearDown(self):
         if hasattr(self, 'repl'):
             self.repl.cleanup()
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
 
     def test_len(self):
         self.repl = ReplicaSet(self.repl_cfg)
@@ -578,17 +570,14 @@ class ReplicaSetTestCase(unittest.TestCase):
 class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        fd, self.db_path = tempfile.mkstemp(prefix='test-replica-set', suffix='host.db')
         self.hosts = Hosts()
-        self.hosts.set_settings(self.db_path, os.environ.get('MONGOBIN', None))
+        self.hosts.set_settings(os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
 
     def tearDown(self):
         if len(self.repl) > 0:
             self.repl.cleanup()
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
 
     def test_auth_connection(self):
         self.assertTrue(isinstance(self.repl.connection().admin.collection_names(), list))
@@ -627,9 +616,8 @@ class RSSingleTestCase(unittest.TestCase):
         self.port1 = PortPool().port(check=True)
         self.port2 = PortPool().port(check=True)
 
-        self.path = tempfile.mktemp(prefix="test-rs")
         self.rs = RS()
-        self.rs.set_settings(self.path, os.environ.get('MONGOBIN', None))
+        self.rs.set_settings(os.environ.get('MONGOBIN', None))
 
         self.tags_primary = {"status": "primary"}
         self.tags_hidden = {"status": "hidden"}
@@ -651,13 +639,6 @@ class RSSingleTestCase(unittest.TestCase):
         self.repl_id = self.rs.create(config)
         logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
 
-    def tearDown(self):
-        pass
-        # self.rs.cleanup()
-        # self.rs._storage.disconnect()
-        # if os.path.exists(self.path):
-        #     os.remove(self.path)
-
     def waiting(self, fn, timeout=300, sleep=10):
         t_start = time.time()
         while not fn():
@@ -672,8 +653,7 @@ class RSSingleTestCase(unittest.TestCase):
 
     def check_set_settings(self):
         # test set_settings
-        print("test set_setting")
-        self.assertEqual(self.path, self.rs.pids_file)
+        self.assertEqual(os.environ.get('MONGOBIN', None), self.rs.bin_path)
 
     def check_bool(self):
         # test bool

@@ -23,7 +23,7 @@ class HostsTestCase(unittest.TestCase):
         PortPool().change_range()
         self.path = tempfile.mktemp(prefix="test-storage")
         self.hosts = Hosts()
-        self.hosts.set_settings(self.path, os.environ.get('MONGOBIN', ""))
+        self.hosts.set_settings(os.environ.get('MONGOBIN', ""))
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))
@@ -36,17 +36,15 @@ class HostsTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.hosts.cleanup()
-        self.hosts._storage.disconnect()
         self.remove_path(self.path)
 
     def test_singleton(self):
         self.assertEqual(id(self.hosts), id(Hosts()))
 
     def test_set_settings(self):
-        path = tempfile.mktemp(prefix="test-set-settings-")
+        path = os.path.join(os.getcwd(), 'bin')
         self.hosts.set_settings(path)
-        self.assertEqual(path, self.hosts.pids_file)
-        self.remove_path(path)
+        self.assertEqual(path, self.hosts.bin_path)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.hosts))
@@ -57,7 +55,8 @@ class HostsTestCase(unittest.TestCase):
         host_id = self.hosts.create('mongod', {}, autostart=False)
         self.assertTrue(len(self.hosts) == 1)
         self.assertTrue(host_id in self.hosts)
-        host_id2, host2 = 'host-id2', Host('mongod', {})
+        host_id2 = 'host-id2'
+        host2 = Host(os.path.join(os.environ.get('MONGOBIN', ''), 'mongod'), {})
         host2.start(30)
         host2_pid = host2.info()['procInfo']['pid']
         self.hosts[host_id2] = host2
@@ -209,10 +208,11 @@ class HostTestCase(unittest.TestCase):
             self.assertTrue(item in info)
 
         fd_log, log_path = tempfile.mkstemp()
+        os.close(fd_log)
         db_path = tempfile.mkdtemp()
-        params = {'logPath': log_path, 'dbpath': db_path}
-        host2 = Host('mongod', params)
-        host2.start(30)
+        params = {'logpath': log_path, 'dbpath': db_path}
+        host2 = Host(self.mongod, params)
+        host2.start()
         info2 = host2.info()
         for param, value in params.items():
             self.assertTrue(info2['procInfo']['params'].get(param, value) == value)

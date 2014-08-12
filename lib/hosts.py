@@ -1,16 +1,22 @@
 #!/usr/bin/python
 # coding=utf-8
 
+import errno
 import logging
-logger = logging.getLogger(__name__)
-import lib.process
+import os
+import platform
+import stat
+import tempfile
+
 from uuid import uuid4
+
+import lib.process
+import pymongo
+
 from lib.singleton import Singleton
 from lib.container import Container
-import pymongo
-import os
-import tempfile
-import stat
+
+logger = logging.getLogger(__name__)
 
 
 class Host(object):
@@ -91,6 +97,7 @@ class Host(object):
         self.auth_key = auth_key
         self.admin_added = False
         self.pid = None  # process pid
+        self.proc = None # Popen object
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
@@ -145,12 +152,13 @@ class Host(object):
 
     @property
     def is_alive(self):
-        return lib.process.proc_alive(self.pid)
+        return lib.process.proc_alive(self.proc)
 
     def info(self):
         """return info about host as dict object"""
         proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
-                     "pid": self.pid, "optfile": self.config_path}
+                     "pid": self.pid if self.proc else None,
+                     "optfile": self.config_path}
         logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
@@ -174,7 +182,14 @@ class Host(object):
         # If neither journal nor nojournal is specified, assume nojournal=True
         journaling_enabled = (self.cfg.get('journal') or
                               not self.cfg.get('nojournal', True))
-        return (not journaling_enabled and os.path.exists(lock_file) and len(open(lock_file, 'r').read())) > 0
+        try:
+            with open(lock_file, 'r') as fd:
+                return (not journaling_enabled and len(fd.read())) > 0
+        except IOError as e:
+            # Permission denied -- mongod holds the lock on the file.
+            if platform.system() == 'Windows' and e.errno == errno.EACCES:
+                return True
+        return False
 
     def start(self, timeout=300):
         """start host
@@ -184,7 +199,8 @@ class Host(object):
                 # repair if needed
                 lib.process.repair_mongo(self.name, self.cfg['dbpath'])
 
-            self.pid, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.proc, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
@@ -198,7 +214,7 @@ class Host(object):
 
     def stop(self):
         """stop host"""
-        return lib.process.kill_mprocess(self.pid)
+        return lib.process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300):
         """restart host: stop() and start()
@@ -216,7 +232,8 @@ class Host(object):
                                'clusterAdmin',
                                'dbAdminAnyDatabase',
                                'readWriteAnyDatabase',
-                               'userAdminAnyDatabase'])
+                               'userAdminAnyDatabase'],
+                        writeConcern={'fsync': True})
             db.logout()
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))
@@ -240,9 +257,8 @@ class Hosts(Singleton, Container):
 
     def cleanup(self):
         """remove all hosts with their data"""
-        if self._storage:
-            for host_id in self._storage:
-                self.remove(host_id)
+        for host_id in self:
+            self.remove(host_id)
 
     def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True, host_id=None):
         """create new host
