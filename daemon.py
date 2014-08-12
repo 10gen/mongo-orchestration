@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # coding=utf-8
-import sys
-import os
-import time
 import atexit
+import os
+import sys
+import time
+
 from signal import SIGTERM
+
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = open(os.devnull, 'r+b')
 
 
 class Daemon(object):
@@ -15,7 +21,9 @@ class Daemon(object):
 
     source: http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
     """
-    def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', timeout=0):
+    def __init__(self, pidfile,
+                 stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+                 timeout=0):
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
@@ -59,12 +67,9 @@ class Daemon(object):
         sys.stdout.flush()
         sys.stderr.flush()
 
-        stdin_fd = file(self.stdin, 'r')
-        stdout_fd = file(self.stdout, 'a+')
-        stderr_fd = file(self.stderr, 'a+', 0)
-        os.dup2(stdin_fd.fileno(), sys.stdin.fileno())
-        os.dup2(stdout_fd.fileno(), sys.stdout.fileno())
-        os.dup2(stderr_fd.fileno(), sys.stderr.fileno())
+        os.dup2(self.stdin.fileno(), sys.stdin.fileno())
+        os.dup2(self.stdout.fileno(), sys.stdout.fileno())
+        os.dup2(self.stderr.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
