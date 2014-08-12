@@ -5,9 +5,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-from storage import Storage
-
-
 class Container(object):
     """ Container is a dict-like collection for objects"""
     _storage = None
