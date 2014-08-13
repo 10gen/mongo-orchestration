@@ -47,7 +47,7 @@ class ReplicaSet(object):
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
-            raise lib.errors.ReplicaSetError("replica can't started")
+            raise lib.errors.ReplicaSetError("Could not create replica set.")
 
         if self.login:
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
@@ -63,6 +63,10 @@ class ReplicaSet(object):
                 pass
             finally:
                 c.close()
+
+        if not self.waiting_config_state():
+            raise lib.errors.ReplicaSetError(
+                "Could not actualize replica set configuration.")
 
     def __len__(self):
         return len(self.host_map)
@@ -101,15 +105,14 @@ class ReplicaSet(object):
             logger.error("all hosts must be reachable")
             self.cleanup()
             return False
-
         try:
             result = self.connection(init_host).admin.command("replSetInitiate", config)
             logger.debug("replica init result: {result}".format(**locals()))
         except pymongo.errors.PyMongoError:
             raise
         if int(result.get('ok', 0)) == 1:
-            # wait while real state equals config
-            return self.waiting_config_state()
+            # Wait while members come up
+            return self.waiting_member_state()
         else:
             self.cleanup()
             return False
@@ -124,6 +127,7 @@ class ReplicaSet(object):
                 return False
         except pymongo.errors.AutoReconnect:
             self.update_host_map(cfg)  # use new host_map
+        self.waiting_member_state()
         self.waiting_config_state()
         return self.connection() and True
 
@@ -175,7 +179,7 @@ class ReplicaSet(object):
     @property
     def config(self):
         """return replica set config, use rs.conf() command"""
-        config = self.run_command("rs.conf()", is_eval=True)
+        config = self.connection().local.system.replset.find_one()
         return config
 
     def member_create(self, params, member_id):
@@ -257,8 +261,6 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        # return self.run_command("rs.freeze({timeout})".format(timeout=timeout), is_eval=True, member_id=member_id)
-        # result = c.admin.command("replSetFreeze", 10)
         return self.run_command("replSetFreeze", timeout, is_eval=False, member_id=member_id)
 
     def members(self):
@@ -370,12 +372,20 @@ class ReplicaSet(object):
                     logger.debug("server_info: {server_info}".format(server_info=server_info))
                     if int(server_info['ok']) != 1:
                         raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
-                # logger.debug("rs status: {rs_status}".format(rs_status=self.run_command("rs.status()", is_eval=True)['members']))
                 return True
             except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 if time.time() - t_start > timeout:
                     return False
                 time.sleep(2)
+
+    def waiting_member_state(self, timeout=300):
+        """Wait for all RS members to be in an acceptable state."""
+        t_start = time.time()
+        while not self.check_member_state():
+            if time.time() - t_start > timeout:
+                return False
+            time.sleep(1)
+        return True
 
     def waiting_config_state(self, timeout=300):
         """waiting while real state equal config state
@@ -391,15 +401,23 @@ class ReplicaSet(object):
             time.sleep(8)
         return True
 
-    def check_config_state(self):
-        "return True if real state equal config state otherwise False"
+    def check_member_state(self):
+        """Verify that all RS members have an acceptable state."""
+        bad_states = (3, 4, 5, 6, 9)
         try:
-            if len(filter(lambda item: item['state'] in (3, 4, 5, 6, 9), self.run_command("rs.status()", is_eval=True)['members'])) > 0:
+            rs_status = self.run_command('replSetGetStatus')
+            bad_members = [member for member in rs_status['members']
+                           if member['state'] in bad_states]
+            if bad_members:
                 return False
         except pymongo.errors.AutoReconnect:
             # catch 'No replica set primary available' Exception
             return False
         logger.debug("all members in correct state")
+        return True
+
+    def check_config_state(self):
+        """Return True if real state equal config state otherwise False."""
         config = self.config
         self.update_host_map(config)
         for member in config['members']:
