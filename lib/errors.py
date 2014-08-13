@@ -3,23 +3,23 @@
 
 
 class MongoOrchestrationError(Exception):
-    """Base class for all mongo-orchestration exceptions.
-    """
+    """Base class for all mongo-orchestration exceptions."""
 
 
 class HostsError(MongoOrchestrationError):
-    """Base class for all Hosts exceptions.
-    """
+    """Base class for all Hosts exceptions."""
 
 
 class ReplicaSetError(MongoOrchestrationError):
-    """Base class for all ReplicaSet exceptions.
-    """
+    """Base class for all ReplicaSet exceptions."""
+
+
+class ShardingError(MongoOrchestrationError):
+    """Base class for all Sharding exceptions."""
 
 
 class OperationFailure(MongoOrchestrationError):
-    """Raised when an operation fails.
-    """
+    """Raised when an operation fails."""
 
     def __init__(self, error, code=None):
         self.code = code  # pragma: no cover
@@ -27,5 +27,4 @@ class OperationFailure(MongoOrchestrationError):
 
 
 class TimeoutError(OperationFailure):
-    """Raised when an operation times out.
-    """
+    """Raised when an operation times out."""

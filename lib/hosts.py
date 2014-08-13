@@ -10,6 +10,7 @@ import tempfile
 
 from uuid import uuid4
 
+import lib.errors
 import lib.process
 import pymongo
 
@@ -277,17 +278,17 @@ class Hosts(Singleton, Container):
            where host_id - id which can use to take the host from hosts collection
         """
         name = os.path.split(name)[1]
-        try:
-            host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
-            if host_id is None:
-                host_id = str(uuid4())
-            if autostart:
-                if not host.start(timeout):
-                    raise OSError
-            self[host_id] = host
-            return host_id
-        except:
-            raise
+        if host_id is None:
+            host_id = str(uuid4())
+        if host_id in self:
+            raise lib.errors.HostsError(
+                "Host with id %s already exists." % host_id)
+        host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+        if autostart:
+            if not host.start(timeout):
+                raise OSError
+        self[host_id] = host
+        return host_id
 
     def remove(self, host_id):
         """remove host and data stuff

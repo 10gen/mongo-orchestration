@@ -47,6 +47,12 @@ def error_wrap(f):
     return wrap
 
 
+def _rs_create(params):
+    rs_id = RS().create(params)
+    result = RS().info(rs_id)
+    return send_result(200, result)
+
+
 @route('/rs', method='POST')
 @error_wrap
 def rs_create():
@@ -56,9 +62,7 @@ def rs_create():
     if json_data:
         data = json.loads(json_data)
     data = preset_merge(data, 'rs')
-    rs_id = RS().create(data)
-    result = RS().info(rs_id)
-    return send_result(200, result)
+    return _rs_create(data)
 
 
 @route('/rs', method='GET')
@@ -77,6 +81,18 @@ def rs_info(rs_id):
         return send_result(404)
     result = RS().info(rs_id)
     return send_result(200, result)
+
+
+@route('/rs/<rs_id>', method='PUT')
+@error_wrap
+def rs_create_by_id(rs_id):
+    logger.debug("rs_create_by_id()")
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    data['id'] = rs_id
+    return _rs_create(data)
 
 
 @route('/rs/<rs_id>', method='DELETE')
