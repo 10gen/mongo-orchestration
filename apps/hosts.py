@@ -48,6 +48,20 @@ def error_wrap(f):
     return wrap
 
 
+def _host_create(params):
+    host_id = params.get('id')
+    host_id = Hosts().create(params['name'],
+                             params.get('procParams', {}),
+                             params.get('sslParams', {}),
+                             params.get('auth_key', ''),
+                             params.get('login', ''), params.get('password', ''),
+                             params.get('timeout', 300),
+                             params.get('autostart', True),
+                             host_id)
+    result = Hosts().info(host_id)
+    return send_result(200, result)
+
+
 @route('/', method='GET')
 @error_wrap
 def base_uri():
@@ -64,16 +78,7 @@ def host_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    host_id = Hosts().create(data['name'],
-                             data.get('procParams', {}),
-                             data.get('sslParams', {}),
-                             data.get('auth_key', ''),
-                             data.get('login', ''), data.get('password', ''),
-                             data.get('timeout', 300),
-                             data.get('autostart', True),
-                             data.get('id', None))
-    result = Hosts().info(host_id)
-    return send_result(200, result)
+    return _host_create(data)
 
 
 @route('/hosts', method='GET')
@@ -92,6 +97,17 @@ def host_info(host_id):
         return send_result(404)
     result = Hosts().info(host_id)
     return send_result(200, result)
+
+
+@route('/hosts/<host_id>', method='PUT')
+@error_wrap
+def host_create_by_id(host_id):
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    data['id'] = host_id
+    return _host_create(data)
 
 
 @route('/hosts/<host_id>', method='DELETE')

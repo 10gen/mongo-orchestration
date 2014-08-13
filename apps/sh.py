@@ -46,6 +46,12 @@ def error_wrap(f):
     return wrap
 
 
+def _sh_create(params):
+    sh_id = Shards().create(params)
+    result = Shards().info(sh_id)
+    return send_result(200, result)
+
+
 @route('/sh', method='POST')
 @error_wrap
 def sh_create():
@@ -54,9 +60,7 @@ def sh_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    sh_id = Shards().create(data)
-    result = Shards().info(sh_id)
-    return send_result(200, result)
+    return _sh_create(data)
 
 
 @route('/sh', method='GET')
@@ -75,6 +79,18 @@ def info(sh_id):
         return send_result(404)
     result = Shards().info(sh_id)
     return send_result(200, result)
+
+
+@route('/sh/<sh_id>', method='PUT')
+@error_wrap
+def sh_create_by_id(sh_id):
+    logger.debug("sh_create()")
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    data['id'] = sh_id
+    return _sh_create(data)
 
 
 @route('/sh/<sh_id>', method='DELETE')
