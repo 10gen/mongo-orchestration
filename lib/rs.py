@@ -417,7 +417,7 @@ class ReplicaSet(object):
         return True
 
     def check_config_state(self):
-        "return True if real state equal config state otherwise False"
+        """Return True if real state equal config state otherwise False."""
         config = self.config
         self.update_host_map(config)
         for member in config['members']:
