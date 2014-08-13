@@ -31,38 +31,42 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 ##Requires
 - [Python 2.7](http://www.python.org/download/)  
 - [requests](http://docs.python-requests.org/en/latest/user/install/#install)
-- [PyMongo 2.5.2](http://api.mongodb.org/python/2.5.2/)
+- [PyMongo 2.7.2](https://pypi.python.org/pypi/pymongo/2.7.2)
 
 ##Installing
 
-###Ubuntu
-`sudo apt-get install python-pip && sudo pip install pymongo\>=2.7.2 requests\>=0.12`
-
-###OSX
+Install Mongo Orchestration using `python setup.py install`. Note that this may require administrator privileges.
 
 ##Usage
 `python server.py [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
   
 Arguments:  
 + **-h** - show help info
-+ **-f** - path to config file, default: mongo-orchestration.config  
-+ **-e** - release name from config file, 'default' by default  
++ **-f, --config** - path to config file
++ **-e, --env** - release name from config file
 + **--no-fork** - don't start as service  
 + **-p** - port number, 8889 by default  
 + **start/stop/restart**: server's command  
 
 ###Examples
-`python server.py start` - starts as service on 8889 port  
-`python server.py stop` - stop server  
-`python server.py -e stable-release -p 8888 --no-fork start` - starts on 8888 port using stable-release. Stops by *Ctrl+C*  
 
+`python server.py start`
 
-##Notes
-+ tested on Ubuntu 12.04 and OS X 10.8.2
-+ does not support Windows
+Starts Mongo Orchestration as service on port 8889.
+
+`python server.py stop`
+
+Stop the server.
+
+`python server.py -f mongo-orchestration.config -e 26-release -p 8888 --no-fork start`
+
+Starts Mongo Orchestration on port 8888 using `26-release` defined in `mongo-orchestration.config`. Stops with *Ctrl+C*.
+
+###Configuration File
+Mongo Orchestration may be given a JSON configuration file with the `--config` option specifying where to find MongoDB binaries. See [`mongo-orchestration.config`](https://github.com/mongodb/mongo-orchestration/blob/master/mongo-orchestration.config) for an example. When no configuration file is provided, Mongo Orchestration uses whatever binaries are on the user's PATH.
 
 ## Predefined configurations
-There is a set of predefined configurations in repository. They can be started with '#' script from root folder. 
+There is a set of predefined configurations in the repository. They can be started with the `mo` script from the `scripts` folder.
 
 To start a single node without ssl or auth:
 ```bash
