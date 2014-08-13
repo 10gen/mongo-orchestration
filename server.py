@@ -11,7 +11,6 @@ work_dir = os.path.split(os.path.join(os.getcwd(), __file__))[0]
 
 pid_file = os.path.join(work_dir, 'server.pid')
 log_file = os.path.join(work_dir, 'server.log')
-cfg_file = os.path.join(work_dir, 'mongo-orchestration.config')
 
 DEFAULT_PORT = 8889
 
@@ -22,14 +21,22 @@ logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
 def read_env():
     """return command-line arguments"""
     parser = argparse.ArgumentParser(description='mongo-orchestration server')
-    parser.add_argument('-f', '--config', action='store', default=cfg_file, type=str, dest='config')
-    parser.add_argument('-e', '--env', action='store', type=str, dest='env', default='default')
-    parser.add_argument(action='store', type=str, dest='command', default='start', choices=('start', 'stop', 'restart'))
-    parser.add_argument('--no-fork', action='store_true', dest='no_fork', default=False)
-    parser.add_argument('-p', '--port', action='store', dest='port', default=DEFAULT_PORT)
+    parser.add_argument('-f', '--config',
+                        action='store', default=None, type=str, dest='config')
+    parser.add_argument('-e', '--env',
+                        action='store', type=str, dest='env', default=None)
+    parser.add_argument(action='store', type=str, dest='command',
+                        default='start', choices=('start', 'stop', 'restart'))
+    parser.add_argument('--no-fork',
+                        action='store_true', dest='no_fork', default=False)
+    parser.add_argument('-p', '--port',
+                        action='store', dest='port', default=DEFAULT_PORT)
     cli_args = parser.parse_args()
 
-    if cli_args.command == 'stop':
+    if cli_args.env and not cli_args.config:
+        print("Specified release '%s' without a config file" % cli_args.env)
+        sys.exit(1)
+    if cli_args.command == 'stop' or not cli_args.config:
         return cli_args
     try:
         # read config
