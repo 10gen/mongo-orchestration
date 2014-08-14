@@ -2,17 +2,20 @@
 # coding=utf-8
 
 import logging
+import tempfile
+
+from uuid import uuid4
+
+import lib.errors
+
+from lib.container import Container
+from lib.hosts import Hosts
+from lib.rs import RS
+from lib.singleton import Singleton
+from pymongo import MongoClient
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-from uuid import uuid4
-from lib.singleton import Singleton
-from lib.container import Container
-import tempfile
-from lib.hosts import Hosts
-from rs import RS
-
-from pymongo import MongoClient
-from pymongo.errors import OperationFailure
 
 
 class Shard(object):
@@ -247,7 +250,11 @@ class Shards(Singleton, Container):
         Return shard_id
            where shard_id - id which can use to take the shard from hosts collection
         """
-        params['id'] = params.get('id', str(uuid4()))
+        sh_id = params.get('id', str(uuid4()))
+        if sh_id in self:
+            raise lib.errors.ShardingError(
+                "Sharded set with id %s already exists." % sh_id)
+        params['id'] = sh_id
         shard = Shard(params)
         self[shard.id] = shard
         return shard.id

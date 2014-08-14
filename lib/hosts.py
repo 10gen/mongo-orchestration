@@ -10,6 +10,7 @@ import tempfile
 
 from uuid import uuid4
 
+import lib.errors
 import lib.process
 import pymongo
 
@@ -156,9 +157,12 @@ class Host(object):
 
     def info(self):
         """return info about host as dict object"""
-        proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
-                     "pid": self.pid if self.proc else None,
+        proc_info = {"name": self.name,
+                     "params": self.cfg,
+                     "alive": self.is_alive,
                      "optfile": self.config_path}
+        if self.is_alive:
+            proc_info['pid'] = self.proc.pid
         logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
@@ -274,17 +278,17 @@ class Hosts(Singleton, Container):
            where host_id - id which can use to take the host from hosts collection
         """
         name = os.path.split(name)[1]
-        try:
-            host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
-            if host_id is None:
-                host_id = str(uuid4())
-            if autostart:
-                if not host.start(timeout):
-                    raise OSError
-            self[host_id] = host
-            return host_id
-        except:
-            raise
+        if host_id is None:
+            host_id = str(uuid4())
+        if host_id in self:
+            raise lib.errors.HostsError(
+                "Host with id %s already exists." % host_id)
+        host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+        if autostart:
+            if not host.start(timeout):
+                raise OSError
+        self[host_id] = host
+        return host_id
 
     def remove(self, host_id):
         """remove host and data stuff

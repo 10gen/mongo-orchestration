@@ -82,7 +82,7 @@ class HostsTestCase(unittest.TestCase):
         host_id = self.hosts.create('mongod', {}, autostart=False)
         info = self.hosts.info(host_id)
         self.assertTrue(len(self.hosts) == 1)
-        self.assertEqual(info['procInfo']['pid'], None)
+        self.assertNotIn('pid', info['procInfo'])
         host_id2 = self.hosts.create('mongod', {}, autostart=True)
         info = self.hosts.info(host_id2)
         self.assertTrue(info['procInfo']['pid'] > 0)
@@ -124,7 +124,7 @@ class HostsTestCase(unittest.TestCase):
         h_id = self.hosts.create('mongod', {}, autostart=False)
         info = self.hosts.info(h_id)
         self.assertEqual(info['id'], h_id)
-        self.assertEqual(info['procInfo']['pid'], None)
+        self.assertNotIn('pid', info['procInfo'])
         self.assertEqual(info['statuses'], {})
         self.assertEqual(info['serverInfo'], {})
 
@@ -230,7 +230,7 @@ class HostTestCase(unittest.TestCase):
         self.assertEqual(self.host.run_command('db.getName()', arg=None, is_eval=True), 'admin')
 
     def test_start(self):
-        self.assertTrue(self.host.info()['procInfo']['pid'] is None)
+        self.assertNotIn('pid', self.host.info()['procInfo'])
         self.assertTrue(self.host.start(30))
         self.assertTrue(self.host.info()['procInfo']['pid'] > 0)
 
