@@ -156,9 +156,12 @@ class Host(object):
 
     def info(self):
         """return info about host as dict object"""
-        proc_info = {"name": self.name, "params": self.cfg, "alive": self.is_alive,
-                     "pid": self.pid if self.proc else None,
+        proc_info = {"name": self.name,
+                     "params": self.cfg,
+                     "alive": self.is_alive,
                      "optfile": self.config_path}
+        if self.is_alive:
+            proc_info['pid'] = self.proc.pid
         logger.debug("proc_info: {proc_info}".format(**locals()))
         server_info = {}
         status_info = {}
