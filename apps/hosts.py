@@ -8,6 +8,7 @@ import json
 import traceback
 import sys
 sys.path.insert(0, '..')
+from lib.common import *
 from lib.hosts import Hosts
 from bottle import route, request, response, run
 
@@ -64,6 +65,7 @@ def host_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
+    data = preset_merge(data, 'hosts')
     host_id = Hosts().create(data['name'],
                              data.get('procParams', {}),
                              data.get('sslParams', {}),

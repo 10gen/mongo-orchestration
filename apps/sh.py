@@ -9,6 +9,7 @@ import traceback
 import sys
 
 sys.path.insert(0, '..')
+from lib.common import *
 from lib.shards import Shards
 from bottle import route, request, response, run
 
@@ -54,6 +55,7 @@ def sh_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
+    data = preset_merge(data, 'sh')
     sh_id = Shards().create(data)
     result = Shards().info(sh_id)
     return send_result(200, result)
