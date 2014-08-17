@@ -15,6 +15,4 @@ def preset_merge(data, cluster_type):
         with open (path, "r") as preset_file:
             preset_data = json.loads(preset_file.read())
         data = dict(preset_data.items() + data.items())
-        print("preset_merge preset:{preset} path:{path} preset_data:{preset_data} data:{data}".format(
-            preset = preset, path = path, preset_data = preset_data, data = data))
     return data
