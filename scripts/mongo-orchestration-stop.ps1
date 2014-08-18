@@ -1,9 +1,14 @@
-$BASE_PATH="C:\mongo"
-$PYTHON_BIN="C:\Python27\python.exe"
+param([string]$python_bin="C:\\Python27\\python.exe")
 
-& $PYTHON_BIN server.py stop
+cd $env:WORKSPACE\mongo-orchestration
+& $python_bin server.py stop
 
 echo "====== CLEANUP ======"
+
+# Cleanup code may raise errors if there are no such processes running, directories to remove, etc.
+# Don't show these in the build log.
+$ErrorActionPreference = 'SilentlyContinue'
+
 echo "*** Killing any existing MongoDB Processes which may not have shut down on a prior job."
 $mongods = (Get-Process mongod)
 echo "Found existing mongod Processes: $mongods"
@@ -21,6 +26,10 @@ foreach ($python in $pythons) {
     }
 }
 
-echo "remove old files from $BASE_PATH"
-del -Recurse -Force $BASE_PATH
+echo "remove old files from $env:BASEPATH"
+del -Recurse -Force $env:BASEPATH\data
+del -Recurse -Force $env:BASEPATH\logs
 echo "====== END CLEANUP ======"
+
+# Start caring about errors messages again.
+$ErrorActionPreference = 'Continue'

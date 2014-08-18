@@ -7,20 +7,23 @@ echo "Authentication: $authentication"
 echo "SSL: $ssl"
 echo "-------------------------------------------------------"
 
-$BASEPATH="C:\\mongo"
+$BASEPATH_DOUBLEBACK=$env:BASEPATH -replace '\\','\\'
+
 # Note: backslashes must be escaped in the following string:
-$DATAPATH="$($BASEPATH)\\data"
+$DATAPATH="$BASEPATH_DOUBLEBACK\\data"
 # Note: backslashes must be escaped in the following string:
 $SSL_FILES_ROOT="C:\\test-lib\\ssl-files"
 # This environment variable is injected by Jenkins.
 # Uncomment the following line to use this script outside of Jenkins:
 # $WORKSPACE="C:\\mongo"
 # Note: backslashes must be escaped in the following string:
-$LOGPATH="$WORKSPACE\\logs"
+$LOGPATH="$BASEPATH_DOUBLEBACK\\logs"
 
 # Clean up files
+$ErrorActionPreference = 'SilentlyContinue'
 del -Recurse -Force $DATAPATH
 del -Recurse -Force $LOGPATH
+$ErrorActionPreference = 'Continue'
 
 md "$($DATAPATH)\db27016"
 md "$($DATAPATH)\db27017"
