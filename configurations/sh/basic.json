@@ -1,0 +1,28 @@
+{
+    "configsvrs": [
+        {
+        }
+    ],
+    "members": [
+        {
+            "id": "sh01", 
+            "shardParams": {
+                "procParams": {
+                }
+            }
+        }, 
+        {
+            "id": "sh02", 
+            "shardParams": {
+                "procParams": {
+                }
+            }
+        }
+    ], 
+    "routers": [
+        {
+        }, 
+        {
+        }
+    ]
+}
