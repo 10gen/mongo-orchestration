@@ -123,17 +123,7 @@ def host_del(host_id):
     return send_result(204)
 
 
-@route('/hosts/<host_id>/status', method='GET')
-@error_wrap
-def host_status(host_id):
-    logger.debug("host_status({host_id})".format(**locals()))
-    if host_id not in Hosts():
-        return send_result(404)
-    host_info = Hosts().info(host_id)
-    return send_result(200, {'alive': host_info['procInfo']['alive']})
-
-
-@route('/hosts/<host_id>/status', method='POST')
+@route('/hosts/<host_id>', method='PATCH')
 @error_wrap
 def host_command(host_id):
     """Start, stop, or restart a Host. Command is in the POST body."""
@@ -158,7 +148,7 @@ def host_command_legacy(host_id, command):
     if host_id not in Hosts():
         return send_result(404)
     Hosts().command(host_id, command)
-    msg = ('This URI is deprecated. Please use /hosts/%s/status '
+    msg = ('This URI is deprecated. Please use PATCH /hosts/%s '
            'with a body of {"action": "%s"} instead.'
            % (host_id, command))
     return send_result(200, {"warning": msg})
