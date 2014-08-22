@@ -91,6 +91,7 @@ def sh_create_by_id(sh_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
+    data = preset_merge(data, 'sh')
     data['id'] = sh_id
     return _sh_create(data)
 
