@@ -124,13 +124,13 @@ def host_del(host_id):
     return send_result(204)
 
 
-@route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
+@route('/hosts/<host_id>', method='POST')
 @error_wrap
-def host_command(host_id, command):
-    # TODO: use timeout value
-    logger.debug("host_command({host_id}, {command})".format(**locals()))
+def host_command(host_id):
+    logger.debug("host_command({host_id})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
+    command = json.loads(request.body.read())['action']
     Hosts().command(host_id, command)
     return send_result(200)
 
