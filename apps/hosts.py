@@ -124,15 +124,35 @@ def host_del(host_id):
     return send_result(204)
 
 
+@route('/hosts/<host_id>', method='PATCH')
+@error_wrap
+def host_command(host_id):
+    """Start, stop, or restart a Host. Command is in the POST body."""
+    logger.debug("host_command({host_id})".format(**locals()))
+    if host_id not in Hosts():
+        return send_result(404)
+    payload = json.loads(request.body.read())
+    Hosts().command(host_id, payload['action'])
+    host_info = Hosts().info(host_id)
+    return send_result(200, {"alive": host_info['procInfo']['alive']})
+
+
 @route('/hosts/<host_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
 @error_wrap
-def host_command(host_id, command):
+def host_command_legacy(host_id, command):
+    """Start, stop, or restart a Host. Command is part of the URI.
+
+    This function is deprecated.
+    """
     # TODO: use timeout value
     logger.debug("host_command({host_id}, {command})".format(**locals()))
     if host_id not in Hosts():
         return send_result(404)
     Hosts().command(host_id, command)
-    return send_result(200)
+    msg = ('This URI is deprecated. Please use PATCH /hosts/%s '
+           'with a body of {"action": "%s"} instead.'
+           % (host_id, command))
+    return send_result(200, {"warning": msg})
 
 
 if __name__ == '__main__':
