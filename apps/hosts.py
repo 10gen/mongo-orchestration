@@ -72,7 +72,7 @@ def base_uri():
     return send_result(200, data)
 
 
-@route('/hosts', method='POST')
+@route('/servers', method='POST')
 @error_wrap
 def host_create():
     data = {}
@@ -83,7 +83,7 @@ def host_create():
     return _host_create(data)
 
 
-@route('/hosts', method='GET')
+@route('/servers', method='GET')
 @error_wrap
 def host_list():
     logger.debug("host_list()")
@@ -91,7 +91,7 @@ def host_list():
     return send_result(200, data)
 
 
-@route('/hosts/<host_id>', method='GET')
+@route('/servers/<host_id>', method='GET')
 @error_wrap
 def host_info(host_id):
     logger.debug("host_info({host_id})".format(**locals()))
@@ -101,7 +101,7 @@ def host_info(host_id):
     return send_result(200, result)
 
 
-@route('/hosts/<host_id>', method='PUT')
+@route('/servers/<host_id>', method='PUT')
 @error_wrap
 def host_create_by_id(host_id):
     data = {}
@@ -113,7 +113,7 @@ def host_create_by_id(host_id):
     return _host_create(data)
 
 
-@route('/hosts/<host_id>', method='DELETE')
+@route('/servers/<host_id>', method='DELETE')
 # TODO: return 400 code if process failed
 @error_wrap
 def host_del(host_id):
@@ -124,7 +124,7 @@ def host_del(host_id):
     return send_result(204)
 
 
-@route('/hosts/<host_id>', method='POST')
+@route('/servers/<host_id>', method='POST')
 @error_wrap
 def host_command(host_id):
     logger.debug("host_command({host_id})".format(**locals()))
