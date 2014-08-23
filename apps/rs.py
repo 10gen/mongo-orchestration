@@ -53,7 +53,18 @@ def _rs_create(params):
     return send_result(200, result)
 
 
-@route('/rs', method='POST')
+def _build_server_info(member_docs):
+    server_info = []
+    scheme, host, _, _, _ = request.urlparts
+    servers_uri = "%s://%s/servers/" % (scheme, host)
+    for member_doc in member_docs:
+        server_info.append({
+            "member_id": member_doc['_id'],
+            "uri": servers_uri + member_doc['host_id']})
+    return server_info
+
+
+@route('/replica_sets', method='POST')
 @error_wrap
 def rs_create():
     logger.debug("rs_create()")
@@ -65,7 +76,7 @@ def rs_create():
     return _rs_create(data)
 
 
-@route('/rs', method='GET')
+@route('/replica_sets', method='GET')
 @error_wrap
 def rs_list():
     logger.debug("rs_list()")
@@ -73,7 +84,7 @@ def rs_list():
     return send_result(200, data)
 
 
-@route('/rs/<rs_id>', method='GET')
+@route('/replica_sets/<rs_id>', method='GET')
 @error_wrap
 def rs_info(rs_id):
     logger.debug("rs_info({rs_id})".format(**locals()))
@@ -83,7 +94,7 @@ def rs_info(rs_id):
     return send_result(200, result)
 
 
-@route('/rs/<rs_id>', method='PUT')
+@route('/replica_sets/<rs_id>', method='PUT')
 @error_wrap
 def rs_create_by_id(rs_id):
     logger.debug("rs_create_by_id()")
@@ -96,7 +107,7 @@ def rs_create_by_id(rs_id):
     return _rs_create(data)
 
 
-@route('/rs/<rs_id>', method='DELETE')
+@route('/replica_sets/<rs_id>', method='DELETE')
 @error_wrap
 def rs_del(rs_id):
     logger.debug("rs_del({rs_id})".format(**locals()))
@@ -106,7 +117,7 @@ def rs_del(rs_id):
     return send_result(204, result)
 
 
-@route('/rs/<rs_id>/members', method='POST')
+@route('/replica_sets/<rs_id>/members', method='POST')
 @error_wrap
 def member_add(rs_id):
     logger.debug("member_add({rs_id})".format(**locals()))
@@ -121,78 +132,16 @@ def member_add(rs_id):
     return send_result(200, result)
 
 
-@route('/rs/<rs_id>/members', method='GET')
+@route('/replica_sets/<rs_id>/members', method='GET')
 @error_wrap
 def members(rs_id):
     logger.debug("members({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-    result = RS().members(rs_id)
-    return send_result(200, result)
+    return send_result(200, _build_server_info(RS().members(rs_id)))
 
 
-@route('/rs/<rs_id>/secondaries', method='GET')
-@error_wrap
-def secondaries(rs_id):
-    logger.debug("secondaries({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().secondaries(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/arbiters', method='GET')
-@error_wrap
-def arbiters(rs_id):
-    logger.debug("arbiters({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().arbiters(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/hidden', method='GET')
-@error_wrap
-def hidden(rs_id):
-    logger.debug("hidden({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().hidden(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/passives', method='GET')
-@error_wrap
-def passives(rs_id):
-    logger.debug("passives({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().passives(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/hosts', method='GET')
-@error_wrap
-def hosts(rs_id):
-    logger.debug("hosts({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().hosts(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/members/<member_id>', method='GET')
-@error_wrap
-def member_info(rs_id, member_id):
-    logger.debug("member_info({rs_id}, {member_id})".format(**locals()))
-    member_id = int(member_id)
-    if rs_id not in RS():
-        return send_result(404)
-    result = RS().member_info(rs_id, member_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/members/<member_id>', method='DELETE')
+@route('/replica_sets/<rs_id>/members/<member_id>', method='DELETE')
 @error_wrap
 def member_del(rs_id, member_id):
     logger.debug("member_del({rs_id}), {member_id}".format(**locals()))
@@ -203,78 +152,58 @@ def member_del(rs_id, member_id):
     return send_result(200, result)
 
 
-@route('/rs/<rs_id>/members/<member_id>', method='PUT')
+@route('/replica_sets/<rs_id>/secondaries', method='GET')
 @error_wrap
-def member_update(rs_id, member_id):
-    logger.debug("member_update({rs_id}, {member_id})".format(**locals()))
-    member_id = int(member_id)
+def secondaries(rs_id):
+    logger.debug("secondaries({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
-    RS().member_update(rs_id, member_id, data)
-    result = RS().member_info(rs_id, member_id)
-    return send_result(200, result)
+    return send_result(200, _build_server_info(RS().secondaries(rs_id)))
 
 
-@route('/rs/<rs_id>/members/<member_id>/<command:re:(start)|(stop)|(restart)>', method='PUT')
+@route('/replica_sets/<rs_id>/arbiters', method='GET')
 @error_wrap
-def member_command(rs_id, member_id, command):
-    logger.debug("member_command({rs_id}, {member_id}, {command})".format(**locals()))
-    member_id = int(member_id)
+def arbiters(rs_id):
+    logger.debug("arbiters({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-    result = RS().member_command(rs_id, member_id, command)
-    if result:
-        return send_result(200)
-    return send_result(400)
+    return send_result(200, _build_server_info(RS().arbiters(rs_id)))
 
 
-@route('/rs/<rs_id>/members/<member_id>/freeze', method='PUT')
+@route('/replica_sets/<rs_id>/hidden', method='GET')
 @error_wrap
-def member_freeze(rs_id, member_id):
-    logger.debug("member_freeze({rs_id}, {member_id})".format(**locals()))
-    member_id = int(member_id)
+def hidden(rs_id):
+    logger.debug("hidden({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
-
-    result = RS().member_freeze(rs_id, member_id, data.get('timeout', 60))
-    if result:
-        return send_result(200)
-    return send_result(400)
+    return send_result(200, _build_server_info(RS().hidden(rs_id)))
 
 
-@route('/rs/<rs_id>/primary', method='GET')
+@route('/replica_sets/<rs_id>/passives', method='GET')
+@error_wrap
+def passives(rs_id):
+    logger.debug("passives({rs_id})".format(**locals()))
+    if rs_id not in RS():
+        return send_result(404)
+    return send_result(200, _build_server_info(RS().passives(rs_id)))
+
+
+@route('/replica_sets/<rs_id>/hosts', method='GET')
+@error_wrap
+def hosts(rs_id):
+    logger.debug("hosts({rs_id})".format(**locals()))
+    if rs_id not in RS():
+        return send_result(404)
+    return send_result(200, _build_server_info(RS().hosts(rs_id)))
+
+
+@route('/replica_sets/<rs_id>/primary', method='GET')
 @error_wrap
 def rs_member_primary(rs_id):
     logger.debug("rs_member_primary({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-
-    result = RS().primary(rs_id)
-    return send_result(200, result)
-
-
-@route('/rs/<rs_id>/primary/stepdown', method='PUT')
-@error_wrap
-def primary_stepdown(rs_id):
-    logger.debug("primary_stepdown({rs_id})".format(**locals()))
-    if rs_id not in RS():
-        return send_result(404)
-
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
-    RS().primary_stepdown(rs_id, data.get('timeout', 60))
-    return send_result(200)
+    return send_result(200, _build_server_info([RS().primary(rs_id)]))
 
 
 if __name__ == '__main__':
