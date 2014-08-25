@@ -243,6 +243,11 @@ def write_config(params, config_path=None):
         config_path = tempfile.mktemp(prefix="mongo-")
 
     cfg = params.copy()
+    if 'setParameter' in cfg:
+        set_parameters = cfg.pop('setParameter')
+        for key, value in set_parameters.items():
+            cfg['setParameter = ' + key] = value
+
     # fix boolean value
     for key, value in cfg.items():
         if isinstance(value, bool):

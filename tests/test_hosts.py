@@ -275,6 +275,18 @@ class HostTestCase(unittest.TestCase):
         self.host.restart()
         self.assertTrue(self.host.is_alive)
 
+    def test_set_parameter(self):
+        cfg = {"setParameter": {"textSearchEnabled": True,
+                                "enableTestCommands": 1}}
+        host = Host(self.mongod, cfg)
+        host.start()
+        c = pymongo.MongoClient(host.hostname)
+        c.foo.bar.insert({"data": "text stuff"})
+        # No Exception.
+        c.foo.bar.ensure_index([("data", pymongo.TEXT)])
+        # No Exception.
+        c.admin.command("sleep", secs=1)
+
     def test_cleanup(self):
         self.host.start(80)
         self.assertTrue(os.path.exists(self.host.cfg['dbpath']))
