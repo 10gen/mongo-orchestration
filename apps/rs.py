@@ -141,6 +141,17 @@ def members(rs_id):
     return send_result(200, _build_server_info(RS().members(rs_id)))
 
 
+@route('/replica_sets/<rs_id>/members/<member_id>', method='GET')
+@error_wrap
+def member_info(rs_id, member_id):
+    logger.debug("member_info({rs_id}, {member_id})".format(**locals()))
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    result = RS().member_info(rs_id, member_id)
+    return send_result(200, result)
+
+
 @route('/replica_sets/<rs_id>/members/<member_id>', method='DELETE')
 @error_wrap
 def member_del(rs_id, member_id):
@@ -149,6 +160,22 @@ def member_del(rs_id, member_id):
     if rs_id not in RS():
         return send_result(404)
     result = RS().member_del(rs_id, member_id)
+    return send_result(200, result)
+
+
+@route('/replica_sets/<rs_id>/members/<member_id>', method='PATCH')
+@error_wrap
+def member_update(rs_id, member_id):
+    logger.debug("member_update({rs_id}, {member_id})".format(**locals()))
+    member_id = int(member_id)
+    if rs_id not in RS():
+        return send_result(404)
+    data = {}
+    json_data = request.body.read()
+    if json_data:
+        data = json.loads(json_data)
+    RS().member_update(rs_id, member_id, data)
+    result = RS().member_info(rs_id, member_id)
     return send_result(200, result)
 
 
