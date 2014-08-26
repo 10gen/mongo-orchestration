@@ -120,13 +120,15 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
         info = self.rs.info(repl_id)
         self.assertTrue(isinstance(info, dict))
-        for item in ("id", "members", "uri", "orchestration"):
+        for item in ("id", "members", "uri", "mongodb_uri", "orchestration"):
             self.assertTrue(item in info)
 
         self.assertEqual(info['id'], repl_id)
         self.assertEqual(len(info['members']), 2)
         self.assertTrue(info['uri'].find(','))
         self.assertTrue(info['uri'].find('replicaSet=' + repl_id))
+        self.assertTrue(info['mongodb_uri'].find(info['uri']))
+        self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
         self.assertEqual(info['orchestration'], 'rs')
 
     def test_info_with_auth(self):

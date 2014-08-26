@@ -197,11 +197,14 @@ class Shard(object):
 
     def info(self):
         """return info about configuration"""
+        uri = ','.join(x['hostname'] for x in self.routers)
+        mongodb_uri = 'mongodb://' + uri
         return {'id': self.id,
                 'members': self.members,
                 'configsvrs': self.configsvrs,
                 'routers': self.routers,
-                'uri': ','.join(x['hostname'] for x in self.routers),
+                'uri': uri,
+                'mongodb_uri': mongodb_uri,
                 'orchestration': 'sh'}
 
     def cleanup(self):
