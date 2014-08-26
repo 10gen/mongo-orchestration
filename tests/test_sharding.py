@@ -1,31 +1,26 @@
 #!/usr/bin/python
 # coding=utf-8
 
-import os
-import sys
-sys.path.insert(0, '../')
-
-# log_file = os.path.join(os.path.split(__file__)[0], 'test.log')
-
 import logging
-# logging.basicConfig(level=logging.DEBUG, filename=log_file)
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+import os
+import operator
+import pymongo
+import re
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, '../')
 
 from lib import set_bin_path, cleanup_storage
 from lib.shards import Shard, Shards
 from lib.hosts import Hosts
 from lib.process import PortPool, HOSTNAME
-
-import time
-import operator
-import unittest
-import pymongo
-import re
-import subprocess
-
-from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
+from tests import unittest, SkipTest
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 

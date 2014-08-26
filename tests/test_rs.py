@@ -1,26 +1,24 @@
 #!/usr/bin/python
 # coding=utf-8
 
+import logging
 import os
 import sys
+import operator
+import time
+
+import pymongo
+
 sys.path.insert(0, '../')
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-
-import unittest
 from lib.rs import ReplicaSet, RS
 from lib.hosts import Hosts
 from lib.process import PortPool, HOSTNAME
-import pymongo
-
-import operator
-import tempfile
-import time
 from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
+from tests import unittest, SkipTest
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 @attr('rs')

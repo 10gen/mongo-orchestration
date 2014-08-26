@@ -1,20 +1,20 @@
 #!/usr/bin/python
 # coding=utf-8
 
-import sys
-sys.path.insert(0, '../')
-import unittest
-import lib.process as process
-import socket
-import sys
-import subprocess
 import os
 import platform
 import random
+import socket
+import subprocess
+import sys
 import tempfile
 
-from unittest.case import SkipTest
+sys.path.insert(0, '../')
+
+import lib.process as process
 from nose.plugins.attrib import attr
+
+from tests import unittest, SkipTest
 
 
 @attr('process')

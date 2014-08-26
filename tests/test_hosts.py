@@ -1,19 +1,22 @@
 #!/usr/bin/python
 # coding=utf-8
 
-import sys
-sys.path.insert(0, '../')
-import unittest
-from lib.hosts import Host, Hosts
-from lib.process import PortPool
-import socket
+import operator
 import os
+import socket
+import stat
+import sys
 import tempfile
 import time
-import stat
-import operator
+
 import pymongo
+
+sys.path.insert(0, '../')
+
+from lib.hosts import Host, Hosts
+from lib.process import PortPool
 from nose.plugins.attrib import attr
+from tests import unittest
 
 
 @attr('hosts')
