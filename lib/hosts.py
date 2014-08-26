@@ -131,6 +131,25 @@ class Host(object):
                 pass
         return c
 
+    def freeze(self, timeout=60):
+        """Run `replSetFreeze` on this server.
+
+        May raise `pymongo.errors.OperationFailure` if this server is not a
+        replica set member.
+        """
+        return self.run_command('replSetFreeze', timeout)
+
+    def stepdown(self, timeout=60):
+        """Run `replSetStepDown` on this server.
+
+        May raise `pymongo.errors.OperationFailure` if this server is not a
+        replica set member.
+        """
+        try:
+            self.run_command('replSetStepDown', timeout)
+        except pymongo.errors.AutoReconnect:
+            pass
+
     def run_command(self, command, arg=None, is_eval=False):
         """run command on the host
 

@@ -48,12 +48,33 @@ def error_wrap(f):
 
 
 def _sh_create(params):
-    sh_id = Shards().create(params)
-    result = Shards().info(sh_id)
+    cluster_id = Shards().create(params)
+    result = Shards().info(cluster_id)
     return send_result(200, result)
 
 
-@route('/sh', method='POST')
+def _build_server_uris(docs):
+    scheme, host, _, _, _ = request.urlparts
+    base_uri = "%s://%s/" % (scheme, host)
+    return [(base_uri + 'servers/' + doc['id']) for doc in docs]
+
+
+def _build_shard_info(shard_docs):
+    resource_info = []
+    scheme, host, _, _, _ = request.urlparts
+    base_uri = "%s://%s/" % (scheme, host)
+    for shard_doc in shard_docs:
+        if shard_doc.get("isReplicaSet"):
+            resource = 'replica_sets'
+        else:
+            resource = 'servers'
+        resource_info.append({
+            "shard_id": shard_doc['id'],
+            "uri": base_uri + resource + '/' + shard_doc['_id']})
+    return resource_info
+
+
+@route('/sharded_clusters', method='POST')
 @error_wrap
 def sh_create():
     logger.debug("sh_create()")
@@ -65,7 +86,7 @@ def sh_create():
     return _sh_create(data)
 
 
-@route('/sh', method='GET')
+@route('/sharded_clusters', method='GET')
 @error_wrap
 def sh_list():
     logger.debug("sh_list()")
@@ -73,122 +94,124 @@ def sh_list():
     return send_result(200, data)
 
 
-@route('/sh/<sh_id>', method='GET')
+@route('/sharded_clusters/<cluster_id>', method='GET')
 @error_wrap
-def info(sh_id):
-    logger.debug("info({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def info(cluster_id):
+    logger.debug("info({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().info(sh_id)
+    result = Shards().info(cluster_id)
     return send_result(200, result)
 
 
-@route('/sh/<sh_id>', method='PUT')
+@route('/sharded_clusters/<cluster_id>', method='PUT')
 @error_wrap
-def sh_create_by_id(sh_id):
+def sh_create_by_id(cluster_id):
     logger.debug("sh_create()")
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
     data = preset_merge(data, 'sh')
-    data['id'] = sh_id
+    data['id'] = cluster_id
     return _sh_create(data)
 
 
-@route('/sh/<sh_id>', method='DELETE')
+@route('/sharded_clusters/<cluster_id>', method='DELETE')
 @error_wrap
-def sh_del(sh_id):
-    logger.debug("sh_del({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def sh_del(cluster_id):
+    logger.debug("sh_del({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().remove(sh_id)
+    result = Shards().remove(cluster_id)
     return send_result(204, result)
 
 
-@route('/sh/<sh_id>/members', method='POST')
+@route('/sharded_clusters/<cluster_id>/shards', method='POST')
 @error_wrap
-def member_add(sh_id):
-    logger.debug("member_add({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def shard_add(cluster_id):
+    logger.debug("shard_add({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    result = Shards().member_add(sh_id, data)
+    result = Shards().member_add(cluster_id, data)
     return send_result(200, result)
 
 
-@route('/sh/<sh_id>/members', method='GET')
+@route('/sharded_clusters/<cluster_id>/shards', method='GET')
 @error_wrap
-def members(sh_id):
-    logger.debug("members({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def shards(cluster_id):
+    logger.debug("shards({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().members(sh_id)
-    return send_result(200, result)
+    members = Shards().members(cluster_id)
+    return send_result(200, _build_shard_info(members))
 
 
-@route('/sh/<sh_id>/configservers', method='GET')
+@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='GET')
 @error_wrap
-def configservers(sh_id):
-    logger.debug("configservers({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def shard_info(cluster_id, shard_id):
+    logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().configservers(sh_id)
+    result = Shards().member_info(cluster_id, shard_id)
     return send_result(200, result)
 
 
-@route('/sh/<sh_id>/routers', method='GET')
+@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='DELETE')
 @error_wrap
-def routers(sh_id):
-    logger.debug("routers({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def shard_del(cluster_id, shard_id):
+    logger.debug("member_del({cluster_id}), {shard_id}".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().routers(sh_id)
+    result = Shards().member_del(cluster_id, shard_id)
     return send_result(200, result)
 
 
-@route('/sh/<sh_id>/routers', method='POST')
+@route('/sharded_clusters/<cluster_id>/configservers', method='GET')
 @error_wrap
-def router_add(sh_id):
-    logger.debug("router_add({sh_id})".format(**locals()))
-    if sh_id not in Shards():
+def configservers(cluster_id):
+    logger.debug("configservers({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
+        return send_result(404)
+    result = _build_server_uris(Shards().configservers(cluster_id))
+    return send_result(200, result)
+
+
+@route('/sharded_clusters/<cluster_id>/routers', method='GET')
+@error_wrap
+def routers(cluster_id):
+    logger.debug("routers({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
+        return send_result(404)
+    result = _build_server_uris(Shards().routers(cluster_id))
+    return send_result(200, result)
+
+
+@route('/sharded_clusters/<cluster_id>/routers', method='POST')
+@error_wrap
+def router_add(cluster_id):
+    logger.debug("router_add({cluster_id})".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    result = Shards().router_add(sh_id, data)
-    return send_result(200, result)
-
-@route('/sh/<sh_id>/routers/<router_id>', method='DELETE')
-@error_wrap
-def router_del(sh_id, router_id):
-    logger.debug("router_del({sh_id}), {router_id}".format(**locals()))
-    if sh_id not in Shards():
-        return send_result(404)
-    result = Shards().router_del(sh_id, router_id)
-    return send_result(200, result)
-
-@route('/sh/<sh_id>/members/<member_id>', method='GET')
-@error_wrap
-def member_info(sh_id, member_id):
-    logger.debug("member_info({sh_id}, {member_id})".format(**locals()))
-    if sh_id not in Shards():
-        return send_result(404)
-    result = Shards().member_info(sh_id, member_id)
+    result = Shards().router_add(cluster_id, data)
     return send_result(200, result)
 
 
-@route('/sh/<sh_id>/members/<member_id>', method='DELETE')
+@route('/sharded_clusters/<cluster_id>/routers/<router_id>', method='DELETE')
 @error_wrap
-def member_del(sh_id, member_id):
-    logger.debug("member_del({sh_id}), {member_id}".format(**locals()))
-    if sh_id not in Shards():
+def router_del(cluster_id, router_id):
+    logger.debug("router_del({cluster_id}), {router_id}".format(**locals()))
+    if cluster_id not in Shards():
         return send_result(404)
-    result = Shards().member_del(sh_id, member_id)
+    result = Shards().router_del(cluster_id, router_id)
     return send_result(200, result)
 
 
