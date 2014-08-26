@@ -54,23 +54,20 @@ def _sh_create(params):
 
 
 def _build_server_uris(docs):
-    scheme, host, _, _, _ = request.urlparts
-    base_uri = "%s://%s/" % (scheme, host)
-    return [(base_uri + 'servers/' + doc['id']) for doc in docs]
+    return [{'uri': '/servers/' + doc['id']} for doc in docs]
 
 
 def _build_shard_info(shard_docs):
     resource_info = []
-    scheme, host, _, _, _ = request.urlparts
-    base_uri = "%s://%s/" % (scheme, host)
     for shard_doc in shard_docs:
-        if shard_doc.get("isReplicaSet"):
-            resource = 'replica_sets'
-        else:
-            resource = 'servers'
-        resource_info.append({
+        repl_set = shard_doc.get('isReplicaSet')
+        resource = 'replica_sets' if repl_set else 'servers'
+        info = {
             "shard_id": shard_doc['id'],
-            "uri": base_uri + resource + '/' + shard_doc['_id']})
+            "tags": shard_doc['tags'],
+            "uri": '/' + resource + '/' + shard_doc['_id']}
+        info['isReplicaSet' if repl_set else 'isServer'] = True
+        resource_info.append(info)
     return resource_info
 
 

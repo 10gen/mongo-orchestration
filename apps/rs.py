@@ -55,12 +55,10 @@ def _rs_create(params):
 
 def _build_server_info(member_docs):
     server_info = []
-    scheme, host, _, _, _ = request.urlparts
-    servers_uri = "%s://%s/servers/" % (scheme, host)
     for member_doc in member_docs:
         server_info.append({
             "member_id": member_doc['_id'],
-            "uri": servers_uri + member_doc['host_id']})
+            "uri": '/servers/' + member_doc['host_id']})
     return server_info
 
 
