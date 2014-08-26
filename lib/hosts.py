@@ -164,6 +164,7 @@ class Host(object):
         if self.is_alive:
             proc_info['pid'] = self.proc.pid
         logger.debug("proc_info: {proc_info}".format(**locals()))
+        mongodb_uri = ''
         server_info = {}
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
@@ -171,14 +172,15 @@ class Host(object):
                 c = pymongo.MongoClient(self.hostname.split(':')[0], self.cfg['port'], socketTimeoutMS=120000, **self.kwargs)
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
+                mongodb_uri = 'mongodb://' + self.hostname
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
                 logger.debug("status_info: {status_info}".format(**locals()))
             except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
                 server_info = {}
                 status_info = {}
 
-        logger.debug("return {d}".format(d={"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
-        return {"uri": self.hostname, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'hosts'}
+        logger.debug("return {d}".format(d={"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
+        return {"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'hosts'}
 
     @property
     def _is_locked(self):

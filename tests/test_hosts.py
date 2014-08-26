@@ -204,9 +204,11 @@ class HostTestCase(unittest.TestCase):
     def test_info(self):
         self.host.start(30)
         info = self.host.info()
-        for item in ("uri", "statuses", "serverInfo", "procInfo", "orchestration"):
+        for item in ("uri", "mongodb_uri", "statuses", "serverInfo", "procInfo", "orchestration"):
             self.assertTrue(item in info)
 
+        self.assertTrue(info['mongodb_uri'].find(info['uri']))
+        self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
         fd_log, log_path = tempfile.mkstemp()
         os.close(fd_log)
         db_path = tempfile.mkdtemp()
