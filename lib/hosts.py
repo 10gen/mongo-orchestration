@@ -145,7 +145,10 @@ class Host(object):
         May raise `pymongo.errors.OperationFailure` if this server is not a
         replica set member.
         """
-        return self.run_command('replSetStepDown', timeout)
+        try:
+            self.run_command('replSetStepDown', timeout)
+        except pymongo.errors.AutoReconnect:
+            pass
 
     def run_command(self, command, arg=None, is_eval=False):
         """run command on the host

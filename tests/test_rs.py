@@ -144,11 +144,15 @@ class RSTestCase(unittest.TestCase):
         c.close()
 
     def test_primary_stepdown(self):
-        repl_id = self.rs.create({'id': 'test-rs-stepdown', 'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
-        primary = self.rs.primary(repl_id)['uri']
-        self.rs.primary_stepdown(repl_id, timeout=60)
-        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.primary(repl_id)['uri']))
-        self.assertNotEqual(primary, self.rs.primary(repl_id)['uri'])
+        # This tests Host, but only makes sense in the context of a replica set.
+        repl_id = self.rs.create(
+            {'id': 'test-rs-stepdown',
+             'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
+        primary = self.rs.primary(repl_id)
+        primary_host = Hosts()._storage[primary['host_id']]
+        # No Exception.
+        primary_host.stepdown()
+        self.assertNotEqual(primary['uri'], self.rs.primary(repl_id)['uri'])
 
     def test_rs_del(self):
         self.rs.create({'members': [{}, {}]})
@@ -283,13 +287,22 @@ class RSTestCase(unittest.TestCase):
         self.assertTrue(self.rs.member_info(repl_id, _id)['procInfo']['alive'])
 
     def test_member_freeze(self):
-        repl_id = self.rs.create({'members': [{"rsParams": {"priority": 19}}, {"rsParams": {"priority": 5}}, {}]})
-        primary_next = self.rs.member_info(repl_id, 2)['uri']
-        self.assertTrue(self.rs.member_freeze(repl_id, 1, 30))
-        self.rs.member_command(repl_id, 0, 'stop')
-        self.assertEqual(self.rs.primary(repl_id)['uri'], primary_next)
-        time.sleep(40)
-        self.assertEqual(self.rs.primary(repl_id)['uri'], self.rs.member_info(repl_id, 1)['uri'])
+        # This tests Host, but only makes sense in the context of a replica set.
+        repl_id = self.rs.create(
+            {'members': [{"rsParams": {"priority": 19}},
+                         {"rsParams": {"priority": 5}}, {}]})
+        next_primary_info = self.rs.member_info(repl_id, 2)
+        next_primary = next_primary_info['uri']
+        secondary_info = self.rs.member_info(repl_id, 1)
+        secondary_host = Hosts()._storage[secondary_info['host_id']]
+        primary_info = self.rs.member_info(repl_id, 0)
+        primary_host = Hosts()._storage[primary_info['host_id']]
+        self.assertTrue(secondary_host.freeze(10))
+        primary_host.stop()
+        self.assertEqual(self.rs.primary(repl_id)['uri'], next_primary)
+        time.sleep(12)
+        self.assertEqual(self.rs.primary(repl_id)['uri'],
+                         self.rs.member_info(repl_id, 1)['uri'])
 
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority": 0, "hidden": True}}, {}]})
@@ -464,16 +477,6 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl.member_command(_id, 'restart')
         self.assertTrue(self.repl.member_info(_id)['procInfo']['alive'])
 
-    def test_member_freeze(self):
-        self.repl_cfg = {"members": [{"rsParams": {"priority": 19}}, {"rsParams": {"priority": 7}}, {}]}
-        self.repl = ReplicaSet(self.repl_cfg)
-        primary_next = self.repl.member_info(2)['uri']
-        self.assertTrue(self.repl.member_freeze(1, 30))
-        self.repl.member_command(0, 'stop')
-        self.assertEqual(self.repl.primary(), primary_next)
-        time.sleep(40)
-        self.assertEqual(self.repl.primary(), self.repl.member_info(1)['uri'])
-
     def test_members(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
@@ -483,13 +486,6 @@ class ReplicaSetTestCase(unittest.TestCase):
         for i in xrange(len(members1)):
             self.assertEqual(members1[i]['host'], members2[i]['host'])
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
-
-    def test_stepdown(self):
-        self.repl_cfg = {'members': [{}, {}]}
-        self.repl = ReplicaSet(self.repl_cfg)
-        primary = self.repl.primary()
-        self.assertTrue(self.repl.stepdown())
-        self.assertNotEqual(primary, self.repl.primary())
 
     def test_primary(self):
         self.repl_cfg = {'members': [{}, {}]}
