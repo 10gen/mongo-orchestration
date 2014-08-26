@@ -256,36 +256,12 @@ class ReplicaSet(object):
         host_id = self._hosts.id_by_hostname(self.id2host(member_id))
         return self._hosts.command(host_id, command)
 
-    def member_freeze(self, member_id, timeout):
-        """apply command (start/stop/restart) to member instance of replica set
-        Args:
-            member_id - member index
-            timeout - duration of this operation
-
-        return True if operation success otherwise False
-        """
-        return self.run_command("replSetFreeze", timeout, is_eval=False, member_id=member_id)
-
     def members(self):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
             result.append({"_id": member['_id'], "host": member["name"], "host_id": self._hosts.id_by_hostname(member["name"])})
         return result
-
-    def stepdown(self, timeout=60):
-        """stepdown primary host
-        Args:
-            timeout - number of seconds to avoid election to primary.
-
-        return True if operation success otherwise False
-        """
-        try:
-            self.run_command("replSetStepDown", timeout, is_eval=False)
-        except (pymongo.errors.AutoReconnect):
-            pass
-        time.sleep(2)
-        return self.connection() and True
 
     def primary(self):
         """return primary hostname of replica set"""
@@ -490,16 +466,6 @@ class RS(Singleton, Container):
         primary = repl.primary()
         return repl.member_info(repl.host2id(primary))
 
-    def primary_stepdown(self, repl_id, timeout=60):
-        """stepdown primary node
-        Args:
-            repld_id - replica set identity
-            timeout - number of seconds to avoid election to primary
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        return repl.stepdown(timeout)
-
     def remove(self, repl_id):
         """remove replica set with kill members
         Args:
@@ -580,20 +546,6 @@ class RS(Singleton, Container):
         """
         repl = self[repl_id]
         result = repl.member_command(member_id, command)
-        self[repl_id] = repl
-        return result
-
-    def member_freeze(self, repl_id, member_id, timeout):
-        """apply command 'freeze' to the member of replica set
-        Args:
-            repl_id - replica set identity
-            member_id - member index
-            timeout - duration of this operation
-
-        return True if operation success otherwise False
-        """
-        repl = self[repl_id]
-        result = repl.member_freeze(member_id, timeout)
         self[repl_id] = repl
         return result
 

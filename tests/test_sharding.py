@@ -200,7 +200,7 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
-        self.assertTrue(info['isHost'])
+        self.assertTrue(info['isServer'])
         self.assertTrue('_id' in info)
 
         info = self.sh.member_info(sh_id, 'sh-rs-01')
@@ -214,7 +214,7 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'member1')
         self.assertEqual(info['id'], 'member1')
-        self.assertTrue(info['isHost'])
+        self.assertTrue(info['isServer'])
         self.assertTrue('_id' in info)
 
         info = self.sh.member_info(sh_id, 'sh-rs-01')
@@ -265,12 +265,12 @@ class ShardsTestCase(unittest.TestCase):
 
         self.assertEqual(len(c.admin.command("listShards")['shards']), 0)
         result = self.sh.member_add(sh_id, {'id': 'test1', 'shardParams': {}})
-        self.assertTrue(result.get('isHost', False))
+        self.assertTrue(result.get('isServer', False))
         self.assertEqual(result['id'], 'test1')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 1)
 
         result = self.sh.member_add(sh_id, {'id': 'test2', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}})
-        self.assertFalse(result.get('isHost', False))
+        self.assertFalse(result.get('isServer', False))
         self.assertTrue(result.get('isReplicaSet', False))
         self.assertEqual(result['id'], 'test2')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
@@ -428,12 +428,12 @@ class ShardTestCase(unittest.TestCase):
         self.sh = Shard(config)
         self.assertEqual(len(self.sh.members), 0)
         result = self.sh.member_add('test1', {})
-        self.assertTrue(result.get('isHost', False))
+        self.assertTrue(result.get('isServer', False))
         self.assertEqual(result['id'], 'test1')
         self.assertEqual(len(self.sh.members), 1)
 
         result = self.sh.member_add('test2', {'id': 'rs1', 'members': [{}, {}]})
-        self.assertFalse(result.get('isHost', False))
+        self.assertFalse(result.get('isServer', False))
         self.assertTrue(result.get('isReplicaSet', False))
         self.assertEqual(result['id'], 'test2')
         self.assertEqual(len(self.sh.members), 2)
@@ -445,7 +445,7 @@ class ShardTestCase(unittest.TestCase):
         self.sh = Shard(config)
         info = self.sh.member_info('member1')
         self.assertEqual(info['id'], 'member1')
-        self.assertTrue(info['isHost'])
+        self.assertTrue(info['isServer'])
         self.assertTrue('_id' in info)
 
         info = self.sh.member_info('sh-rs-01')
@@ -461,7 +461,7 @@ class ShardTestCase(unittest.TestCase):
         self.sh = Shard(config)
         info = self.sh.member_info('member1')
         self.assertEqual(info['id'], 'member1')
-        self.assertTrue(info['isHost'])
+        self.assertTrue(info['isServer'])
         self.assertTrue('_id' in info)
 
         info = self.sh.member_info('sh-rs-01')

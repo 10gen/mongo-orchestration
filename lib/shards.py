@@ -169,7 +169,7 @@ class Shard(object):
             host_id = Hosts().create('mongod', **params)
             result = self._add(Hosts().info(host_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
-                self._shards[result['shardAdded']] = {'isHost': True, '_id': host_id}
+                self._shards[result['shardAdded']] = {'isServer': True, '_id': host_id}
                 # return self._shards[result['shardAdded']]
                 return self.member_info(member_id)
 
@@ -185,7 +185,7 @@ class Shard(object):
         result = self.router_command("removeShard", shard_name, is_eval=False)
         if result['ok'] == 1 and result['state'] == 'completed':
             shard = self._shards.pop(shard_name)
-            if shard.get('isHost', False):
+            if shard.get('isServer', False):
                 Hosts().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
                 RS().remove(shard['_id'])
@@ -210,7 +210,7 @@ class Shard(object):
     def cleanup(self):
         """cleanup configuration: stop and remove all hosts"""
         for _id, shard in self._shards.items():
-            if shard.get('isHost', False):
+            if shard.get('isServer', False):
                 Hosts().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
                 RS().remove(shard['_id'])
