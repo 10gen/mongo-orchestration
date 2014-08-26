@@ -190,7 +190,7 @@ def rs_member_primary(rs_id):
     logger.debug("rs_member_primary({rs_id})".format(**locals()))
     if rs_id not in RS():
         return send_result(404)
-    return send_result(200, _build_server_info([RS().primary(rs_id)]))
+    return send_result(200, _build_server_info([RS().primary(rs_id)])[0])
 
 
 @route('/replica_sets/<rs_id>/members/<member_id>', method='GET')
