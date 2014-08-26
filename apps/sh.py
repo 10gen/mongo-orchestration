@@ -151,26 +151,6 @@ def shards(cluster_id):
     return send_result(200, _build_shard_info(members))
 
 
-@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='GET')
-@error_wrap
-def shard_info(cluster_id, shard_id):
-    logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
-    if cluster_id not in Shards():
-        return send_result(404)
-    result = Shards().member_info(cluster_id, shard_id)
-    return send_result(200, result)
-
-
-@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='DELETE')
-@error_wrap
-def shard_del(cluster_id, shard_id):
-    logger.debug("member_del({cluster_id}), {shard_id}".format(**locals()))
-    if cluster_id not in Shards():
-        return send_result(404)
-    result = Shards().member_del(cluster_id, shard_id)
-    return send_result(200, result)
-
-
 @route('/sharded_clusters/<cluster_id>/configservers', method='GET')
 @error_wrap
 def configservers(cluster_id):
@@ -212,6 +192,26 @@ def router_del(cluster_id, router_id):
     if cluster_id not in Shards():
         return send_result(404)
     result = Shards().router_del(cluster_id, router_id)
+    return send_result(200, result)
+
+
+@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='GET')
+@error_wrap
+def shard_info(cluster_id, shard_id):
+    logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
+    if cluster_id not in Shards():
+        return send_result(404)
+    result = Shards().member_info(cluster_id, shard_id)
+    return send_result(200, result)
+
+
+@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='DELETE')
+@error_wrap
+def shard_del(cluster_id, shard_id):
+    logger.debug("member_del({cluster_id}), {shard_id}".format(**locals()))
+    if cluster_id not in Shards():
+        return send_result(404)
+    result = Shards().member_del(cluster_id, shard_id)
     return send_result(200, result)
 
 
