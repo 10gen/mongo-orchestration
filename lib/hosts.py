@@ -200,6 +200,8 @@ class Host(object):
     def start(self, timeout=300):
         """start host
         return True of False"""
+        if self.is_alive:
+            return True
         try:
             if self.cfg.get('dbpath', None) and self._is_locked:
                 # repair if needed
