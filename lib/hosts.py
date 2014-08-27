@@ -199,7 +199,7 @@ class Host(object):
                 status_info = {}
 
         logger.debug("return {d}".format(d={"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
-        return {"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'hosts'}
+        return {"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'servers'}
 
     @property
     def _is_locked(self):

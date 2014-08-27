@@ -205,7 +205,7 @@ class Shard(object):
                 'routers': self.routers,
                 'uri': uri,
                 'mongodb_uri': mongodb_uri,
-                'orchestration': 'sh'}
+                'orchestration': 'sharded_clusters'}
 
     def cleanup(self):
         """cleanup configuration: stop and remove all hosts"""

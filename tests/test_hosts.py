@@ -225,7 +225,7 @@ class HostTestCase(unittest.TestCase):
         info = host2.info()
         self.assertEqual(len(info['serverInfo']), 0)
         self.assertEqual(len(info['statuses']), 0)
-        self.assertEqual(info['orchestration'], 'hosts')
+        self.assertEqual(info['orchestration'], 'servers')
         host2.cleanup()
 
     def test_command(self):

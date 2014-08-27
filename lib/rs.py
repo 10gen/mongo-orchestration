@@ -140,7 +140,7 @@ class ReplicaSet(object):
                 "members": self.members(),
                 "uri": uri,
                 "mongodb_uri": mongodb_uri,
-                "orchestration": 'rs'}
+                "orchestration": 'replica_sets'}
 
     def repl_member_add(self, params):
         """create new mongod instances and add it to the replica set.

@@ -151,7 +151,7 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue(info['uri'].find(','))
         self.assertTrue(info['mongodb_uri'].find(info['uri']))
         self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
-        self.assertEqual(info['orchestration'], 'sh')
+        self.assertEqual(info['orchestration'], 'sharded_clusters')
 
     def test_configservers(self):
         config = {}

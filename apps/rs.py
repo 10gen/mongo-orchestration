@@ -70,7 +70,7 @@ def rs_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'rs')
+    data = preset_merge(data, 'replica_sets')
     return _rs_create(data)
 
 
@@ -100,7 +100,7 @@ def rs_create_by_id(rs_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'rs')
+    data = preset_merge(data, 'replica_sets')
     data['id'] = rs_id
     return _rs_create(data)
 
