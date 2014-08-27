@@ -7,7 +7,7 @@
         }
     ], 
     "id": "shard_cluster_1", 
-    "members": [
+    "shards": [
         {
             "id": "sh01", 
             "shardParams": {

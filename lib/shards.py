@@ -40,7 +40,7 @@ class Shard(object):
 
         self.__init_configsvr(params.get('configsvrs', [{}]))
         map(self.router_add, params.get('routers', [{}]))
-        for cfg in params.get('members', []):
+        for cfg in params.get('shards', []):
             shard_params = cfg.get('shardParams', {})
             shard_tags = shard_params.pop('tags', None)
             info = self.member_add(cfg.get('id', None), shard_params)
@@ -200,7 +200,7 @@ class Shard(object):
         uri = ','.join(x['hostname'] for x in self.routers)
         mongodb_uri = 'mongodb://' + uri
         return {'id': self.id,
-                'members': self.members,
+                'shards': self.members,
                 'configsvrs': self.configsvrs,
                 'routers': self.routers,
                 'uri': uri,

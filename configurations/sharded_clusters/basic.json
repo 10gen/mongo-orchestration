@@ -3,7 +3,7 @@
         {
         }
     ],
-    "members": [
+    "shards": [
         {
             "id": "sh01", 
             "shardParams": {
