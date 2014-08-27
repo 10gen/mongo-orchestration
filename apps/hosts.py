@@ -7,10 +7,13 @@ logger = logging.getLogger(__name__)
 import json
 import traceback
 import sys
+
 sys.path.insert(0, '..')
+
+from apps import setup_versioned_routes, Route
 from lib.common import *
 from lib.hosts import Hosts
-from bottle import route, request, response, run
+from bottle import request, response, run
 
 
 __version__ = '0.9'
@@ -63,7 +66,6 @@ def _host_create(params):
     return send_result(200, result)
 
 
-@route('/', method='GET')
 @error_wrap
 def base_uri():
     logger.debug("base_uri()")
@@ -72,7 +74,6 @@ def base_uri():
     return send_result(200, data)
 
 
-@route('/servers', method='POST')
 @error_wrap
 def host_create():
     data = {}
@@ -83,7 +84,6 @@ def host_create():
     return _host_create(data)
 
 
-@route('/servers', method='GET')
 @error_wrap
 def host_list():
     logger.debug("host_list()")
@@ -91,7 +91,6 @@ def host_list():
     return send_result(200, data)
 
 
-@route('/servers/<host_id>', method='GET')
 @error_wrap
 def host_info(host_id):
     logger.debug("host_info({host_id})".format(**locals()))
@@ -101,7 +100,6 @@ def host_info(host_id):
     return send_result(200, result)
 
 
-@route('/servers/<host_id>', method='PUT')
 @error_wrap
 def host_create_by_id(host_id):
     data = {}
@@ -113,8 +111,6 @@ def host_create_by_id(host_id):
     return _host_create(data)
 
 
-@route('/servers/<host_id>', method='DELETE')
-# TODO: return 400 code if process failed
 @error_wrap
 def host_del(host_id):
     logger.debug("host_del({host_id})")
@@ -124,7 +120,6 @@ def host_del(host_id):
     return send_result(204)
 
 
-@route('/servers/<host_id>', method='POST')
 @error_wrap
 def host_command(host_id):
     logger.debug("host_command({host_id})".format(**locals()))
@@ -134,6 +129,20 @@ def host_command(host_id):
     Hosts().command(host_id, command)
     return send_result(200)
 
+
+ROUTES = {
+    Route('/', method='GET'): base_uri,
+    Route('/servers', method='POST'): host_create,
+    Route('/servers', method='GET'): host_list,
+    Route('/servers/<host_id>', method='GET'): host_info,
+    Route('/servers/<host_id>', method='PUT'): host_create_by_id,
+    Route('/servers/<host_id>', method='DELETE'): host_del,
+    Route('/servers/<host_id>', method='POST'): host_command
+}
+
+setup_versioned_routes(ROUTES, version='v1')
+# Assume v1 if no version is specified.
+setup_versioned_routes(ROUTES)
 
 if __name__ == '__main__':
     hs = Hosts()
