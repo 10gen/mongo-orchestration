@@ -9,6 +9,8 @@ import traceback
 import sys
 
 sys.path.insert(0, '..')
+
+from apps import setup_versioned_routes, Route
 from lib.common import *
 from lib.shards import Shards
 from bottle import route, request, response, run
@@ -71,7 +73,6 @@ def _build_shard_info(shard_docs):
     return resource_info
 
 
-@route('/sharded_clusters', method='POST')
 @error_wrap
 def sh_create():
     logger.debug("sh_create()")
@@ -83,7 +84,6 @@ def sh_create():
     return _sh_create(data)
 
 
-@route('/sharded_clusters', method='GET')
 @error_wrap
 def sh_list():
     logger.debug("sh_list()")
@@ -91,7 +91,6 @@ def sh_list():
     return send_result(200, data)
 
 
-@route('/sharded_clusters/<cluster_id>', method='GET')
 @error_wrap
 def info(cluster_id):
     logger.debug("info({cluster_id})".format(**locals()))
@@ -101,7 +100,6 @@ def info(cluster_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>', method='PUT')
 @error_wrap
 def sh_create_by_id(cluster_id):
     logger.debug("sh_create()")
@@ -114,7 +112,6 @@ def sh_create_by_id(cluster_id):
     return _sh_create(data)
 
 
-@route('/sharded_clusters/<cluster_id>', method='DELETE')
 @error_wrap
 def sh_del(cluster_id):
     logger.debug("sh_del({cluster_id})".format(**locals()))
@@ -124,7 +121,6 @@ def sh_del(cluster_id):
     return send_result(204, result)
 
 
-@route('/sharded_clusters/<cluster_id>/shards', method='POST')
 @error_wrap
 def shard_add(cluster_id):
     logger.debug("shard_add({cluster_id})".format(**locals()))
@@ -138,7 +134,6 @@ def shard_add(cluster_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/shards', method='GET')
 @error_wrap
 def shards(cluster_id):
     logger.debug("shards({cluster_id})".format(**locals()))
@@ -148,7 +143,6 @@ def shards(cluster_id):
     return send_result(200, _build_shard_info(members))
 
 
-@route('/sharded_clusters/<cluster_id>/configservers', method='GET')
 @error_wrap
 def configservers(cluster_id):
     logger.debug("configservers({cluster_id})".format(**locals()))
@@ -158,7 +152,6 @@ def configservers(cluster_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/routers', method='GET')
 @error_wrap
 def routers(cluster_id):
     logger.debug("routers({cluster_id})".format(**locals()))
@@ -168,7 +161,6 @@ def routers(cluster_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/routers', method='POST')
 @error_wrap
 def router_add(cluster_id):
     logger.debug("router_add({cluster_id})".format(**locals()))
@@ -182,7 +174,6 @@ def router_add(cluster_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/routers/<router_id>', method='DELETE')
 @error_wrap
 def router_del(cluster_id, router_id):
     logger.debug("router_del({cluster_id}), {router_id}".format(**locals()))
@@ -192,7 +183,6 @@ def router_del(cluster_id, router_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='GET')
 @error_wrap
 def shard_info(cluster_id, shard_id):
     logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
@@ -202,7 +192,6 @@ def shard_info(cluster_id, shard_id):
     return send_result(200, result)
 
 
-@route('/sharded_clusters/<cluster_id>/shards/<shard_id>', method='DELETE')
 @error_wrap
 def shard_del(cluster_id, shard_id):
     logger.debug("member_del({cluster_id}), {shard_id}".format(**locals()))
@@ -211,6 +200,30 @@ def shard_del(cluster_id, shard_id):
     result = Shards().member_del(cluster_id, shard_id)
     return send_result(200, result)
 
+
+ROUTES = {
+    Route('/sharded_clusters', method='POST'): sh_create,
+    Route('/sharded_clusters', method='GET'): sh_list,
+    Route('/sharded_clusters/<cluster_id>', method='GET'): info,
+    Route('/sharded_clusters/<cluster_id>', method='PUT'): sh_create_by_id,
+    Route('/sharded_clusters/<cluster_id>', method='DELETE'): sh_del,
+    Route('/sharded_clusters/<cluster_id>/shards', method='POST'): shard_add,
+    Route('/sharded_clusters/<cluster_id>/shards', method='GET'): shards,
+    Route('/sharded_clusters/<cluster_id>/configservers',
+          method='GET'): configservers,
+    Route('/sharded_clusters/<cluster_id>/routers', method='GET'): routers,
+    Route('/sharded_clusters/<cluster_id>/routers', method='POST'): router_add,
+    Route('/sharded_clusters/<cluster_id>/routers/<router_id>',
+          method='DELETE'): router_del,
+    Route('/sharded_clusters/<cluster_id>/shards/<shard_id>',
+          method='GET'): shard_info,
+    Route('/sharded_clusters/<cluster_id>/shards/<shard_id>',
+          method='DELETE'): shard_del
+}
+
+setup_versioned_routes(ROUTES, version='v1')
+# Assume v1 if no version is specified.
+setup_versioned_routes(ROUTES)
 
 if __name__ == '__main__':
     rs = Shards()
