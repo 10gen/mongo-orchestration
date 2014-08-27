@@ -13,7 +13,7 @@ sys.path.insert(0, '..')
 from apps import setup_versioned_routes, Route
 from lib.common import *
 from lib.shards import Shards
-from bottle import route, request, response, run
+from bottle import request, response, run
 
 
 def send_result(code, result=None):
