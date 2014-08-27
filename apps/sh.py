@@ -79,7 +79,7 @@ def sh_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'sh')
+    data = preset_merge(data, 'sharded_clusters')
     return _sh_create(data)
 
 
@@ -109,7 +109,7 @@ def sh_create_by_id(cluster_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'sh')
+    data = preset_merge(data, 'sharded_clusters')
     data['id'] = cluster_id
     return _sh_create(data)
 

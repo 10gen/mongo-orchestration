@@ -127,7 +127,7 @@ class RSTestCase(unittest.TestCase):
         self.assertTrue(info['uri'].find('replicaSet=' + repl_id))
         self.assertTrue(info['mongodb_uri'].find(info['uri']))
         self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
-        self.assertEqual(info['orchestration'], 'rs')
+        self.assertEqual(info['orchestration'], 'replica_sets')
 
     def test_info_with_auth(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]})

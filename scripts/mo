@@ -36,7 +36,7 @@ function code {
 
 function usage {
     echo "usage: $0 configurations/cluster/file.json action"
-    echo "cluster: hosts|rs|sh"
+    echo "cluster: servers|replica_sets|sharded_clusters"
     echo "action: start|status|stop"
     exit 1
 }

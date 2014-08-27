@@ -79,7 +79,7 @@ def host_create():
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'hosts')
+    data = preset_merge(data, 'servers')
     return _host_create(data)
 
 
@@ -108,7 +108,7 @@ def host_create_by_id(host_id):
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    data = preset_merge(data, 'hosts')
+    data = preset_merge(data, 'servers')
     data['id'] = host_id
     return _host_create(data)
 
