@@ -58,16 +58,16 @@ echo "-------------------------------------------------------"
 
 $http_request = New-Object -ComObject Msxml2.XMLHTTP
 if ($configuration -eq "single_server") {
-    $post_url = "http://localhost:8889/hosts"
-    $get_url = "http://localhost:8889/hosts"
+    $post_url = "http://localhost:8889/servers"
+    $get_url = "http://localhost:8889/servers"
     $request_body="{$AUTH_PARAMS $SSL_PARAMS `"name`": `"mongod`", `"procParams`": {$TEST_PARAMS `"port`": 27017, `"dbpath`": `"$DATAPATH`", `"logpath`":`"$($LOGPATH)\\mongo.log`", `"ipv6`":true, `"logappend`":true, `"nojournal`":true}}"
 } elseif ($configuration -eq "replica_set") {
-    $post_url = "http://localhost:8889/rs"
-    $get_url = "http://localhost:8889/rs/repl0"
+    $post_url = "http://localhost:8889/replica_sets"
+    $get_url = "http://localhost:8889/replica_sets/repl0"
     $request_body="{$AUTH_PARAMS $SSL_PARAMS `"id`": `"repl0`", `"members`":[{`"rsParams`":{`"priority`": 99}, `"procParams`": {$TEST_PARAMS `"dbpath`":`"$($DATAPATH)\\db27017`", `"port`": 27017, `"logpath`":`"$($LOGPATH)\\db27017.log`", `"nojournal`":false, `"nohttpinterface`": true, `"noprealloc`":true, `"smallfiles`":true, `"nssize`":1, `"oplogSize`": 150, `"ipv6`": true}}, {`"rsParams`": {`"priority`": 1.1}, `"procParams`":{$TEST_PARAMS `"dbpath`":`"$($DATAPATH)\\db27018`", `"port`": 27018, `"logpath`":`"$($LOGPATH)\\db27018.log`", `"nojournal`":false, `"nohttpinterface`": true, `"noprealloc`":true, `"smallfiles`":true, `"nssize`":1, `"oplogSize`": 150, `"ipv6`": true}}, {`"procParams`":{`"dbpath`":`"$($DATAPATH)\\db27019`", `"port`": 27019, `"logpath`":`"$($LOGPATH)\\27019.log`", `"nojournal`":false, `"nohttpinterface`": true, `"noprealloc`":true, `"smallfiles`":true, `"nssize`":1, `"oplogSize`": 150, `"ipv6`": true}}]}" 
 } elseif ($configuration -eq "sharded") {
-    $post_url = "http://localhost:8889/sh"
-    $get_url = "http://localhost:8889/sh/shard_cluster_1"
+    $post_url = "http://localhost:8889/sharded_clusters"
+    $get_url = "http://localhost:8889/sharded_clusters/shard_cluster_1"
     $request_body = "{$AUTH_PARAMS $SSL_PARAMS `"routers`": [{$TEST_PARAMS `"port`": 27017, `"logpath`": `"$LOGPATH\\router27017.log`"}, {$TEST_PARAMS `"port`": 27018, `"logpath`": `"$LOGPATH\\router27018.log`"}], `"configsvrs`": [{`"port`": 27016, `"dbpath`": `"$DATAPATH\\db27016`", `"logpath`": `"$LOGPATH\\configsvr27016.log`"}], `"id`": `"shard_cluster_1`", `"members`": [{`"id`": `"sh01`", `"shardParams`": {`"procParams`": {$TEST_PARAMS `"port`": 27020, `"dbpath`": `"$DATAPATH\\db27020`", `"logpath`":`"$LOGPATH\\db27020.log`", `"ipv6`":true, `"logappend`":true, `"nojournal`":false}}}]}" 
 } else{
     echo "Unrecognized configuration: $configuration"
