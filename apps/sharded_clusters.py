@@ -12,7 +12,7 @@ sys.path.insert(0, '..')
 
 from apps import setup_versioned_routes, Route
 from lib.common import *
-from lib.shards import Shards
+from lib.sharded_clusters import ShardedClusters
 from bottle import request, response, run
 
 
@@ -50,8 +50,8 @@ def error_wrap(f):
 
 
 def _sh_create(params):
-    cluster_id = Shards().create(params)
-    result = Shards().info(cluster_id)
+    cluster_id = ShardedClusters().create(params)
+    result = ShardedClusters().info(cluster_id)
     return send_result(200, result)
 
 
@@ -87,16 +87,16 @@ def sh_create():
 @error_wrap
 def sh_list():
     logger.debug("sh_list()")
-    data = [sh_info for sh_info in Shards()]
+    data = [sh_info for sh_info in ShardedClusters()]
     return send_result(200, data)
 
 
 @error_wrap
 def info(cluster_id):
     logger.debug("info({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = Shards().info(cluster_id)
+    result = ShardedClusters().info(cluster_id)
     return send_result(200, result)
 
 
@@ -115,89 +115,89 @@ def sh_create_by_id(cluster_id):
 @error_wrap
 def sh_del(cluster_id):
     logger.debug("sh_del({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = Shards().remove(cluster_id)
+    result = ShardedClusters().remove(cluster_id)
     return send_result(204, result)
 
 
 @error_wrap
 def shard_add(cluster_id):
     logger.debug("shard_add({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    result = Shards().member_add(cluster_id, data)
+    result = ShardedClusters().member_add(cluster_id, data)
     return send_result(200, result)
 
 
 @error_wrap
 def shards(cluster_id):
     logger.debug("shards({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    members = Shards().members(cluster_id)
+    members = ShardedClusters().members(cluster_id)
     return send_result(200, _build_shard_info(members))
 
 
 @error_wrap
 def configservers(cluster_id):
     logger.debug("configservers({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = _build_server_uris(Shards().configservers(cluster_id))
+    result = _build_server_uris(ShardedClusters().configservers(cluster_id))
     return send_result(200, result)
 
 
 @error_wrap
 def routers(cluster_id):
     logger.debug("routers({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = _build_server_uris(Shards().routers(cluster_id))
+    result = _build_server_uris(ShardedClusters().routers(cluster_id))
     return send_result(200, result)
 
 
 @error_wrap
 def router_add(cluster_id):
     logger.debug("router_add({cluster_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    result = Shards().router_add(cluster_id, data)
+    result = ShardedClusters().router_add(cluster_id, data)
     return send_result(200, result)
 
 
 @error_wrap
 def router_del(cluster_id, router_id):
     logger.debug("router_del({cluster_id}), {router_id}".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = Shards().router_del(cluster_id, router_id)
+    result = ShardedClusters().router_del(cluster_id, router_id)
     return send_result(200, result)
 
 
 @error_wrap
 def shard_info(cluster_id, shard_id):
     logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = Shards().member_info(cluster_id, shard_id)
+    result = ShardedClusters().member_info(cluster_id, shard_id)
     return send_result(200, result)
 
 
 @error_wrap
 def shard_del(cluster_id, shard_id):
     logger.debug("member_del({cluster_id}), {shard_id}".format(**locals()))
-    if cluster_id not in Shards():
+    if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = Shards().member_del(cluster_id, shard_id)
+    result = ShardedClusters().member_del(cluster_id, shard_id)
     return send_result(200, result)
 
 
@@ -226,6 +226,6 @@ setup_versioned_routes(ROUTES, version='v1')
 setup_versioned_routes(ROUTES)
 
 if __name__ == '__main__':
-    rs = Shards()
+    rs = ShardedClusters()
     rs.set_settings()
     run(host='localhost', port=8889, debug=True, reloader=False)

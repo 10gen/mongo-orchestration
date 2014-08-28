@@ -9,8 +9,8 @@ from uuid import uuid4
 import lib.errors
 
 from lib.container import Container
-from lib.hosts import Hosts
-from lib.rs import RS
+from lib.servers import Servers
+from lib.replica_sets import ReplicaSets
 from lib.singleton import Singleton
 from pymongo import MongoClient
 
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-class Shard(object):
+class ShardedCluster(object):
     """class represents Sharding configuration"""
 
     def __init__(self, params):
@@ -68,7 +68,7 @@ class Shard(object):
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Hosts().create('mongod', cfg, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
+            self._configsvrs.append(Servers().create('mongod', cfg, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
 
     def __len__(self):
         return len(self._shards)
@@ -76,33 +76,33 @@ class Shard(object):
     @property
     def configsvrs(self):
         """return list of config servers"""
-        return [{'id': h_id, 'hostname': Hosts().hostname(h_id)} for h_id in self._configsvrs]
+        return [{'id': h_id, 'hostname': Servers().hostname(h_id)} for h_id in self._configsvrs]
 
     @property
     def routers(self):
         """return list of routers"""
-        return [{'id': h_id, 'hostname': Hosts().hostname(h_id)} for h_id in self._routers]
+        return [{'id': h_id, 'hostname': Servers().hostname(h_id)} for h_id in self._routers]
 
     @property
     def members(self):
         """return list of members"""
-        # return [{'id': shard, 'hostname': Hosts().hostname(info['_id'])} for shard, info in self._shards.items()]
+        # return [{'id': shard, 'hostname': Servers().hostname(info['_id'])} for shard, info in self._shards.items()]
         return [self.member_info(item) for item in self._shards]
 
     @property
     def router(self):
         """return first available router"""
-        for host in self._routers:
-            info = Hosts().info(host)
+        for server in self._routers:
+            info = Servers().info(server)
             if info['procInfo'].get('alive', False):
-                return {'id': host, 'hostname': Hosts().hostname(host)}
+                return {'id': server, 'hostname': Servers().hostname(server)}
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
-        cfgs = ','.join([Hosts().info(item)['uri'] for item in self._configsvrs])
+        cfgs = ','.join([Servers().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Hosts().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
-        return {'id': self._routers[-1], 'hostname': Hosts().hostname(self._routers[-1])}
+        self._routers.append(Servers().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
+        return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
         c = MongoClient(self.router['hostname'], **self.kwargs)
@@ -113,7 +113,7 @@ class Shard(object):
         return c
 
     def router_command(self, command, arg=None, is_eval=False):
-        """run command on the router host
+        """run command on the router server
 
         Args:
             command - command string
@@ -134,7 +134,7 @@ class Shard(object):
 
     def router_remove(self, router_id):
         """remove """
-        result = Hosts().remove(router_id)
+        result = Servers().remove(router_id)
         del self._routers[ self._routers.index(router_id) ]
         return { "ok": 1, "routers": self._routers }
 
@@ -152,9 +152,9 @@ class Shard(object):
             rs_params.update({'sslParams': self.sslParams})
             if self.login and self.password:
                 rs_params.update({'login': self.login, 'password': self.password})
-            rs_id = RS().create(rs_params)
-            members = RS().members(rs_id)
-            cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
+            rs_id = ReplicaSets().create(rs_params)
+            members = ReplicaSets().members(rs_id)
+            cfgs = rs_id + r"/" + ','.join([item['server'] for item in members])
             result = self._add(cfgs, member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isReplicaSet': True, '_id': rs_id}
@@ -162,14 +162,14 @@ class Shard(object):
                 return self.member_info(member_id)
 
         else:
-            # is single host
+            # is single server
             params.update({'autostart': True, 'auth_key': self.auth_key, 'sslParams': self.sslParams})
             params['procParams'] = params.get('procParams', {})
-            logger.debug("hosts create params: {params}".format(**locals()))
-            host_id = Hosts().create('mongod', **params)
-            result = self._add(Hosts().info(host_id)['uri'], member_id)
+            logger.debug("servers create params: {params}".format(**locals()))
+            server_id = Servers().create('mongod', **params)
+            result = self._add(Servers().info(server_id)['uri'], member_id)
             if result.get('ok', 0) == 1:
-                self._shards[result['shardAdded']] = {'isServer': True, '_id': host_id}
+                self._shards[result['shardAdded']] = {'isServer': True, '_id': server_id}
                 # return self._shards[result['shardAdded']]
                 return self.member_info(member_id)
 
@@ -186,9 +186,9 @@ class Shard(object):
         if result['ok'] == 1 and result['state'] == 'completed':
             shard = self._shards.pop(shard_name)
             if shard.get('isServer', False):
-                Hosts().remove(shard['_id'])
+                Servers().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
-                RS().remove(shard['_id'])
+                ReplicaSets().remove(shard['_id'])
         return result
 
     def member_remove(self, member_id):
@@ -208,116 +208,116 @@ class Shard(object):
                 'orchestration': 'sharded_clusters'}
 
     def cleanup(self):
-        """cleanup configuration: stop and remove all hosts"""
+        """cleanup configuration: stop and remove all servers"""
         for _id, shard in self._shards.items():
             if shard.get('isServer', False):
-                Hosts().remove(shard['_id'])
+                Servers().remove(shard['_id'])
             if shard.get('isReplicaSet', False):
-                RS().remove(shard['_id'])
+                ReplicaSets().remove(shard['_id'])
 
         for mongos in self._routers:
-            Hosts().remove(mongos)
+            Servers().remove(mongos)
 
         for configsvr in self._configsvrs:
-            Hosts().remove(configsvr)
+            Servers().remove(configsvr)
 
         self._configsvrs = []
         self._routers = []
         self._shards = {}
 
 
-class Shards(Singleton, Container):
-    """ Shards is a dict-like collection for Shard objects"""
+class ShardedClusters(Singleton, Container):
+    """ ShardedClusters is a dict-like collection for ShardedCluster objects"""
     _name = 'shards'
-    _obj_type = Shard
+    _obj_type = ShardedCluster
     bin_path = ''
     pids_file = tempfile.mktemp(prefix="mongo-")
 
     def set_settings(self, bin_path=None):
         """set path to storage"""
-        super(Shards, self).set_settings(bin_path)
-        RS().set_settings(bin_path)
+        super(ShardedClusters, self).set_settings(bin_path)
+        ReplicaSets().set_settings(bin_path)
 
     def __getitem__(self, key):
         return self.info(key)
 
     def cleanup(self):
-        """remove all hosts with their data"""
-        for host in self:
-            self.remove(host)
+        """remove all servers with their data"""
+        for server in self:
+            self.remove(server)
 
     def create(self, params):
-        """create new shard
+        """create new ShardedCluster
         Args:
            params - dictionary with specific params for instance
-        Return shard_id
-           where shard_id - id which can use to take the shard from hosts collection
+        Return cluster_id
+           where cluster_id - id which can use to take the cluster from servers collection
         """
         sh_id = params.get('id', str(uuid4()))
         if sh_id in self:
-            raise lib.errors.ShardingError(
-                "Sharded set with id %s already exists." % sh_id)
+            raise lib.errors.ShardedClusterError(
+                "Sharded cluster with id %s already exists." % sh_id)
         params['id'] = sh_id
-        shard = Shard(params)
-        self[shard.id] = shard
-        return shard.id
+        cluster = ShardedCluster(params)
+        self[cluster.id] = cluster
+        return cluster.id
 
-    def remove(self, shard_id):
-        """remove shard and data stuff
+    def remove(self, cluster_id):
+        """remove cluster and data stuff
         Args:
-            shard_id - shard identity
+            cluster_id - cluster identity
         """
-        shard = self._storage.pop(shard_id)
-        shard.cleanup()
+        cluster = self._storage.pop(cluster_id)
+        cluster.cleanup()
 
-    def info(self, shard_id):
-        """return dictionary object with info about shard
+    def info(self, cluster_id):
+        """return dictionary object with info about cluster
         Args:
-            shard_id - shard identity
+            cluster_id - cluster identity
         """
-        return self._storage[shard_id].info()
+        return self._storage[cluster_id].info()
 
-    def configservers(self, shard_id):
+    def configservers(self, cluster_id):
         """return list of config servers"""
-        return self._storage[shard_id].configsvrs
+        return self._storage[cluster_id].configsvrs
 
-    def routers(self, shard_id):
+    def routers(self, cluster_id):
         """return list of routers"""
-        return self._storage[shard_id].routers
+        return self._storage[cluster_id].routers
 
-    def router_add(self, shard_id, params):
+    def router_add(self, cluster_id, params):
         """add new router"""
-        shard = self._storage[shard_id]
-        result = shard.router_add(params)
-        self._storage[shard_id] = shard
+        cluster = self._storage[cluster_id]
+        result = cluster.router_add(params)
+        self._storage[cluster_id] = cluster
         return result
 
-    def router_del(self, shard_id, router_id):
-        """remove router from shard cluster"""
-        shard = self._storage[shard_id]
-        result = shard.router_remove(router_id)
-        self._storage[shard_id] = shard
+    def router_del(self, cluster_id, router_id):
+        """remove router from the ShardedCluster"""
+        cluster = self._storage[cluster_id]
+        result = cluster.router_remove(router_id)
+        self._storage[cluster_id] = cluster
         return result
 
-    def members(self, shard_id):
+    def members(self, cluster_id):
         """return list of members"""
-        return self._storage[shard_id].members
+        return self._storage[cluster_id].members
 
-    def member_info(self, shard_id, member_id):
+    def member_info(self, cluster_id, member_id):
         """return info about member"""
-        shard = self._storage[shard_id]
-        return shard.member_info(member_id)
+        cluster = self._storage[cluster_id]
+        return cluster.member_info(member_id)
 
-    def member_del(self, shard_id, member_id):
-        """remove member from shard cluster"""
-        shard = self._storage[shard_id]
-        result = shard.member_remove(member_id)
-        self._storage[shard_id] = shard
+    def member_del(self, cluster_id, member_id):
+        """remove member from cluster cluster"""
+        cluster = self._storage[cluster_id]
+        result = cluster.member_remove(member_id)
+        self._storage[cluster_id] = cluster
         return result
 
-    def member_add(self, shard_id, params):
+    def member_add(self, cluster_id, params):
         """add new member into configuration"""
-        shard = self._storage[shard_id]
-        result = shard.member_add(params.get('id', None), params.get('shardParams', {}))
-        self._storage[shard_id] = shard
+        cluster = self._storage[cluster_id]
+        result = cluster.member_add(params.get('id', None), params.get('shardParams', {}))
+        self._storage[cluster_id] = cluster
         return result

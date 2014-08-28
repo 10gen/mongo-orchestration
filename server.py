@@ -70,7 +70,9 @@ def get_app():
     """return bottle app that includes all sub-apps"""
     from bottle import default_app
     default_app.push()
-    for module in ("apps.hosts", "apps.rs", "apps.sh"):
+    for module in ("apps.servers",
+                   "apps.replica_sets",
+                   "apps.sharded_clusters"):
         __import__(module)
     app = default_app.pop()
     return app

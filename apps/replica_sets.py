@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, '..')
 from apps import setup_versioned_routes, Route
 from lib.common import *
-from lib.rs import RS
+from lib.replica_sets import ReplicaSets
 from bottle import request, response, run
 
 
@@ -49,8 +49,8 @@ def error_wrap(f):
 
 
 def _rs_create(params):
-    rs_id = RS().create(params)
-    result = RS().info(rs_id)
+    rs_id = ReplicaSets().create(params)
+    result = ReplicaSets().info(rs_id)
     return send_result(200, result)
 
 
@@ -59,7 +59,7 @@ def _build_server_info(member_docs):
     for member_doc in member_docs:
         server_info.append({
             "member_id": member_doc['_id'],
-            "uri": '/servers/' + member_doc['host_id']})
+            "uri": '/servers/' + member_doc['server_id']})
     return server_info
 
 
@@ -77,16 +77,16 @@ def rs_create():
 @error_wrap
 def rs_list():
     logger.debug("rs_list()")
-    data = [info for info in RS()]
+    data = [info for info in ReplicaSets()]
     return send_result(200, data)
 
 
 @error_wrap
 def rs_info(rs_id):
     logger.debug("rs_info({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    result = RS().info(rs_id)
+    result = ReplicaSets().info(rs_id)
     return send_result(200, result)
 
 
@@ -105,89 +105,89 @@ def rs_create_by_id(rs_id):
 @error_wrap
 def rs_del(rs_id):
     logger.debug("rs_del({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    result = RS().remove(rs_id)
+    result = ReplicaSets().remove(rs_id)
     return send_result(204, result)
 
 
 @error_wrap
 def member_add(rs_id):
     logger.debug("member_add({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    member_id = RS().member_add(rs_id, data)
-    result = RS().member_info(rs_id, member_id)
+    member_id = ReplicaSets().member_add(rs_id, data)
+    result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)
 
 
 @error_wrap
 def members(rs_id):
     logger.debug("members({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().members(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().members(rs_id)))
 
 
 @error_wrap
 def secondaries(rs_id):
     logger.debug("secondaries({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().secondaries(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().secondaries(rs_id)))
 
 
 @error_wrap
 def arbiters(rs_id):
     logger.debug("arbiters({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().arbiters(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().arbiters(rs_id)))
 
 
 @error_wrap
 def hidden(rs_id):
     logger.debug("hidden({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().hidden(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().hidden(rs_id)))
 
 
 @error_wrap
 def passives(rs_id):
     logger.debug("passives({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().passives(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().passives(rs_id)))
 
 
 @error_wrap
 def hosts(rs_id):
     logger.debug("hosts({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(RS().hosts(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().hosts(rs_id)))
 
 
 @error_wrap
 def rs_member_primary(rs_id):
     logger.debug("rs_member_primary({rs_id})".format(**locals()))
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info([RS().primary(rs_id)])[0])
+    return send_result(200, _build_server_info([ReplicaSets().primary(rs_id)])[0])
 
 
 @error_wrap
 def member_info(rs_id, member_id):
     logger.debug("member_info({rs_id}, {member_id})".format(**locals()))
     member_id = int(member_id)
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    result = RS().member_info(rs_id, member_id)
+    result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)
 
 
@@ -195,9 +195,9 @@ def member_info(rs_id, member_id):
 def member_del(rs_id, member_id):
     logger.debug("member_del({rs_id}), {member_id}".format(**locals()))
     member_id = int(member_id)
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
-    result = RS().member_del(rs_id, member_id)
+    result = ReplicaSets().member_del(rs_id, member_id)
     return send_result(200, result)
 
 
@@ -205,14 +205,14 @@ def member_del(rs_id, member_id):
 def member_update(rs_id, member_id):
     logger.debug("member_update({rs_id}, {member_id})".format(**locals()))
     member_id = int(member_id)
-    if rs_id not in RS():
+    if rs_id not in ReplicaSets():
         return send_result(404)
     data = {}
     json_data = request.body.read()
     if json_data:
         data = json.loads(json_data)
-    RS().member_update(rs_id, member_id, data)
-    result = RS().member_info(rs_id, member_id)
+    ReplicaSets().member_update(rs_id, member_id, data)
+    result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)
 
 
@@ -244,6 +244,6 @@ setup_versioned_routes(ROUTES)
 
 
 if __name__ == '__main__':
-    rs = RS()
+    rs = ReplicaSets()
     rs.set_settings()
     run(host='localhost', port=8889, debug=True, reloader=False)
