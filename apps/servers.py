@@ -55,13 +55,15 @@ def error_wrap(f):
 def _host_create(params):
     host_id = params.get('id')
     host_id = Servers().create(params['name'],
-                             params.get('procParams', {}),
-                             params.get('sslParams', {}),
-                             params.get('auth_key', ''),
-                             params.get('login', ''), params.get('password', ''),
-                             params.get('timeout', 300),
-                             params.get('autostart', True),
-                             host_id)
+                               params.get('procParams', {}),
+                               params.get('sslParams', {}),
+                               params.get('auth_key', ''),
+                               params.get('login', ''),
+                               params.get('password', ''),
+                               params.get('timeout', 300),
+                               params.get('autostart', True),
+                               host_id,
+                               params.get('version', ''))
     result = Servers().info(host_id)
     return send_result(200, result)
 

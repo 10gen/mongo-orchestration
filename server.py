@@ -1,10 +1,13 @@
 #!/usr/bin/python
 # coding=utf-8
-import sys
-import os
 import argparse
-import json
 import atexit
+import json
+import os
+import sys
+
+from bson import SON
+
 from daemon import Daemon
 
 work_dir = os.path.split(os.path.join(os.getcwd(), __file__))[0]
@@ -41,16 +44,17 @@ def read_env():
         return cli_args
     try:
         # read config
-        config = json.loads(open(cli_args.config, 'r').read())
+        with open(cli_args.config, 'r') as fd:
+            config = json.loads(fd.read(), object_hook=SON)
         if not 'releases' in config:
             print("No releases defined in %s" % cli_args.config)
             sys.exit(1)
         releases = config['releases']
-        if not cli_args.env in releases:
+        if cli_args.env is not None and cli_args.env not in releases:
             print("Release '%s' is not defined in %s"
                   % (cli_args.env, cli_args.config))
             sys.exit(1)
-        cli_args.release_path = releases[cli_args.env]
+        cli_args.releases = releases
         return cli_args
     except (IOError):
         print("config file not found")
@@ -60,10 +64,10 @@ def read_env():
         sys.exit(1)
 
 
-def setup(release_path):
+def setup(releases, default_release):
     """setup storages"""
-    from lib import set_bin_path, cleanup_storage
-    set_bin_path(release_path)
+    from lib import set_releases, cleanup_storage
+    set_releases(releases, default_release)
     atexit.register(cleanup_storage)
 
 
@@ -87,7 +91,7 @@ class MyDaemon(Daemon):
 
     def run(self):
         from bottle import run
-        setup(getattr(self.args, "release_path", ""))
+        setup(getattr(self.args, 'releases', {}), self.args.env)
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
             run(get_app(), host='localhost', port=self.args.port, debug=False, reloader=False, quiet=not self.args.no_fork)
@@ -100,7 +104,6 @@ if __name__ == "__main__":
     args = read_env()
     daemon.set_args(args)
     if args.command == 'stop':
-        setup(getattr(args, "release_path", ""))
         daemon.stop()
     if args.command == 'start' and not args.no_fork:
         daemon.start()

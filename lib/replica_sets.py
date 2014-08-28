@@ -34,6 +34,7 @@ class ReplicaSet(object):
         self.login = rs_params.get('login', '')
         self.password = rs_params.get('password', '')
         self.repl_id = rs_params.get('id', None) or str(uuid4())
+        self._version = rs_params.get('version')
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
@@ -197,7 +198,9 @@ class ReplicaSet(object):
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
 
-        server_id = self._servers.create('mongod', proc_params, self.sslParams, self.auth_key)
+        server_id = self._servers.create(
+            'mongod', proc_params, self.sslParams, self.auth_key,
+            version=self._version)
         member_config.update({"_id": member_id, "host": self._servers.info(server_id)['uri']})
         return member_config
 
@@ -423,13 +426,13 @@ class ReplicaSets(Singleton, Container):
     """ ReplicaSets is a dict-like collection for replica set"""
     _name = 'rs'
     _obj_type = ReplicaSet
-    bin_path = ''
+    releases = {}
     pids_file = tempfile.mktemp(prefix="mongo-")
 
-    def set_settings(self, bin_path=''):
+    def set_settings(self, releases=None, default_release=None):
         """set path to storage"""
-        super(ReplicaSets, self).set_settings(bin_path)
-        Servers().set_settings(bin_path)
+        super(ReplicaSets, self).set_settings(releases, default_release)
+        Servers().set_settings(releases, default_release)
 
     def cleanup(self):
         """remove all servers with their data"""

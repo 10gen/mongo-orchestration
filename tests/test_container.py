@@ -5,9 +5,12 @@ import os
 import operator
 import sys
 
+from bson import SON
+
 sys.path.insert(0, '../')
 
 from lib.container import Container
+from lib.errors import MongoOrchestrationError
 from nose.plugins.attrib import attr
 from tests import unittest
 
@@ -23,9 +26,29 @@ class ContainerTestCase(unittest.TestCase):
         self.container.cleanup()
 
     def test_set_settings(self):
-        path = os.path.join(os.getcwd(), 'bin')
-        self.container.set_settings(path)
-        self.assertEqual(path, self.container.bin_path)
+        default_release = 'old-release'
+        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
+        self.container.set_settings(releases, default_release)
+        self.assertEqual(releases, self.container.releases)
+        self.assertEqual(default_release, self.container.default_release)
+
+    def test_bin_path(self):
+        releases = SON([('20-release', '/path/to/20/release'),
+                        ('24.9-release', '/path/to/24.9/release'),
+                        ('24-release', '/path/to/24/release'),
+                        ('26-release', '/path/to/26/release')])
+        default_release = '26-release'
+        self.container.set_settings(releases, default_release)
+        self.assertRaises(MongoOrchestrationError,
+                          self.container.bin_path, '27')
+        self.assertEqual(self.container.bin_path('20'),
+                         releases['20-release'])
+        self.assertEqual(self.container.bin_path('24'),
+                         releases['24.9-release'])
+        self.assertEqual(self.container.bin_path(), releases[default_release])
+        # Clear default release.
+        self.container.set_settings(releases)
+        self.assertEqual(self.container.bin_path(), '')
 
     def test_getitem(self):
         self.container['key'] = 'value'

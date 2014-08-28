@@ -45,9 +45,11 @@ class ServersTestCase(unittest.TestCase):
         self.assertEqual(id(self.servers), id(Servers()))
 
     def test_set_settings(self):
-        path = os.path.join(os.getcwd(), 'bin')
-        self.servers.set_settings(path)
-        self.assertEqual(path, self.servers.bin_path)
+        default_release = 'old-release'
+        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
+        self.servers.set_settings(releases, default_release)
+        self.assertEqual(releases, self.servers.releases)
+        self.assertEqual(default_release, self.servers.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.servers))
