@@ -20,8 +20,8 @@ from lib.container import Container
 logger = logging.getLogger(__name__)
 
 
-class Host(object):
-    """Class Host represents behaviour of  mongo instances """
+class Server(object):
+    """Class Server represents behaviour of  mongo instances """
 
     # default params for all mongo instances
     mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
@@ -91,7 +91,7 @@ class Host(object):
             login - username for the  admin collection
             password - password
         """
-        logger.debug("Host.__init__({name}, {procParams}, {sslParams}, {auth_key}, {login}, {password})".format(**locals()))
+        logger.debug("Server.__init__({name}, {procParams}, {sslParams}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
         self.login = login
         self.password = password
@@ -151,7 +151,7 @@ class Host(object):
             pass
 
     def run_command(self, command, arg=None, is_eval=False):
-        """run command on the host
+        """run command on the server
 
         Args:
             command - command string
@@ -175,7 +175,7 @@ class Host(object):
         return lib.process.proc_alive(self.proc)
 
     def info(self):
-        """return info about host as dict object"""
+        """return info about server as dict object"""
         proc_info = {"name": self.name,
                      "params": self.cfg,
                      "alive": self.is_alive,
@@ -217,7 +217,7 @@ class Host(object):
         return False
 
     def start(self, timeout=300):
-        """start host
+        """start server
         return True of False"""
         if self.is_alive:
             return True
@@ -240,11 +240,11 @@ class Host(object):
         return True
 
     def stop(self):
-        """stop host"""
+        """stop server"""
         return lib.process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300):
-        """restart host: stop() and start()
+        """restart server: stop() and start()
         return status of start command
         """
         self.stop()
@@ -268,14 +268,14 @@ class Host(object):
             pass
 
     def cleanup(self):
-        """remove host data"""
+        """remove server data"""
         lib.process.cleanup_mprocess(self.config_path, self.cfg)
 
 
-class Hosts(Singleton, Container):
-    """ Hosts is a dict-like collection for Host objects"""
-    _name = 'hosts'
-    _obj_type = Host
+class Servers(Singleton, Container):
+    """ Servers is a dict-like collection for Server objects"""
+    _name = 'servers'
+    _obj_type = Server
     bin_path = ''
     pids_file = tempfile.mktemp(prefix="mongo-")
 
@@ -283,12 +283,12 @@ class Hosts(Singleton, Container):
         return self.info(key)
 
     def cleanup(self):
-        """remove all hosts with their data"""
-        for host_id in self:
-            self.remove(host_id)
+        """remove all servers with their data"""
+        for server_id in self:
+            self.remove(server_id)
 
-    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True, host_id=None):
-        """create new host
+    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True, server_id=None):
+        """create new server
         Args:
            name - process name or path
            procParams - dictionary with specific params for instance
@@ -297,70 +297,70 @@ class Hosts(Singleton, Container):
            password - password
            timeout -  specify how long, in seconds, a command can take before times out.
            autostart - (default: True), autostart instance
-        Return host_id
-           where host_id - id which can use to take the host from hosts collection
+        Return server_id
+           where server_id - id which can use to take the server from servers collection
         """
         name = os.path.split(name)[1]
-        if host_id is None:
-            host_id = str(uuid4())
-        if host_id in self:
-            raise lib.errors.HostsError(
-                "Host with id %s already exists." % host_id)
-        host = Host(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+        if server_id is None:
+            server_id = str(uuid4())
+        if server_id in self:
+            raise lib.errors.ServersError(
+                "Server with id %s already exists." % server_id)
+        server = Server(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
         if autostart:
-            if not host.start(timeout):
+            if not server.start(timeout):
                 raise OSError
-        self[host_id] = host
-        return host_id
+        self[server_id] = server
+        return server_id
 
-    def remove(self, host_id):
-        """remove host and data stuff
+    def remove(self, server_id):
+        """remove server and data stuff
         Args:
-            host_id - host identity
+            server_id - server identity
         """
-        host = self._storage.pop(host_id)
-        host.stop()
-        host.cleanup()
+        server = self._storage.pop(server_id)
+        server.stop()
+        server.cleanup()
 
-    def db_command(self, host_id, command, arg=None, is_eval=False):
-        host = self._storage[host_id]
-        result = host.run_command(command, arg, is_eval)
-        self._storage[host_id] = host
+    def db_command(self, server_id, command, arg=None, is_eval=False):
+        server = self._storage[server_id]
+        result = server.run_command(command, arg, is_eval)
+        self._storage[server_id] = server
         return result
 
-    def command(self, host_id, command, *args):
+    def command(self, server_id, command, *args):
         """run command
         Args:
-            host_id - host identity
-            command - command which apply to host
+            server_id - server identity
+            command - command which apply to server
         """
-        host = self._storage[host_id]
+        server = self._storage[server_id]
         try:
             if args:
-                result = getattr(host, command)(args)
+                result = getattr(server, command)(args)
             else:
-                result = getattr(host, command)()
+                result = getattr(server, command)()
         except AttributeError:
             raise ValueError
-        self._storage[host_id] = host
+        self._storage[server_id] = server
         return result
 
-    def info(self, host_id):
-        """return dicionary object with info about host
+    def info(self, server_id):
+        """return dicionary object with info about server
         Args:
-            host_id - host identity
+            server_id - server identity
         """
-        result = self._storage[host_id].info()
-        result['id'] = host_id
+        result = self._storage[server_id].info()
+        result['id'] = server_id
         return result
 
-    def hostname(self, host_id):
-        return self._storage[host_id].hostname
+    def hostname(self, server_id):
+        return self._storage[server_id].hostname
 
     def id_by_hostname(self, hostname):
-        for host_id in self._storage:
-            if self._storage[host_id].hostname == hostname:
-                return host_id
+        for server_id in self._storage:
+            if self._storage[server_id].hostname == hostname:
+                return server_id
 
-    def is_alive(self, host_id):
-        return self._storage[host_id].is_alive
+    def is_alive(self, server_id):
+        return self._storage[server_id].is_alive

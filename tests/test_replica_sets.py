@@ -11,8 +11,8 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from lib.rs import ReplicaSet, RS
-from lib.hosts import Hosts
+from lib.replica_sets import ReplicaSet, ReplicaSets
+from lib.servers import Servers
 from lib.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
 from tests import unittest, SkipTest
@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 @attr('rs')
 @attr('test')
-class RSTestCase(unittest.TestCase):
+class ReplicaSetsTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        self.rs = RS()
+        self.rs = ReplicaSets()
         self.rs.set_settings(os.environ.get('MONGOBIN', None))
 
     def tearDown(self):
@@ -41,7 +41,7 @@ class RSTestCase(unittest.TestCase):
         return True
 
     def test_singleton(self):
-        self.assertEqual(id(self.rs), id(RS()))
+        self.assertEqual(id(self.rs), id(ReplicaSets()))
 
     def test_set_settings(self):
         path = os.path.join(os.getcwd(), 'bin')
@@ -90,9 +90,9 @@ class RSTestCase(unittest.TestCase):
                                               {"procParams": {"port": port2}}
                                               ]})
         self.assertEqual(repl_id, 'test-rs-1')
-        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
-        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
-        c = pymongo.MongoClient([host1, host2], replicaSet=repl_id)
+        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
+        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
+        c = pymongo.MongoClient([server1, server2], replicaSet=repl_id)
         self.assertEqual(c.admin.eval("rs.conf()")['_id'], repl_id)
         c.close()
 
@@ -104,9 +104,9 @@ class RSTestCase(unittest.TestCase):
                                               {"procParams": {"port": port2}}
                                               ]})
         self.assertEqual(repl_id, 'test-rs-1')
-        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
-        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
-        c = pymongo.MongoClient([host1, host2], replicaSet=repl_id)
+        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
+        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
+        c = pymongo.MongoClient([server1, server2], replicaSet=repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -144,14 +144,14 @@ class RSTestCase(unittest.TestCase):
         c.close()
 
     def test_primary_stepdown(self):
-        # This tests Host, but only makes sense in the context of a replica set.
+        # This tests Server, but only makes sense in the context of a replica set.
         repl_id = self.rs.create(
             {'id': 'test-rs-stepdown',
              'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
         primary = self.rs.primary(repl_id)
-        primary_host = Hosts()._storage[primary['host_id']]
+        primary_server = Servers()._storage[primary['server_id']]
         # No Exception.
-        primary_host.stepdown()
+        primary_server.stepdown()
         self.assertNotEqual(primary['uri'], self.rs.primary(repl_id)['uri'])
 
     def test_rs_del(self):
@@ -166,13 +166,13 @@ class RSTestCase(unittest.TestCase):
 
     def test_members(self):
         port1, port2 = PortPool().port(check=True), PortPool().port(check=True)
-        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
-        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
+        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port1)
+        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=port2)
         repl_id = self.rs.create({'members': [{"procParams": {"port": port1}}, {"procParams": {"port": port2}}]})
         members = self.rs.members(repl_id)
         self.assertEqual(len(members), 2)
-        self.assertTrue(host1 in [member['host'] for member in members])
-        self.assertTrue(host2 in [member['host'] for member in members])
+        self.assertTrue(server1 in [member['server'] for member in members])
+        self.assertTrue(server2 in [member['server'] for member in members])
 
     def test_secondaries(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
@@ -199,17 +199,17 @@ class RSTestCase(unittest.TestCase):
         passives = self.rs.passives(repl_id)
         self.assertEqual(len(passives), 1)
 
-    def test_hosts(self):
+    def test_servers(self):
         config = {"members": [{},
                               {"rsParams": {"priority": 0}},
                               {"rsParams": {"arbiterOnly": True}},
                               {"rsParams": {"priority": 0, 'hidden': True}},
                               {"rsParams": {"priority": 0, 'slaveDelay': 5}}]}
         repl_id = self.rs.create(config)
-        hosts = self.rs.hosts(repl_id)
-        self.assertEqual(len(hosts), 1)
+        servers = self.rs.servers(repl_id)
+        self.assertEqual(len(servers), 1)
 
-    def test_compare_passives_and_hosts(self):
+    def test_compare_passives_and_servers(self):
         config = {"members": [{},
                               {"rsParams": {"priority": 0}},
                               {"rsParams": {"arbiterOnly": True}},
@@ -217,12 +217,12 @@ class RSTestCase(unittest.TestCase):
                               {"rsParams": {"priority": 0, 'slaveDelay': 5}}]}
 
         repl_id = self.rs.create(config)
-        passives = [host['host'] for host in self.rs.passives(repl_id)]
-        hosts = [host['host'] for host in self.rs.hosts(repl_id)]
+        passives = [server['server'] for server in self.rs.passives(repl_id)]
+        servers = [server['server'] for server in self.rs.servers(repl_id)]
         for item in passives:
-            self.assertTrue(item not in hosts)
+            self.assertTrue(item not in servers)
 
-        for item in hosts:
+        for item in servers:
             self.assertTrue(item not in passives)
 
     def test_member_info(self):
@@ -262,10 +262,10 @@ class RSTestCase(unittest.TestCase):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
         self.assertEqual(len(self.rs.members(repl_id)), 3)
         secondary = self.rs.secondaries(repl_id)[0]
-        self.assertTrue(pymongo.MongoClient(secondary['host']))
+        self.assertTrue(pymongo.MongoClient(secondary['server']))
         self.assertTrue(self.rs.member_del(repl_id, secondary['_id']))
         self.assertEqual(len(self.rs.members(repl_id)), 2)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, secondary['host'])
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, secondary['server'])
 
     def test_member_add(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}]})
@@ -287,18 +287,18 @@ class RSTestCase(unittest.TestCase):
         self.assertTrue(self.rs.member_info(repl_id, _id)['procInfo']['alive'])
 
     def test_member_freeze(self):
-        # This tests Host, but only makes sense in the context of a replica set.
+        # This tests Server, but only makes sense in the context of a replica set.
         repl_id = self.rs.create(
             {'members': [{"rsParams": {"priority": 19}},
                          {"rsParams": {"priority": 5}}, {}]})
         next_primary_info = self.rs.member_info(repl_id, 2)
         next_primary = next_primary_info['uri']
         secondary_info = self.rs.member_info(repl_id, 1)
-        secondary_host = Hosts()._storage[secondary_info['host_id']]
+        secondary_server = Servers()._storage[secondary_info['server_id']]
         primary_info = self.rs.member_info(repl_id, 0)
-        primary_host = Hosts()._storage[primary_info['host_id']]
-        self.assertTrue(secondary_host.freeze(10))
-        primary_host.stop()
+        primary_server = Servers()._storage[primary_info['server_id']]
+        self.assertTrue(secondary_server.freeze(10))
+        primary_server.stop()
         self.assertEqual(self.rs.primary(repl_id)['uri'], next_primary)
         time.sleep(12)
         self.assertEqual(self.rs.primary(repl_id)['uri'],
@@ -329,8 +329,8 @@ class RSTestCase(unittest.TestCase):
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        self.hosts = Hosts()
-        self.hosts.set_settings(os.environ.get('MONGOBIN', None))
+        self.servers = Servers()
+        self.servers.set_settings(os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}, {'rsParams': {'arbiterOnly': True}}]}
         # self.repl = ReplicaSet(self.repl_cfg)
 
@@ -365,14 +365,15 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
-            self.assertTrue(member['_id'] == self.repl.host2id(member['host']))
+            self.assertEqual(member['_id'],
+                             self.repl.host2id(member['host']))
 
-    def test_update_host_map(self):
+    def test_update_server_map(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
-        origin = self.repl.host_map.copy()
-        self.repl.update_host_map(self.repl.config)
-        self.assertEqual(self.repl.host_map, origin)
+        origin = self.repl.server_map.copy()
+        self.repl.update_server_map(self.repl.config)
+        self.assertEqual(self.repl.server_map, origin)
 
     def test_repl_update(self):
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}]}
@@ -395,7 +396,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         members2 = sorted(info['members'], key=lambda item: item['_id'])
         for i in range(len(members1)):
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
-            self.assertEqual(members1[i]['host'], members2[i]['host'])
+            self.assertEqual(members1[i]['host'], members2[i]['server'])
 
     def test_repl_member_add(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -427,11 +428,11 @@ class ReplicaSetTestCase(unittest.TestCase):
         result = self.repl.member_create({}, 13)
         self.assertTrue('host' in result)
         self.assertTrue('_id' in result)
-        h_id = Hosts().id_by_hostname(result['host'])
-        h_info = Hosts().info(h_id)
+        h_id = Servers().id_by_hostname(result['host'])
+        h_info = Servers().info(h_id)
         self.assertEqual(result['host'], h_info['uri'])
         self.assertTrue(h_info['procInfo']['alive'])
-        Hosts().remove(h_id)
+        Servers().remove(h_id)
 
     def test_member_del(self):
         self.repl_cfg = {'members': [{}, {}, {}]}
@@ -446,7 +447,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         m_count = len(self.repl.config['members'])
         self.assertTrue(self.repl.member_del(2, reconfig=False))
         self.assertEqual(len(self.repl.config['members']), m_count)
-        self.repl.host_map.pop(2)
+        self.repl.server_map.pop(2)
 
     def test_member_update(self):
         self.repl = ReplicaSet(self.repl_cfg)
@@ -484,14 +485,14 @@ class ReplicaSetTestCase(unittest.TestCase):
         members2 = sorted(self.repl.members(), key=lambda item: item['_id'])
         self.assertEqual(len(members1), len(members2))
         for i in xrange(len(members1)):
-            self.assertEqual(members1[i]['host'], members2[i]['host'])
+            self.assertEqual(members1[i]['host'], members2[i]['server'])
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
 
     def test_primary(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
-        self.assertTrue(Hosts().info(Hosts().id_by_hostname(primary))['statuses']['primary'])
+        self.assertTrue(Servers().info(Servers().id_by_hostname(primary))['statuses']['primary'])
 
     def test_get_members_in_state(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -513,12 +514,12 @@ class ReplicaSetTestCase(unittest.TestCase):
     def test_secondaries(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
-        secondaries = [item['host'] for item in self.repl.secondaries()]
+        secondaries = [item['server'] for item in self.repl.secondaries()]
         self.assertEqual(secondaries, self.repl.get_members_in_state(2))
 
     def test_arbiters(self):
         self.repl = ReplicaSet(self.repl_cfg)
-        arbiters = [item['host'] for item in self.repl.arbiters()]
+        arbiters = [item['server'] for item in self.repl.arbiters()]
         self.assertEqual(arbiters, self.repl.get_members_in_state(7))
 
     def test_hidden(self):
@@ -530,34 +531,34 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         for member in self.repl.passives():
-            self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('passives'))
+            self.assertTrue(member['server'] in self.repl.run_command('isMaster', is_eval=False).get('passives'))
 
-    def test_hosts(self):
+    def test_servers(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
-        for member in self.repl.hosts():
-            self.assertTrue(member['host'] in self.repl.run_command('isMaster', is_eval=False).get('hosts'))
+        for member in self.repl.servers():
+            self.assertTrue(member['server'] in self.repl.run_command('isMaster', is_eval=False).get('hosts'))
 
-    def test_compare_hosts_passives(self):
+    def test_compare_servers_passives(self):
         self.repl = ReplicaSet(self.repl_cfg)
         self.repl.repl_member_add({"rsParams": {"priority": 0}})
         self.repl.repl_member_add({})
-        hosts = self.repl.hosts()
+        servers = self.repl.servers()
         passives = self.repl.passives()
-        for item in hosts:
+        for item in servers:
             self.assertTrue(item not in passives)
 
         for item in passives:
-            self.assertTrue(item not in hosts)
+            self.assertTrue(item not in servers)
 
     def test_wait_while_reachable(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
-        hosts = [member['host'] for member in self.repl.members()]
-        self.assertTrue(self.repl.wait_while_reachable(hosts, timeout=10))
+        servers = [member['server'] for member in self.repl.members()]
+        self.assertTrue(self.repl.wait_while_reachable(servers, timeout=10))
         self.repl.member_command(1, 'stop')
-        self.assertFalse(self.repl.wait_while_reachable(hosts, timeout=10))
+        self.assertFalse(self.repl.wait_while_reachable(servers, timeout=10))
 
 
 @attr('rs')
@@ -566,8 +567,8 @@ class ReplicaSetTestCase(unittest.TestCase):
 class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
-        self.hosts = Hosts()
-        self.hosts.set_settings(os.environ.get('MONGOBIN', None))
+        self.servers = Servers()
+        self.servers.set_settings(os.environ.get('MONGOBIN', None))
         self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
 
@@ -605,14 +606,14 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 @attr('quick-rs')
 @attr('rs')
 @attr('test')
-class RSSingleTestCase(unittest.TestCase):
+class ReplicaSetsSingleTestCase(unittest.TestCase):
     def setUp(self):
         raise SkipTest("quick replicaset test doesn't implemented")
         PortPool().change_range()
         self.port1 = PortPool().port(check=True)
         self.port2 = PortPool().port(check=True)
 
-        self.rs = RS()
+        self.rs = ReplicaSets()
         self.rs.set_settings(os.environ.get('MONGOBIN', None))
 
         self.tags_primary = {"status": "primary"}
@@ -645,7 +646,7 @@ class RSSingleTestCase(unittest.TestCase):
 
     def check_singleton(self):
         # test singleton
-        self.assertEqual(id(self.rs), id(RS()))
+        self.assertEqual(id(self.rs), id(ReplicaSets()))
 
     def check_set_settings(self):
         # test set_settings
@@ -663,9 +664,9 @@ class RSSingleTestCase(unittest.TestCase):
     def check_rs_new_with_auth(self):
         # rs_new_with_auth
         print("rs_new_with_auth")
-        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
-        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
-        c = pymongo.MongoClient([host1, host2], replicaSet=self.repl_id)
+        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
+        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
+        c = pymongo.MongoClient([server1, server2], replicaSet=self.repl_id)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
         self.assertTrue(c.admin.authenticate('admin', 'admin'))
         self.assertTrue(isinstance(c.admin.collection_names(), list))
@@ -692,11 +693,11 @@ class RSSingleTestCase(unittest.TestCase):
     def check_members(self):
         # members
         print("members")
-        host1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
-        host2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
+        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
+        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
         members = self.rs.members(self.repl_id)
-        self.assertTrue(host1 in [member['host'] for member in members])
-        self.assertTrue(host2 in [member['host'] for member in members])
+        self.assertTrue(server1 in [member['server'] for member in members])
+        self.assertTrue(server2 in [member['server'] for member in members])
 
     def check_secondaries(self):
         # secondaries
@@ -722,21 +723,21 @@ class RSSingleTestCase(unittest.TestCase):
         passives = self.rs.passives(self.repl_id)
         self.assertEqual(len(passives), 1)
 
-    def check_hosts(self):
-        # hosts
-        print("hosts")
-        hosts = self.rs.hosts(self.repl_id)
-        self.assertEqual(len(hosts), 3)
+    def check_servers(self):
+        # servers
+        print("servers")
+        servers = self.rs.servers(self.repl_id)
+        self.assertEqual(len(servers), 3)
 
-    def check_compare_passives_and_hosts(self):
-        # compare_passives_and_hosts
-        print("compare_passives_and_hosts")
-        passives = [host['host'] for host in self.rs.passives(self.repl_id)]
-        hosts = [host['host'] for host in self.rs.hosts(self.repl_id)]
+    def check_compare_passives_and_servers(self):
+        # compare_passives_and_servers
+        print("compare_passives_and_servers")
+        passives = [server['server'] for server in self.rs.passives(self.repl_id)]
+        servers = [server['server'] for server in self.rs.servers(self.repl_id)]
         for item in passives:
-            self.assertTrue(item not in hosts)
+            self.assertTrue(item not in servers)
 
-        for item in hosts:
+        for item in servers:
             self.assertTrue(item not in passives)
 
     def check_member_info(self):
@@ -800,10 +801,10 @@ class RSSingleTestCase(unittest.TestCase):
         logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
         member_del = self.rs.secondaries(self.repl_id)[0]
         logger.debug("member to remove: {member_del}".format(member_del=member_del))
-        self.assertTrue(pymongo.MongoClient(member_del['host']))
+        self.assertTrue(pymongo.MongoClient(member_del['server']))
         self.assertTrue(self.rs.member_del(self.repl_id, member_del['_id']))
         self.assertEqual(len(self.rs.members(self.repl_id)), mb_count - 1)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member_del['host'])
+        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member_del['server'])
 
     def check_member_add(self):
         # member_add
@@ -833,11 +834,11 @@ class RSSingleTestCase(unittest.TestCase):
         self.assertTrue(rs_count > 0)
         members = self.rs.members(self.repl_id)
         for member in members:
-            self.assertTrue(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
+            self.assertTrue(pymongo.errors.PyMongoError, pymongo.MongoClient, member['server'])
         self.rs.remove(self.repl_id)
         self.assertEqual(len(self.rs), rs_count - 1)
         for member in members:
-            self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
+            self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member['server'])
 
     def check_rs_create(self):
         # rs_create
@@ -881,9 +882,9 @@ class RSSingleTestCase(unittest.TestCase):
 
         self.check_passives()
 
-        self.check_hosts()
+        self.check_servers()
 
-        self.check_compare_passives_and_hosts()
+        self.check_compare_passives_and_servers()
 
         self.check_member_info()
 
@@ -910,5 +911,5 @@ if __name__ == '__main__':
     # unittest.main(verbosity=3)
     suite = unittest.TestSuite()
     suite.addTest(ReplicaSetTestCase('test_member_freeze'))
-    suite.addTest(RSTestCase('test_member_freeze'))
+    suite.addTest(ReplicaSetsTestCase('test_member_freeze'))
     unittest.TextTestRunner(verbosity=2).run(suite)

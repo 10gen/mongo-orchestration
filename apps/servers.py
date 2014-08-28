@@ -12,7 +12,7 @@ sys.path.insert(0, '..')
 
 from apps import setup_versioned_routes, Route
 from lib.common import *
-from lib.hosts import Hosts
+from lib.servers import Servers
 from bottle import request, response, run
 
 
@@ -54,7 +54,7 @@ def error_wrap(f):
 
 def _host_create(params):
     host_id = params.get('id')
-    host_id = Hosts().create(params['name'],
+    host_id = Servers().create(params['name'],
                              params.get('procParams', {}),
                              params.get('sslParams', {}),
                              params.get('auth_key', ''),
@@ -62,7 +62,7 @@ def _host_create(params):
                              params.get('timeout', 300),
                              params.get('autostart', True),
                              host_id)
-    result = Hosts().info(host_id)
+    result = Servers().info(host_id)
     return send_result(200, result)
 
 
@@ -87,16 +87,16 @@ def host_create():
 @error_wrap
 def host_list():
     logger.debug("host_list()")
-    data = [info for info in Hosts()]
+    data = [info for info in Servers()]
     return send_result(200, data)
 
 
 @error_wrap
 def host_info(host_id):
     logger.debug("host_info({host_id})".format(**locals()))
-    if host_id not in Hosts():
+    if host_id not in Servers():
         return send_result(404)
-    result = Hosts().info(host_id)
+    result = Servers().info(host_id)
     return send_result(200, result)
 
 
@@ -114,19 +114,19 @@ def host_create_by_id(host_id):
 @error_wrap
 def host_del(host_id):
     logger.debug("host_del({host_id})")
-    if host_id not in Hosts():
+    if host_id not in Servers():
         return send_result(404)
-    Hosts().remove(host_id)
+    Servers().remove(host_id)
     return send_result(204)
 
 
 @error_wrap
 def host_command(host_id):
     logger.debug("host_command({host_id})".format(**locals()))
-    if host_id not in Hosts():
+    if host_id not in Servers():
         return send_result(404)
     command = json.loads(request.body.read())['action']
-    Hosts().command(host_id, command)
+    Servers().command(host_id, command)
     return send_result(200)
 
 
@@ -145,6 +145,6 @@ setup_versioned_routes(ROUTES, version='v1')
 setup_versioned_routes(ROUTES)
 
 if __name__ == '__main__':
-    hs = Hosts()
+    hs = Servers()
     hs.set_settings()
     run(host='localhost', port=8889, debug=True, reloader=False)

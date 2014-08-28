@@ -13,8 +13,8 @@ import time
 sys.path.insert(0, '../')
 
 from lib import set_bin_path, cleanup_storage
-from lib.shards import Shard, Shards
-from lib.hosts import Hosts
+from lib.sharded_clusters import ShardedCluster, ShardedClusters
+from lib.servers import Servers
 from lib.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
 from tests import unittest, SkipTest
@@ -29,7 +29,7 @@ MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 @attr('test')
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
-        self.sh = Shards()
+        self.sh = ShardedClusters()
         set_bin_path(os.environ.get('MONGOBIN', None))
         PortPool().change_range()
 
@@ -38,7 +38,7 @@ class ShardsTestCase(unittest.TestCase):
         cleanup_storage()
 
     def test_singleton(self):
-        self.assertEqual(id(self.sh), id(Shards()))
+        self.assertEqual(id(self.sh), id(ShardedClusters()))
 
     def test_set_settings(self):
         path = os.path.join(os.getcwd(), 'bin')
@@ -52,16 +52,16 @@ class ShardsTestCase(unittest.TestCase):
 
     def test_operations(self):
         config = {'shards': [{}, {}, {}]}
-        shard = Shard(config)
+        cluster = ShardedCluster(config)
 
         self.assertEqual(len(self.sh), 0)
-        operator.setitem(self.sh, 1, shard)
+        operator.setitem(self.sh, 1, cluster)
         self.assertEqual(len(self.sh), 1)
-        self.assertEqual(operator.getitem(self.sh, 1)['id'], shard.id)
+        self.assertEqual(operator.getitem(self.sh, 1)['id'], cluster.id)
         operator.delitem(self.sh, 1)
         self.assertEqual(len(self.sh), 0)
         self.assertRaises(KeyError, operator.getitem, self.sh, 1)
-        shard.cleanup()
+        cluster.cleanup()
 
     def test_operations2(self):
         self.assertTrue(len(self.sh) == 0)
@@ -95,8 +95,8 @@ class ShardsTestCase(unittest.TestCase):
                         {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}},
                         ]
         }
-        shard_id = self.sh.create(config)
-        self.assertEqual(shard_id, 'shard_cluster_1')
+        cluster_id = self.sh.create(config)
+        self.assertEqual(cluster_id, 'shard_cluster_1')
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
         c = pymongo.MongoClient(host)
         result = c.admin.command("listShards")
@@ -297,7 +297,7 @@ class ShardTestCase(unittest.TestCase):
 
     def test_len(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh), 0)
         self.sh.member_add('test01', {})
         self.assertEqual(len(self.sh), 1)
@@ -315,7 +315,7 @@ class ShardTestCase(unittest.TestCase):
             'routers': [{"port": port}],
             'shards': [{'id': 'sh01'}, {'id': 'sh02'}]
         }
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         c = pymongo.MongoClient(self.sh.router['hostname'])
         for item in c.admin.command("listShards")['shards']:
             self.assertTrue(item['_id'] in ('sh01', 'sh02'))
@@ -332,7 +332,7 @@ class ShardTestCase(unittest.TestCase):
             'routers': [{"port": port}],
             'shards': [{'id': 'sh01'}, {'id': 'sh02'}]
         }
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         c = pymongo.MongoClient(self.sh.router['hostname'])
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
         c.admin.authenticate('admin', 'adminpass')
@@ -349,58 +349,58 @@ class ShardTestCase(unittest.TestCase):
                         {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}},
                         ]
         }
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertTrue(len(self.sh) == len(config['shards']))
         self.sh.cleanup()
         self.assertTrue(len(self.sh) == 0)
 
     def test_configsvrs(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.configsvrs), 1)
         self.sh.cleanup()
 
         config = {'configsvrs': [{}, {}, {}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.configsvrs), 3)
         self.sh.cleanup()
 
     def test_routers(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.routers), 1)
         self.sh.cleanup()
 
         config = {'routers': [{}, {}, {}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.routers), 3)
         self.sh.cleanup()
 
     def test_members(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.members), 0)
         self.sh.cleanup()
 
         config = {'shards': [{}, {}, {}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.members), 3)
         self.sh.cleanup()
 
     def test_router(self):
         config = {}
-        self.sh = Shard(config)
-        self.assertTrue(Hosts().info(self.sh.router['id'])['statuses']['mongos'])
+        self.sh = ShardedCluster(config)
+        self.assertTrue(Servers().info(self.sh.router['id'])['statuses']['mongos'])
         self.sh.cleanup()
 
         config = {'routers': [{}, {}, {}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         routers = self.sh.routers
         hostname = routers[1]['hostname']
         _id = routers[1]['id']
         # stop routers 0 and 2
-        Hosts().command(routers[0]['id'], 'stop')
-        Hosts().command(routers[2]['id'], 'stop')
+        Servers().command(routers[0]['id'], 'stop')
+        Servers().command(routers[2]['id'], 'stop')
         router = self.sh.router
         self.assertEqual(router['id'], _id)
         self.assertEqual(router['hostname'], hostname)
@@ -408,7 +408,7 @@ class ShardTestCase(unittest.TestCase):
 
     def test_router_add(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.routers), 1)
         self.sh.router_add({})
         self.assertEqual(len(self.sh.routers), 2)
@@ -418,14 +418,14 @@ class ShardTestCase(unittest.TestCase):
 
     def test_router_command(self):
         config = {'shards': [{}, {}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         result = self.sh.router_command('listShards', is_eval=False)
         self.assertEqual(result['ok'], 1)
         self.sh.cleanup()
 
     def test_member_add(self):
         config = {}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.members), 0)
         result = self.sh.member_add('test1', {})
         self.assertTrue(result.get('isServer', False))
@@ -442,7 +442,7 @@ class ShardTestCase(unittest.TestCase):
 
     def test_member_info(self):
         config = {'shards': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         info = self.sh.member_info('member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isServer'])
@@ -458,7 +458,7 @@ class ShardTestCase(unittest.TestCase):
     @attr('auth')
     def test_member_info_with_auth(self):
         config = {'auth_key': 'secret', 'login': 'admin', 'password': 'adminpass', 'shards': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         info = self.sh.member_info('member1')
         self.assertEqual(info['id'], 'member1')
         self.assertTrue(info['isServer'])
@@ -473,7 +473,7 @@ class ShardTestCase(unittest.TestCase):
 
     def test_member_remove(self):
         config = {'shards': [{'id': 'member1'}, {'id': 'member2'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(len(self.sh.members), 3)
 
         # remove member-host
@@ -506,7 +506,7 @@ class ShardTestCase(unittest.TestCase):
             'routers': [{}, {}, {}],
             'shards': [{}, {}]
         }
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         info = self.sh.info()
         self.assertTrue('shards' in info)
         self.assertTrue('configsvrs' in info)
@@ -532,7 +532,7 @@ class ShardTestCase(unittest.TestCase):
                         {'id': 'sh03', 'shardParams': {'tags': tags_repl, 'members': [{}, {}]}}
                         ]
         }
-        self.sh = Shard(config)
+        self.sh = ShardedCluster(config)
         self.assertEqual(tags, self.sh.member_info('sh01')['tags'])
         self.assertEqual([], self.sh.member_info('sh02')['tags'])
         self.assertEqual(tags_repl, self.sh.member_info('sh03')['tags'])

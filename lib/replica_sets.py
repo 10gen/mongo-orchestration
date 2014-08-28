@@ -7,20 +7,20 @@ from uuid import uuid4
 from lib.singleton import Singleton
 from lib.container import Container
 import pymongo
-from lib.hosts import Hosts
+from lib.servers import Servers
 import time
 import lib.errors
 import tempfile
 import sys
 import traceback
 
-Hosts()
+Servers()
 
 
 class ReplicaSet(object):
     """class represents ReplicaSet"""
 
-    _hosts = Hosts()  # singleton to manage hosts instances
+    _servers = Servers()  # singleton to manage servers instances
     # replica set's default parameters
     default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
 
@@ -29,7 +29,7 @@ class ReplicaSet(object):
         Args:
             rs_params - replica set configuration
         """
-        self.host_map = {}
+        self.server_map = {}
         self.auth_key = rs_params.get('auth_key', None)
         self.login = rs_params.get('login', '')
         self.password = rs_params.get('password', '')
@@ -69,44 +69,44 @@ class ReplicaSet(object):
                 "Could not actualize replica set configuration.")
 
     def __len__(self):
-        return len(self.host_map)
+        return len(self.server_map)
 
     def cleanup(self):
         """remove all members without reconfig"""
-        for item in self.host_map:
+        for item in self.server_map:
             self.member_del(item, reconfig=False)
-        self.host_map.clear()
+        self.server_map.clear()
 
     def id2host(self, member_id):
         """return hostname by member id"""
-        return self.host_map[member_id]
+        return self.server_map[member_id]
 
     def host2id(self, hostname):
         """return member id by hostname"""
-        for key, value in self.host_map.items():
+        for key, value in self.server_map.items():
             if value == hostname:
                 return key
 
-    def update_host_map(self, config):
-        """update host_map ({member_id:hostname})"""
-        self.host_map = dict([(member['_id'], member['host']) for member in config['members']])
+    def update_server_map(self, config):
+        """update server_map ({member_id:hostname})"""
+        self.server_map = dict([(member['_id'], member['host']) for member in config['members']])
 
     def repl_init(self, config):
         """create replica set by config
         return True if replica set created successfuly, else False"""
-        self.update_host_map(config)
-        # init_host - host which can init replica set
-        init_host = [member['host'] for member in config['members']
-                     if not (member.get('arbiterOnly', False)
-                             or member.get('priority', 1) == 0)][0]
+        self.update_server_map(config)
+        # init_server - server which can init replica set
+        init_server = [member['host'] for member in config['members']
+                       if not (member.get('arbiterOnly', False)
+                               or member.get('priority', 1) == 0)][0]
 
-        hosts = [member['host'] for member in config['members']]
-        if not self.wait_while_reachable(hosts):
-            logger.error("all hosts must be reachable")
+        servers = [member['host'] for member in config['members']]
+        if not self.wait_while_reachable(servers):
+            logger.error("all servers must be reachable")
             self.cleanup()
             return False
         try:
-            result = self.connection(init_host).admin.command("replSetInitiate", config)
+            result = self.connection(init_server).admin.command("replSetInitiate", config)
             logger.debug("replica init result: {result}".format(**locals()))
         except pymongo.errors.PyMongoError:
             raise
@@ -126,14 +126,14 @@ class ReplicaSet(object):
             if int(result.get('ok', 0)) != 1:
                 return False
         except pymongo.errors.AutoReconnect:
-            self.update_host_map(cfg)  # use new host_map
+            self.update_server_map(cfg)  # use new server_map
         self.waiting_member_state()
         self.waiting_config_state()
         return self.connection() and True
 
     def info(self):
         """return information about replica set"""
-        uri = ','.join(x['host'] for x in self.members()) + '/?replicaSet=' + self.repl_id
+        uri = ','.join(x['server'] for x in self.members()) + '/?replicaSet=' + self.repl_id
         mongodb_uri = 'mongodb://' + uri
         return {"id": self.repl_id,
                 "auth_key": self.auth_key,
@@ -159,7 +159,7 @@ class ReplicaSet(object):
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
         """run command on replica set
-        if member_id is specified command will be execute on this host
+        if member_id is specified command will be execute on this server
         if member_id is not specified command will be execute on the primary
 
         Args:
@@ -197,8 +197,8 @@ class ReplicaSet(object):
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
 
-        host_id = self._hosts.create('mongod', proc_params, self.sslParams, self.auth_key)
-        member_config.update({"_id": member_id, "host": self._hosts.info(host_id)['uri']})
+        server_id = self._servers.create('mongod', proc_params, self.sslParams, self.auth_key)
+        member_config.update({"_id": member_id, "host": self._servers.info(server_id)['uri']})
         return member_config
 
     def member_del(self, member_id, reconfig=True):
@@ -209,12 +209,12 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
+        server_id = self._servers.id_by_hostname(self.id2host(member_id))
         if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
             self.repl_update(config)
-        self._hosts.remove(host_id)
+        self._servers.remove(server_id)
         return True
 
     def member_update(self, member_id, params):
@@ -231,11 +231,11 @@ class ReplicaSet(object):
 
     def member_info(self, member_id):
         """return information about member"""
-        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
-        host_info = self._hosts.info(host_id)
-        result = {'_id': member_id, 'uri': host_info['uri'], 'host_id': host_id, 'procInfo': host_info['procInfo'], 'statuses': host_info['statuses']}
+        server_id = self._servers.id_by_hostname(self.id2host(member_id))
+        server_info = self._servers.info(server_id)
+        result = {'_id': member_id, 'uri': server_info['uri'], 'server_id': server_id, 'procInfo': server_info['procInfo'], 'statuses': server_info['statuses']}
         result['rsInfo'] = {}
-        if host_info['procInfo']['alive']:
+        if server_info['procInfo']['alive']:
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
             logger.debug("member {member_id} repl info: {repl}".format(**locals()))
             for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
@@ -253,14 +253,14 @@ class ReplicaSet(object):
 
         return True if operation success otherwise False
         """
-        host_id = self._hosts.id_by_hostname(self.id2host(member_id))
-        return self._hosts.command(host_id, command)
+        server_id = self._servers.id_by_hostname(self.id2host(member_id))
+        return self._servers.command(server_id, command)
 
     def members(self):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
-            result.append({"_id": member['_id'], "host": member["name"], "host_id": self._hosts.id_by_hostname(member["name"])})
+            result.append({"_id": member['_id'], "server": member["name"], "server_id": self._servers.id_by_hostname(member["name"])})
         return result
 
     def primary(self):
@@ -283,12 +283,11 @@ class ReplicaSet(object):
         """
         logger.debug("connection({hostname}, {read_preference}, {timeout})".format(**locals()))
         t_start = time.time()
-        # hosts = member_id is not None and self.id2host(member_id) or ",".join(self.host_map.values())
-        hosts = hostname or ",".join(self.host_map.values())
+        servers = hostname or ",".join(self.server_map.values())
         while True:
             try:
                 if hostname is None:
-                    c = pymongo.MongoReplicaSetClient(hosts, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
+                    c = pymongo.MongoReplicaSetClient(servers, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
                     if c.primary:
                         try:
                             self.login and self.password and c.admin.authenticate(self.login, self.password)
@@ -297,8 +296,8 @@ class ReplicaSet(object):
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
-                    logger.debug("connection to the {hosts}".format(**locals()))
-                    c = pymongo.MongoClient(hosts, socketTimeoutMS=20000, **self.kwargs)
+                    logger.debug("connection to the {servers}".format(**locals()))
+                    c = pymongo.MongoClient(servers, socketTimeoutMS=20000, **self.kwargs)
                     if self.login and self.password:
                         try:
                             c.admin.authenticate(self.login, self.password)
@@ -316,41 +315,41 @@ class ReplicaSet(object):
 
     def secondaries(self):
         """return list of secondaries members"""
-        return [{"_id": self.host2id(member), "host": member, "host_id": self._hosts.id_by_hostname(member)} for member in self.get_members_in_state(2)]
+        return [{"_id": self.host2id(member), "server": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(2)]
 
     def arbiters(self):
         """return list of arbiters"""
-        return [{"_id": self.host2id(member), "host": member, "host_id": self._hosts.id_by_hostname(member)} for member in self.get_members_in_state(7)]
+        return [{"_id": self.host2id(member), "server": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(7)]
 
     def hidden(self):
         """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
-        return [{"_id": member['_id'], "host": member['uri'], "host_id": self._hosts.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
+        return [{"_id": member['_id'], "server": member['uri'], "server_id": self._servers.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
 
     def passives(self):
-        """return list of passive hosts"""
-        hosts = self.run_command('ismaster').get('passives', [])
-        return [member for member in self.members() if member['host'] in hosts]
+        """return list of passive servers"""
+        servers = self.run_command('ismaster').get('passives', [])
+        return [member for member in self.members() if member['server'] in servers]
 
-    def hosts(self):
-        """return list of hosts (not hidden nodes)"""
-        hosts = self.run_command('ismaster').get('hosts', [])
-        return [member for member in self.members() if member['host'] in hosts]
+    def servers(self):
+        """return list of servers (not hidden nodes)"""
+        servers = self.run_command('ismaster').get('hosts', [])
+        return [member for member in self.members() if member['server'] in servers]
 
-    def wait_while_reachable(self, hosts, timeout=60):
-        """wait while all hosts be reachable
+    def wait_while_reachable(self, servers, timeout=60):
+        """wait while all servers be reachable
         Args:
-            hosts - list of hosts
+            servers - list of servers
         """
         t_start = time.time()
         while True:
             try:
-                for host in hosts:
-                    # TODO: use state code to check if host is reachable
-                    server_info = self.connection(hostname=host, timeout=5).server_info()
+                for server in servers:
+                    # TODO: use state code to check if server is reachable
+                    server_info = self.connection(hostname=server, timeout=5).server_info()
                     logger.debug("server_info: {server_info}".format(server_info=server_info))
                     if int(server_info['ok']) != 1:
-                        raise pymongo.errors.OperationFailure("{host} is not reachable".format(**locals))
+                        raise pymongo.errors.OperationFailure("{server} is not reachable".format(**locals))
                 return True
             except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 if time.time() - t_start > timeout:
@@ -398,7 +397,7 @@ class ReplicaSet(object):
     def check_config_state(self):
         """Return True if real state equal config state otherwise False."""
         config = self.config
-        self.update_host_map(config)
+        self.update_server_map(config)
         for member in config['members']:
             cfg_member_info = self.default_params.copy()
             cfg_member_info.update(member)
@@ -420,8 +419,8 @@ class ReplicaSet(object):
         return True
 
 
-class RS(Singleton, Container):
-    """ RS is a dict-like collection for replica set"""
+class ReplicaSets(Singleton, Container):
+    """ ReplicaSets is a dict-like collection for replica set"""
     _name = 'rs'
     _obj_type = ReplicaSet
     bin_path = ''
@@ -429,12 +428,12 @@ class RS(Singleton, Container):
 
     def set_settings(self, bin_path=''):
         """set path to storage"""
-        super(RS, self).set_settings(bin_path)
-        Hosts().set_settings(bin_path)
+        super(ReplicaSets, self).set_settings(bin_path)
+        Servers().set_settings(bin_path)
 
     def cleanup(self):
-        """remove all hosts with their data"""
-        Hosts().cleanup()
+        """remove all servers with their data"""
+        Servers().cleanup()
         self._storage and self._storage.clear()
 
     def create(self, rs_params):
@@ -477,7 +476,7 @@ class RS(Singleton, Container):
         del(repl)
 
     def members(self, repl_id):
-        """return list [{"_id": member_id, "host": hostname}] of replica set members
+        """return list [{"_id": member_id, "server": hostname}] of replica set members
         Args:
             repl_id - replica set identity
         """
@@ -499,9 +498,9 @@ class RS(Singleton, Container):
         """return list of passive nodes"""
         return self[repl_id].passives()
 
-    def hosts(self, repl_id):
-        """return list of hosts"""
-        return self[repl_id].hosts()
+    def servers(self, repl_id):
+        """return list of servers"""
+        return self[repl_id].servers()
 
     def member_info(self, repl_id, member_id):
         """return information about member

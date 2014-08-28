@@ -6,16 +6,16 @@ class MongoOrchestrationError(Exception):
     """Base class for all mongo-orchestration exceptions."""
 
 
-class HostsError(MongoOrchestrationError):
-    """Base class for all Hosts exceptions."""
+class ServersError(MongoOrchestrationError):
+    """Base class for all Server exceptions."""
 
 
 class ReplicaSetError(MongoOrchestrationError):
     """Base class for all ReplicaSet exceptions."""
 
 
-class ShardingError(MongoOrchestrationError):
-    """Base class for all Sharding exceptions."""
+class ShardedClusterError(MongoOrchestrationError):
+    """Base class for all ShardedCluster exceptions."""
 
 
 class OperationFailure(MongoOrchestrationError):
