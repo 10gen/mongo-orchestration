@@ -153,15 +153,15 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
         self.assertEqual(info['orchestration'], 'sharded_clusters')
 
-    def test_configservers(self):
+    def test_configsvrs(self):
         config = {}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.configservers(sh_id)), 1)
+        self.assertEqual(len(self.sh.configsvrs(sh_id)), 1)
         self.sh.cleanup()
 
         config = {'configsvrs': [{}, {}, {}]}
         sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.configservers(sh_id)), 3)
+        self.assertEqual(len(self.sh.configsvrs(sh_id)), 3)
 
     def test_routers(self):
         config = {}

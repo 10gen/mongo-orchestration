@@ -95,8 +95,9 @@ class CmdSH(cmd.Cmd):
         r = requests.delete(url)
         self.print_result(r)
 
-    def do_configservers(self, sh_id):
-        url = "{url}sh/{sh_id}/configservers".format(url=self.api_url, sh_id=self.real_id(sh_id))
+    def do_configsvrs(self, sh_id):
+        url = "{url}sh/{sh_id}/configsvrs".format(
+            url=self.api_url, sh_id=self.real_id(sh_id))
         r = requests.get(url)
         self.print_result(r)
 

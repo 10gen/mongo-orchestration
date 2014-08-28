@@ -277,7 +277,7 @@ class ShardedClusters(Singleton, Container):
         """
         return self._storage[cluster_id].info()
 
-    def configservers(self, cluster_id):
+    def configsvrs(self, cluster_id):
         """return list of config servers"""
         return self._storage[cluster_id].configsvrs
 
