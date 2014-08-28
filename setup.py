@@ -22,6 +22,7 @@ setup(
     author_email='mmamrouski@gmail.com',
     install_requires=['pymongo>=2.7.2',
                       'bottle>=0.12.7',
+                      'CherryPy>=3.5.0',
                       'requests>=1.1'] + extra_deps,
     tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
     test_suite='nose.collector'

@@ -90,7 +90,8 @@ class MyDaemon(Daemon):
         setup(getattr(self.args, "release_path", ""))
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
-            run(get_app(), host='localhost', port=self.args.port, debug=False, reloader=False, quiet=not self.args.no_fork)
+            run(get_app(), host='localhost', port=self.args.port, debug=False,
+                reloader=False, quiet=not self.args.no_fork, server='cherrypy')
 
     def set_args(self, args):
         self.args = args
