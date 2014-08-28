@@ -23,7 +23,7 @@ class ShardedCluster(object):
 
     def __init__(self, params):
         """init configuration acording params"""
-        self.id = params.get('id', None) or 'sh-' + str(uuid4())
+        self.id = params.get('id', None) or str(uuid4())
         self.login = params.get('login', '')
         self.password = params.get('password', '')
         self.auth_key = params.get('auth_key', None)
