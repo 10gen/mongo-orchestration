@@ -30,7 +30,8 @@ def read_env():
     parser.add_argument('--no-fork',
                         action='store_true', dest='no_fork', default=False)
     parser.add_argument('-p', '--port',
-                        action='store', dest='port', default=DEFAULT_PORT)
+                        action='store', dest='port', type=int,
+                        default=DEFAULT_PORT)
     cli_args = parser.parse_args()
 
     if cli_args.env and not cli_args.config:
