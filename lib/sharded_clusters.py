@@ -154,7 +154,7 @@ class ShardedCluster(object):
                 rs_params.update({'login': self.login, 'password': self.password})
             rs_id = ReplicaSets().create(rs_params)
             members = ReplicaSets().members(rs_id)
-            cfgs = rs_id + r"/" + ','.join([item['server'] for item in members])
+            cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
             result = self._add(cfgs, member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isReplicaSet': True, '_id': rs_id}
