@@ -77,6 +77,11 @@ def base_uri():
 
 
 @error_wrap
+def releases_list():
+    return send_result(200, Servers().releases)
+
+
+@error_wrap
 def host_create():
     data = {}
     json_data = request.body.read()
@@ -134,6 +139,7 @@ def host_command(host_id):
 
 ROUTES = {
     Route('/', method='GET'): base_uri,
+    Route('/releases', method='GET'): releases_list,
     Route('/servers', method='POST'): host_create,
     Route('/servers', method='GET'): host_list,
     Route('/servers/<host_id>', method='GET'): host_info,
