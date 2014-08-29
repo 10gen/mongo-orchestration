@@ -33,7 +33,7 @@ class ReplicaSet(object):
         self.auth_key = rs_params.get('auth_key', None)
         self.login = rs_params.get('login', '')
         self.password = rs_params.get('password', '')
-        self.repl_id = rs_params.get('id', None) or "rs-" + str(uuid4())
+        self.repl_id = rs_params.get('id', None) or str(uuid4())
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
