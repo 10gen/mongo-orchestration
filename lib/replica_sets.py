@@ -133,7 +133,7 @@ class ReplicaSet(object):
 
     def info(self):
         """return information about replica set"""
-        uri = ','.join(x['server'] for x in self.members()) + '/?replicaSet=' + self.repl_id
+        uri = ','.join(x['host'] for x in self.members()) + '/?replicaSet=' + self.repl_id
         mongodb_uri = 'mongodb://' + uri
         return {"id": self.repl_id,
                 "auth_key": self.auth_key,
@@ -260,7 +260,7 @@ class ReplicaSet(object):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
-            result.append({"_id": member['_id'], "server": member["name"], "server_id": self._servers.id_by_hostname(member["name"])})
+            result.append({"_id": member['_id'], "host": member["name"], "server_id": self._servers.id_by_hostname(member["name"])})
         return result
 
     def primary(self):
@@ -315,26 +315,26 @@ class ReplicaSet(object):
 
     def secondaries(self):
         """return list of secondaries members"""
-        return [{"_id": self.host2id(member), "server": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(2)]
+        return [{"_id": self.host2id(member), "host": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(2)]
 
     def arbiters(self):
         """return list of arbiters"""
-        return [{"_id": self.host2id(member), "server": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(7)]
+        return [{"_id": self.host2id(member), "host": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(7)]
 
     def hidden(self):
         """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
-        return [{"_id": member['_id'], "server": member['uri'], "server_id": self._servers.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
+        return [{"_id": member['_id'], "host": member['uri'], "server_id": self._servers.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
 
     def passives(self):
         """return list of passive servers"""
         servers = self.run_command('ismaster').get('passives', [])
-        return [member for member in self.members() if member['server'] in servers]
+        return [member for member in self.members() if member['host'] in servers]
 
     def servers(self):
         """return list of servers (not hidden nodes)"""
         servers = self.run_command('ismaster').get('hosts', [])
-        return [member for member in self.members() if member['server'] in servers]
+        return [member for member in self.members() if member['host'] in servers]
 
     def wait_while_reachable(self, servers, timeout=60):
         """wait while all servers be reachable
@@ -476,7 +476,7 @@ class ReplicaSets(Singleton, Container):
         del(repl)
 
     def members(self, repl_id):
-        """return list [{"_id": member_id, "server": hostname}] of replica set members
+        """return list [{"_id": member_id, "host": hostname}] of replica set members
         Args:
             repl_id - replica set identity
         """
