@@ -32,6 +32,7 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 - [Python 2.7](http://www.python.org/download/)  
 - [requests](http://docs.python-requests.org/en/latest/user/install/#install)
 - [PyMongo 2.7.2](https://pypi.python.org/pypi/pymongo/2.7.2)
+- [CherryPy 3.5.0](http://www.cherrypy.org/)
 
 ##Installing
 
