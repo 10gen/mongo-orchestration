@@ -526,8 +526,8 @@ result code:  200
 =================================
 ```
 
-+ **configservers [index or cluster-id]** - show list of config servers  
-Example: `configservers 1`  
++ **configsvrs [index or cluster-id]** - show list of config servers
+Example: `configsvrs 1`
 
 ```javascript
 ========= Response data =========

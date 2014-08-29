@@ -144,11 +144,11 @@ def shards(cluster_id):
 
 
 @error_wrap
-def configservers(cluster_id):
-    logger.debug("configservers({cluster_id})".format(**locals()))
+def configsvrs(cluster_id):
+    logger.debug("configsvrs({cluster_id})".format(**locals()))
     if cluster_id not in ShardedClusters():
         return send_result(404)
-    result = _build_server_uris(ShardedClusters().configservers(cluster_id))
+    result = _build_server_uris(ShardedClusters().configsvrs(cluster_id))
     return send_result(200, result)
 
 
@@ -209,8 +209,8 @@ ROUTES = {
     Route('/sharded_clusters/<cluster_id>', method='DELETE'): sh_del,
     Route('/sharded_clusters/<cluster_id>/shards', method='POST'): shard_add,
     Route('/sharded_clusters/<cluster_id>/shards', method='GET'): shards,
-    Route('/sharded_clusters/<cluster_id>/configservers',
-          method='GET'): configservers,
+    Route('/sharded_clusters/<cluster_id>/configsvrs',
+          method='GET'): configsvrs,
     Route('/sharded_clusters/<cluster_id>/routers', method='GET'): routers,
     Route('/sharded_clusters/<cluster_id>/routers', method='POST'): router_add,
     Route('/sharded_clusters/<cluster_id>/routers/<router_id>',
