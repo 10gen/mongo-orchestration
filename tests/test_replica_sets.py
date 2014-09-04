@@ -44,9 +44,11 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertEqual(id(self.rs), id(ReplicaSets()))
 
     def test_set_settings(self):
-        path = os.path.join(os.getcwd(), 'bin')
-        self.rs.set_settings(path)
-        self.assertEqual(path, self.rs.bin_path)
+        default_release = 'old-release'
+        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
+        self.rs.set_settings(releases, default_release)
+        self.assertEqual(releases, self.rs.releases)
+        self.assertEqual(default_release, self.rs.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.rs))

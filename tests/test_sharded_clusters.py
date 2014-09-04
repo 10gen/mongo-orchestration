@@ -12,7 +12,7 @@ import time
 
 sys.path.insert(0, '../')
 
-from lib import set_bin_path, cleanup_storage
+from lib import set_releases, cleanup_storage
 from lib.sharded_clusters import ShardedCluster, ShardedClusters
 from lib.servers import Servers
 from lib.process import PortPool, HOSTNAME
@@ -30,7 +30,8 @@ MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
         self.sh = ShardedClusters()
-        set_bin_path(os.environ.get('MONGOBIN', None))
+        set_releases({"default-release": os.environ.get('MONGOBIN', '')},
+                     'default-release')
         PortPool().change_range()
 
     def tearDown(self):
@@ -41,9 +42,11 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(id(self.sh), id(ShardedClusters()))
 
     def test_set_settings(self):
-        path = os.path.join(os.getcwd(), 'bin')
-        self.sh.set_settings(path)
-        self.assertEqual(path, self.sh.bin_path)
+        default_release = 'old-release'
+        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
+        self.sh.set_settings(releases, default_release)
+        self.assertEqual(releases, self.sh.releases)
+        self.assertEqual(default_release, self.sh.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.sh))
@@ -288,7 +291,8 @@ class ShardTestCase(unittest.TestCase):
 
     def setUp(self):
         self.bin_path = os.environ.get('MONGOBIN', '')
-        set_bin_path(self.bin_path)
+        set_releases({'default-release': self.bin_path},
+                     'default-release')
         PortPool().change_range()
 
     def tearDown(self):

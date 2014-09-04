@@ -27,6 +27,7 @@ class ShardedCluster(object):
         self.login = params.get('login', '')
         self.password = params.get('password', '')
         self.auth_key = params.get('auth_key', None)
+        self._version = params.get('version')
         self._configsvrs = []
         self._routers = []
         self._shards = {}
@@ -68,7 +69,10 @@ class ShardedCluster(object):
         self._configsvrs = []
         for cfg in params:
             cfg.update({'configsvr': True})
-            self._configsvrs.append(Servers().create('mongod', cfg, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
+            self._configsvrs.append(Servers().create(
+                'mongod', cfg,
+                sslParams=self.sslParams, autostart=True,
+                auth_key=self.auth_key, version=self._version))
 
     def __len__(self):
         return len(self._shards)
@@ -101,7 +105,9 @@ class ShardedCluster(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Servers().info(item)['uri'] for item in self._configsvrs])
         params.update({'configdb': cfgs})
-        self._routers.append(Servers().create('mongos', params, sslParams=self.sslParams, autostart=True, auth_key=self.auth_key))
+        self._routers.append(Servers().create(
+            'mongos', params, sslParams=self.sslParams, autostart=True,
+            auth_key=self.auth_key, version=self._version))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
@@ -152,6 +158,8 @@ class ShardedCluster(object):
             rs_params.update({'sslParams': self.sslParams})
             if self.login and self.password:
                 rs_params.update({'login': self.login, 'password': self.password})
+            if self._version:
+                rs_params['version'] = self._version
             rs_id = ReplicaSets().create(rs_params)
             members = ReplicaSets().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
@@ -165,6 +173,8 @@ class ShardedCluster(object):
             # is single server
             params.update({'autostart': True, 'auth_key': self.auth_key, 'sslParams': self.sslParams})
             params['procParams'] = params.get('procParams', {})
+            if self._version:
+                params['version'] = self._version
             logger.debug("servers create params: {params}".format(**locals()))
             server_id = Servers().create('mongod', **params)
             result = self._add(Servers().info(server_id)['uri'], member_id)
@@ -230,13 +240,13 @@ class ShardedClusters(Singleton, Container):
     """ ShardedClusters is a dict-like collection for ShardedCluster objects"""
     _name = 'shards'
     _obj_type = ShardedCluster
-    bin_path = ''
+    releases = {}
     pids_file = tempfile.mktemp(prefix="mongo-")
 
-    def set_settings(self, bin_path=None):
+    def set_settings(self, releases=None, default_release=None):
         """set path to storage"""
-        super(ShardedClusters, self).set_settings(bin_path)
-        ReplicaSets().set_settings(bin_path)
+        super(ShardedClusters, self).set_settings(releases, default_release)
+        ReplicaSets().set_settings(releases, default_release)
 
     def __getitem__(self, key):
         return self.info(key)

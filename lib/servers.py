@@ -276,7 +276,7 @@ class Servers(Singleton, Container):
     """ Servers is a dict-like collection for Server objects"""
     _name = 'servers'
     _obj_type = Server
-    bin_path = ''
+    releases = {}
     pids_file = tempfile.mktemp(prefix="mongo-")
 
     def __getitem__(self, key):
@@ -287,7 +287,9 @@ class Servers(Singleton, Container):
         for server_id in self:
             self.remove(server_id)
 
-    def create(self, name, procParams, sslParams={}, auth_key=None, login=None, password=None, timeout=300, autostart=True, server_id=None):
+    def create(self, name, procParams, sslParams={},
+               auth_key=None, login=None, password=None,
+               timeout=300, autostart=True, server_id=None, version=None):
         """create new server
         Args:
            name - process name or path
@@ -306,7 +308,10 @@ class Servers(Singleton, Container):
         if server_id in self:
             raise lib.errors.ServersError(
                 "Server with id %s already exists." % server_id)
-        server = Server(os.path.join(self.bin_path, name), procParams, sslParams, auth_key, login, password)
+
+        bin_path = self.bin_path(version)
+        server = Server(os.path.join(bin_path, name), procParams, sslParams,
+                        auth_key, login, password)
         if autostart:
             if not server.start(timeout):
                 raise OSError

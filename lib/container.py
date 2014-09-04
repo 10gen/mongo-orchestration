@@ -2,8 +2,12 @@
 # coding=utf-8
 
 import logging
+
+from lib.errors import MongoOrchestrationError
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 class Container(object):
     """ Container is a dict-like collection for objects"""
@@ -11,11 +15,26 @@ class Container(object):
     _name = 'container'
     _obj_type = object
 
-    def set_settings(self, bin_path=None):
+    def set_settings(self, releases=None, default_release=None):
         """set path to storage"""
-        if self._storage is None or getattr(self, 'bin_path', '') != bin_path:
+        if (self._storage is None or
+                getattr(self, 'releases', {}) != releases or
+                getattr(self, 'default_release', '') != default_release):
             self._storage = {}
-            self.bin_path = bin_path or ''
+            self.releases = releases or {}
+            self.default_release = default_release
+
+    def bin_path(self, release=None):
+        """Get the bin path for a particular release."""
+        if release:
+            for r in self.releases:
+                if release in r:
+                    return self.releases[r]
+            raise MongoOrchestrationError("No such release '%s' in %r"
+                                          % (release, self.releases))
+        if self.default_release:
+            return self.releases[self.default_release]
+        return ''
 
     def __getitem__(self, key):
         return self._storage[key]

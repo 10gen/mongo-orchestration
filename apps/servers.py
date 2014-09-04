@@ -55,13 +55,15 @@ def error_wrap(f):
 def _host_create(params):
     host_id = params.get('id')
     host_id = Servers().create(params['name'],
-                             params.get('procParams', {}),
-                             params.get('sslParams', {}),
-                             params.get('auth_key', ''),
-                             params.get('login', ''), params.get('password', ''),
-                             params.get('timeout', 300),
-                             params.get('autostart', True),
-                             host_id)
+                               params.get('procParams', {}),
+                               params.get('sslParams', {}),
+                               params.get('auth_key', ''),
+                               params.get('login', ''),
+                               params.get('password', ''),
+                               params.get('timeout', 300),
+                               params.get('autostart', True),
+                               host_id,
+                               params.get('version', ''))
     result = Servers().info(host_id)
     return send_result(200, result)
 
@@ -72,6 +74,11 @@ def base_uri():
     data = {"service": "mongo-orchestration",
             "version": __version__}
     return send_result(200, data)
+
+
+@error_wrap
+def releases_list():
+    return send_result(200, Servers().releases)
 
 
 @error_wrap
@@ -132,6 +139,7 @@ def host_command(host_id):
 
 ROUTES = {
     Route('/', method='GET'): base_uri,
+    Route('/releases', method='GET'): releases_list,
     Route('/servers', method='POST'): host_create,
     Route('/servers', method='GET'): host_list,
     Route('/servers/<host_id>', method='GET'): host_info,
