@@ -51,18 +51,6 @@ else
     python_bin=/usr/bin/python
 fi
 
-if [ "$4" ]; then
-    git_branch=$4
-else
-    git_branch=jenkins
-fi
-
-cd "$WORKSPACE"
-rm -rf mongo-orchestration
-
-git clone git@github.com:mongodb/mongo-orchestration.git --branch $git_branch --depth 1
-cd mongo-orchestration
-#cat $config_file
-# git checkout jenkins
+cd "${WORKSPACE}/mongo-orchestration"
 echo $python_bin server.py start -f $config_file -e $2
 $python_bin server.py start -f $config_file -e $2
