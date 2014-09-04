@@ -57,6 +57,7 @@ else
     git_branch=jenkins
 fi
 
+cd "$WORKSPACE"
 rm -rf mongo-orchestration
 
 git clone git@github.com:mongodb/mongo-orchestration.git --branch $git_branch --depth 1
