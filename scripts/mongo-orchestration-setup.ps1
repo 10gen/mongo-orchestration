@@ -34,9 +34,9 @@ md "$LOGPATH"
 if (($server -eq "22-release") -Or ($server -eq "20-release")) {
     $TEST_PARAMS='"vv" : true, '
 } elseif ($server -eq "24-release") {
-    $TEST_PARAMS='"setParameter" : "textSearchEnabled=true", "vv" : true, '
+    $TEST_PARAMS='"setParameter" : {"textSearchEnabled": true}, "vv" : true, '
 } else {
-    $TEST_PARAMS='"setParameter":"enableTestCommands=1", "vv" : true, '
+    $TEST_PARAMS='"setParameter":{"enableTestCommands": 1}, "vv" : true, '
 }
 
 if ($authentication -eq "auth") {
@@ -68,7 +68,7 @@ if ($configuration -eq "single_server") {
 } elseif ($configuration -eq "sharded") {
     $post_url = "http://localhost:8889/sharded_clusters"
     $get_url = "http://localhost:8889/sharded_clusters/shard_cluster_1"
-    $request_body = "{$AUTH_PARAMS $SSL_PARAMS `"routers`": [{$TEST_PARAMS `"port`": 27017, `"logpath`": `"$LOGPATH\\router27017.log`"}, {$TEST_PARAMS `"port`": 27018, `"logpath`": `"$LOGPATH\\router27018.log`"}], `"configsvrs`": [{`"port`": 27016, `"dbpath`": `"$DATAPATH\\db27016`", `"logpath`": `"$LOGPATH\\configsvr27016.log`"}], `"id`": `"shard_cluster_1`", `"members`": [{`"id`": `"sh01`", `"shardParams`": {`"procParams`": {$TEST_PARAMS `"port`": 27020, `"dbpath`": `"$DATAPATH\\db27020`", `"logpath`":`"$LOGPATH\\db27020.log`", `"ipv6`":true, `"logappend`":true, `"nojournal`":false}}}]}" 
+    $request_body = "{$AUTH_PARAMS $SSL_PARAMS `"routers`": [{$TEST_PARAMS `"port`": 27017, `"logpath`": `"$LOGPATH\\router27017.log`"}, {$TEST_PARAMS `"port`": 27018, `"logpath`": `"$LOGPATH\\router27018.log`"}], `"configsvrs`": [{`"port`": 27016, `"dbpath`": `"$DATAPATH\\db27016`", `"logpath`": `"$LOGPATH\\configsvr27016.log`"}], `"id`": `"shard_cluster_1`", `"shards`": [{`"id`": `"sh01`", `"shardParams`": {`"procParams`": {$TEST_PARAMS `"port`": 27020, `"dbpath`": `"$DATAPATH\\db27020`", `"logpath`":`"$LOGPATH\\db27020.log`", `"ipv6`":true, `"logappend`":true, `"nojournal`":false}}}]}" 
 } else{
     echo "Unrecognized configuration: $configuration"
     exit 1
