@@ -10,6 +10,7 @@ $python_bin server.py stop
 echo "====== CLEANUP ======"
 echo "*** Killing any existing MongoDB Processes which may not have shut down on a prior job."
 PSES=`ps auxwwww | grep "mongod" | grep -v grep | awk {'print \$2'}`
+echo "about to kill the following: `ps auxwwww | grep "mongod" | grep -v grep`"
 echo "Found existing mongod Processes: $PSES"
 for x in $PSES
 do
@@ -18,6 +19,7 @@ do
 done
 
 PSES=`ps auxwwww | grep "mongos" | grep -v grep | awk {'print \$2'}`
+echo "about to kill the following: `ps auxwwww | grep "mongos" | grep -v grep`"
 echo "Found existing mongos Processes: $PSES"
 for x in $PSES
 do
@@ -27,6 +29,7 @@ done
 
 
 PSES=`ps auxwwww | grep "server.py " | grep -v grep | awk {'print \$2'}`
+echo "about to kill the following: `ps auxwwww | grep "server.py" | grep -v grep`"
 echo "Found existing mongo-orchestration Processes: $PSES"
 
 for x in $PSES
