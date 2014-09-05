@@ -39,19 +39,5 @@ cd $env:WORKSPACE\mongo-orchestration
 echo "Start-Process -FilePath $python_bin -ArgumentList server.py,start,-f,$configuration_file,-e,$server,--no-fork"
 Start-Process -FilePath $python_bin -ArgumentList server.py,start,-f,$($configuration_file),-e,$($server),--no-fork
 
-$connected = $False
-$ErrorActionPreference = 'SilentlyContinue'
-echo "Waiting for Mongo Orchestration to become available..."
-for ( $attempts = 0; $attempts -lt 1000 -and ! $connected; $attempts++ ) {
-   $s = New-Object Net.Sockets.TcpClient
-   $s.Connect("localhost", 8889)
-   if ($s.Connected) {
-      $connected = $True
-   } else {
-      Start-Sleep -m 100
-   }
-}
-if (! $connected) {
-   throw ("Could not connect to Mongo Orchestration.")
-}
-$ErrorActionPreference = 'Continue'
+echo "Sleeping 5 seconds to allow some time for Mongo Orchestration to start..."
+Start-Sleep -s 5
