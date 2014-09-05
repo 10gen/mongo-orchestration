@@ -231,9 +231,9 @@ class Server(object):
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
-        except OSError as e:
-            logger.error("Error: {0}".format(e))
-            return False
+        except (OSError, lib.errors.TimeoutError):
+            logger.exception("Could not start Server.")
+            raise
         if not self.admin_added and self.login:
             self._add_auth()
             self.admin_added = True
@@ -313,8 +313,7 @@ class Servers(Singleton, Container):
         server = Server(os.path.join(bin_path, name), procParams, sslParams,
                         auth_key, login, password)
         if autostart:
-            if not server.start(timeout):
-                raise OSError
+            server.start(timeout)
         self[server_id] = server
         return server_id
 

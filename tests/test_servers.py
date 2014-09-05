@@ -242,7 +242,7 @@ class ServerTestCase(unittest.TestCase):
         self.assertTrue(self.server.info()['procInfo']['pid'] > 0)
 
         fake_server = Server('fake_proc_', {})
-        self.assertFalse(fake_server.start(5))
+        self.assertRaises(OSError, fake_server.start, 5)
         fake_server.cleanup()
 
     def test_start_with_repair(self):
