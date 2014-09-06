@@ -43,7 +43,8 @@ class Container(object):
         if isinstance(value, self._obj_type):
             self._storage[key] = value
         else:
-            raise ValueError
+            raise ValueError("Can only store objects of type %s, not %s"
+                             % (self._obj_type, type(value)))
 
     def __delitem__(self, key):
         return self._storage.pop(key)

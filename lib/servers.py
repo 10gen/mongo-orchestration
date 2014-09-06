@@ -345,7 +345,8 @@ class Servers(Singleton, Container):
             else:
                 result = getattr(server, command)()
         except AttributeError:
-            raise ValueError
+            raise ValueError("Cannot issue the command %r to server %s"
+                             % (command, server_id))
         self._storage[server_id] = server
         return result
 
