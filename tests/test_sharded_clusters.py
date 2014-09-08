@@ -284,8 +284,11 @@ class ShardsTestCase(unittest.TestCase):
 class ShardTestCase(unittest.TestCase):
 
     def mongod_version(self):
-        raw = subprocess.Popen([os.path.join(self.bin_path, 'mongod'), '--version'], stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.read()
-        m = MONGODB_VERSION.match(raw)
+        proc = subprocess.Popen(
+            [os.path.join(self.bin_path, 'mongod'), '--version'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        version_raw = str(proc.stdout.read())
+        m = MONGODB_VERSION.match(version_raw)
         if m:
             return m.groups()
 

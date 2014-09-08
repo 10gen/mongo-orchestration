@@ -57,7 +57,7 @@ class Container(object):
 
     def __iter__(self):
         # Iterate over a copy of storage's keys
-        return iter(self._storage.keys())
+        return iter(list(self._storage))
 
     def __len__(self):
         return len(self._storage)

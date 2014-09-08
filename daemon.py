@@ -43,7 +43,7 @@ class Daemon(object):
                 sys.stdout.write("child process started successfully, parent exiting after {timeout} seconds\n".format(timeout=self.timeout))
                 time.sleep(self.timeout)
                 sys.exit(0)
-        except OSError, error:
+        except OSError as error:
             sys.stderr.write("fork #1 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
@@ -58,7 +58,7 @@ class Daemon(object):
             if pid > 0:
                 # exit from second parent
                 sys.exit(0)
-        except OSError, error:
+        except OSError as error:
             sys.stderr.write("fork #2 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
@@ -123,14 +123,13 @@ class Daemon(object):
             while 1:
                 os.kill(pid, SIGTERM)
                 time.sleep(0.1)
-        except OSError, err:
+        except OSError as err:
             err = str(err)
             if err.find("No such process") > 0:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print(str(err))
-                sys.exit(1)
+                raise
 
     def restart(self):
         """

@@ -47,7 +47,7 @@ class PortPool(Singleton):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
-            self.__ports = set(xrange(min_port, max_port + 1))
+            self.__ports = set(range(min_port, max_port + 1))
         self.__closed = set()
         self.refresh()
 
@@ -141,7 +141,8 @@ def repair_mongo(name, dbpath):
     t_start = time.time()
     while time.time() - t_start < timeout:
         proc.stdout.flush()
-        if "dbexit: really exiting now" in proc.stdout.readline():
+        line = str(proc.stdout.readline())
+        if "dbexit: really exiting now" in line:
             return
     return
 
@@ -230,8 +231,8 @@ def remove_path(path):
     if os.path.isfile(path):
         try:
             shutil.os.remove(path)
-        except OSError as err:
-            print err
+        except OSError:
+            logger.exception("Could not remove path: %s" % path)
 
 
 def write_config(params, config_path=None):
@@ -257,7 +258,7 @@ def write_config(params, config_path=None):
             cfg[key] = json.dumps(value)
 
     with open(config_path, 'w') as fd:
-        data = reduce(lambda s, item: "{s}\n{key}={value}".format(s=s, key=item[0], value=item[1]), cfg.items(), '')
+        data = '\n'.join('%s=%s' % (key, item) for key, item in cfg.items())
         fd.write(data)
     return config_path
 

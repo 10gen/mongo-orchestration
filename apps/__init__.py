@@ -9,6 +9,7 @@ from bottle import route, response
 
 sys.path.insert(0, '..')
 
+from lib.compat import reraise
 from lib.errors import RequestError
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def send_result(code, result=None):
 
 def error_wrap(f):
     def wrap(*arg, **kwd):
-        f_name = f.func_name
+        f_name = f.__name__
         logger.debug("{f_name}({arg}, {kwd})".format(
             f_name=f_name, arg=arg, kwd=kwd))
         try:
@@ -65,4 +66,4 @@ def get_json(req):
     except ValueError:
         exc_type, exc_value, exc_tb = sys.exc_info()
         message = "Could not parse the JSON sent to the server."
-        raise RequestError, RequestError(message), exc_tb
+        reraise(RequestError, message, exc_tb)
