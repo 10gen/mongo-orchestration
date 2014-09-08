@@ -2,51 +2,19 @@
 # coding=utf-8
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-import json
-import traceback
 import sys
+
+from bottle import request, run
 
 sys.path.insert(0, '..')
 
-from apps import setup_versioned_routes, Route
+from apps import (error_wrap, get_json, Route,
+                  send_result, setup_versioned_routes)
 from lib.common import *
 from lib.sharded_clusters import ShardedClusters
-from bottle import request, response, run
 
-
-def send_result(code, result=None):
-    logger.debug("send_result({code}, {result})".format(**locals()))
-    content = None
-    response.content_type = None
-    if result is not None:
-        content = json.dumps(result)
-        response.content_type = "application/json"
-    response.status = code
-    return content
-
-
-def error_wrap(f):
-    def wrap(*arg, **kwd):
-        f_name = f.func_name
-        logger.debug("{f_name}({arg}, {kwd})".format(f_name=f_name, arg=arg, kwd=kwd))
-        try:
-            return f(*arg, **kwd)
-        except StandardError:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.error("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.error(err_message)
-            return send_result(500, err_message)
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.critical("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.critical(err_message)
-            return send_result(500, err_message)
-
-    return wrap
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def _sh_create(params):
@@ -79,7 +47,7 @@ def sh_create():
     data = {}
     json_data = request.body.read()
     if json_data:
-        data = json.loads(json_data)
+        data = get_json(json_data)
     data = preset_merge(data, 'sharded_clusters')
     return _sh_create(data)
 
@@ -106,7 +74,7 @@ def sh_create_by_id(cluster_id):
     data = {}
     json_data = request.body.read()
     if json_data:
-        data = json.loads(json_data)
+        data = get_json(json_data)
     data = preset_merge(data, 'sharded_clusters')
     data['id'] = cluster_id
     return _sh_create(data)
@@ -129,7 +97,7 @@ def shard_add(cluster_id):
     data = {}
     json_data = request.body.read()
     if json_data:
-        data = json.loads(json_data)
+        data = get_json(json_data)
     result = ShardedClusters().member_add(cluster_id, data)
     return send_result(200, result)
 
@@ -169,7 +137,7 @@ def router_add(cluster_id):
     data = {}
     json_data = request.body.read()
     if json_data:
-        data = json.loads(json_data)
+        data = get_json(json_data)
     result = ShardedClusters().router_add(cluster_id, data)
     return send_result(200, result)
 

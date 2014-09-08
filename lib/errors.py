@@ -6,6 +6,10 @@ class MongoOrchestrationError(Exception):
     """Base class for all mongo-orchestration exceptions."""
 
 
+class RequestError(MongoOrchestrationError):
+    """Raised when a bad request is made to the web interface."""
+
+
 class ServersError(MongoOrchestrationError):
     """Base class for all Server exceptions."""
 

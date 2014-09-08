@@ -12,6 +12,8 @@ import tempfile
 sys.path.insert(0, '../')
 
 import lib.process as process
+import lib.errors
+
 from nose.plugins.attrib import attr
 
 from tests import unittest, SkipTest
@@ -184,9 +186,11 @@ class ProcessTestCase(unittest.TestCase):
         fd_cfg, config_path = tempfile.mkstemp()
         os.close(fd_cfg)
         self.tmp_files.append(config_path)
-        self.assertRaises(OSError, process.mprocess, 'fake-process_', config_path, None, 30)
+        self.assertRaises(OSError, process.mprocess,
+                          'fake-process_', config_path, None, 30)
         process.write_config({"fake": True}, config_path)
-        self.assertRaises(OSError, process.mprocess, 'mongod', config_path, None, 30)
+        self.assertRaises(lib.errors.TimeoutError, process.mprocess,
+                          'mongod', config_path, None, 30)
 
     def test_mprocess(self):
         port = self.pp.port(check=True)
@@ -213,7 +217,7 @@ class ProcessTestCase(unittest.TestCase):
         process.kill_mprocess(proc)
         if platform.system() == 'Windows':
             raise SkipTest("Cannot test mongod startup timeout on Windows.")
-        with self.assertRaises(OSError):
+        with self.assertRaises(lib.errors.TimeoutError):
             result = process.mprocess(self.bin_path, config_path, port, 0.1)
             print(result)
 

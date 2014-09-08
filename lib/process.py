@@ -18,6 +18,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
+from lib.errors import TimeoutError
 from lib.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -175,10 +176,11 @@ def mprocess(name, config_path, port=None, timeout=180):
 
         if proc.poll() is not None:
             logger.debug("process is not alive")
-            raise OSError
+            raise OSError("Process started, but died immediately.")
     except (OSError, TypeError) as err:
-        logger.debug("exception while executing process: {err}".format(err=err))
-        raise OSError
+        message = "exception while executing process: {err}".format(err=err)
+        logger.debug(message)
+        raise OSError(message)
     if timeout > 0 and wait_for(port, timeout):
         logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
         return (proc, host)
@@ -187,8 +189,9 @@ def mprocess(name, config_path, port=None, timeout=180):
         logger.debug("terminate process with pid={proc.pid}".format(**locals()))
         kill_mprocess(proc)
         proc_alive(proc) and time.sleep(3)  # wait while process stoped
-        message = "could not connect to process during {timeout} seconds".format(timeout=timeout)
-        raise OSError(errno.ETIMEDOUT, message)
+        message = ("Could not connect to process during "
+                   "{timeout} seconds".format(timeout=timeout))
+        raise TimeoutError(errno.ETIMEDOUT, message)
     return (proc, host)
 
 
