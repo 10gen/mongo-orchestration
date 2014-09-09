@@ -81,7 +81,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertFalse(port in self.pp._PortPool__closed)
 
     def test_refresh(self):
-        ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        ports = set([random.randint(1025, 2000) for i in range(15)])
         self.pp.change_range(port_sequence=ports)
         ports_opened = self.pp._PortPool__ports.copy()
         test_port = ports_opened.pop()
@@ -98,7 +98,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(len(self.pp._PortPool__ports) == 1)
 
     def test_refresh_only_closed(self):
-        ports = set([random.randint(1025, 2000) for _ in xrange(15)])
+        ports = set([random.randint(1025, 2000) for _ in range(15)])
         self.pp.change_range(port_sequence=ports)
         closed_num = len(self.pp._PortPool__closed)
         self.pp.port(), self.pp.port()
@@ -118,7 +118,7 @@ class PortPoolTestCase(unittest.TestCase):
         ports = self.pp._PortPool__closed.union(self.pp._PortPool__ports)
         self.assertTrue(ports == set(range(1025, 1033 + 1)))
 
-        random_ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        random_ports = set([random.randint(1025, 2000) for i in range(15)])
         self.pp.change_range(port_sequence=random_ports)
         ports = self.pp._PortPool__closed.union(self.pp._PortPool__ports)
         self.assertTrue(ports == random_ports)
@@ -226,11 +226,13 @@ class ProcessTestCase(unittest.TestCase):
         self.tmp_files.append(config_path)
         port = self.pp.port()
         self.listen_port(port, max_connection=0)
-        pid, host = process.mprocess(self.executable, config_path, port=port, timeout=2)
-        self.assertTrue(pid > 0)
+        proc, host = process.mprocess(self.executable, config_path,
+                                      port=port, timeout=2)
+        self.assertTrue(proc.pid > 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
         self.sockets.pop(port).close()
-        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 1)
+        self.assertRaises(OSError, process.mprocess,
+                          self.executable, '', port, 1)
 
     def test_kill_mprocess(self):
         p = subprocess.Popen([self.executable])

@@ -35,10 +35,7 @@ def _build_server_info(member_docs):
 @error_wrap
 def rs_create():
     logger.debug("rs_create()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
     return _rs_create(data)
 
@@ -62,10 +59,7 @@ def rs_info(rs_id):
 @error_wrap
 def rs_create_by_id(rs_id):
     logger.debug("rs_create_by_id()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
     data['id'] = rs_id
     return _rs_create(data)
@@ -85,10 +79,7 @@ def member_add(rs_id):
     logger.debug("member_add({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     member_id = ReplicaSets().member_add(rs_id, data)
     result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)
@@ -176,10 +167,7 @@ def member_update(rs_id, member_id):
     member_id = int(member_id)
     if rs_id not in ReplicaSets():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     ReplicaSets().member_update(rs_id, member_id, data)
     result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)

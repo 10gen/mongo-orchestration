@@ -341,7 +341,7 @@ class Servers(Singleton, Container):
         server = self._storage[server_id]
         try:
             if args:
-                result = getattr(server, command)(args)
+                result = getattr(server, command)(*args)
             else:
                 result = getattr(server, command)()
         except AttributeError:

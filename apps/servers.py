@@ -11,6 +11,7 @@ sys.path.insert(0, '..')
 from apps import (error_wrap, get_json, Route,
                   send_result, setup_versioned_routes)
 from lib.common import *
+from lib.errors import RequestError
 from lib.servers import Servers
 
 logging.basicConfig(level=logging.DEBUG)
@@ -51,10 +52,7 @@ def releases_list():
 
 @error_wrap
 def host_create():
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'servers')
     return _host_create(data)
 
@@ -77,10 +75,7 @@ def host_info(host_id):
 
 @error_wrap
 def host_create_by_id(host_id):
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'servers')
     data['id'] = host_id
     return _host_create(data)
@@ -100,7 +95,9 @@ def host_command(host_id):
     logger.debug("host_command({host_id})".format(**locals()))
     if host_id not in Servers():
         return send_result(404)
-    command = get_json(request.body.read())['action']
+    command = get_json(request.body).get('action')
+    if command is None:
+        raise RequestError('Expected body with an {"action": ...}.')
     Servers().command(host_id, command)
     return send_result(200)
 

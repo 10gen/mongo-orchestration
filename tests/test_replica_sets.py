@@ -486,7 +486,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         members1 = sorted(self.repl.config['members'], key=lambda item: item['_id'])
         members2 = sorted(self.repl.members(), key=lambda item: item['_id'])
         self.assertEqual(len(members1), len(members2))
-        for i in xrange(len(members1)):
+        for i in range(len(members1)):
             self.assertEqual(members1[i]['host'], members2[i]['host'])
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
 

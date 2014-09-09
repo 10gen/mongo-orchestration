@@ -7,10 +7,7 @@ import time
 
 from signal import SIGTERM
 
-try:
-    from subprocess import DEVNULL
-except ImportError:
-    DEVNULL = open(os.devnull, 'r+b')
+DEVNULL = open(os.devnull, 'r+b')
 
 
 class Daemon(object):
@@ -43,7 +40,7 @@ class Daemon(object):
                 sys.stdout.write("child process started successfully, parent exiting after {timeout} seconds\n".format(timeout=self.timeout))
                 time.sleep(self.timeout)
                 sys.exit(0)
-        except OSError, error:
+        except OSError as error:
             sys.stderr.write("fork #1 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
@@ -58,7 +55,7 @@ class Daemon(object):
             if pid > 0:
                 # exit from second parent
                 sys.exit(0)
-        except OSError, error:
+        except OSError as error:
             sys.stderr.write("fork #2 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
@@ -74,7 +71,8 @@ class Daemon(object):
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("%s\n" % pid)
+        with open(self.pidfile, 'w+') as fd:
+            fd.write("%s\n" % pid)
 
     def delpid(self):
         """remove pidfile"""
@@ -86,9 +84,8 @@ class Daemon(object):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pidfile_fd = file(self.pidfile, 'r')
-            pid = int(pidfile_fd.read().strip())
-            pidfile_fd.close()
+            with open(self.pidfile, 'r') as fd:
+                pid = int(fd.read().strip())
         except IOError:
             pid = None
 
@@ -107,9 +104,8 @@ class Daemon(object):
         """
         # Get the pid from the pidfile
         try:
-            pidfile_fd = file(self.pidfile, 'r')
-            pid = int(pidfile_fd.read().strip())
-            pidfile_fd.close()
+            with open(self.pidfile, 'r') as fd:
+                pid = int(fd.read().strip())
         except IOError:
             pid = None
 
@@ -123,14 +119,13 @@ class Daemon(object):
             while 1:
                 os.kill(pid, SIGTERM)
                 time.sleep(0.1)
-        except OSError, err:
+        except OSError as err:
             err = str(err)
             if err.find("No such process") > 0:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print(str(err))
-                sys.exit(1)
+                raise
 
     def restart(self):
         """

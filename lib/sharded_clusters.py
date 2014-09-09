@@ -40,7 +40,8 @@ class ShardedCluster(object):
             self.kwargs['ssl'] = True
 
         self.__init_configsvr(params.get('configsvrs', [{}]))
-        map(self.router_add, params.get('routers', [{}]))
+        for r in params.get('routers', [{}]):
+            self.router_add(r)
         for cfg in params.get('shards', []):
             shard_params = cfg.get('shardParams', {})
             shard_tags = shard_params.pop('tags', None)
