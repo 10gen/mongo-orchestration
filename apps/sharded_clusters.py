@@ -44,10 +44,7 @@ def _build_shard_info(shard_docs):
 @error_wrap
 def sh_create():
     logger.debug("sh_create()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'sharded_clusters')
     return _sh_create(data)
 
@@ -71,10 +68,7 @@ def info(cluster_id):
 @error_wrap
 def sh_create_by_id(cluster_id):
     logger.debug("sh_create()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'sharded_clusters')
     data['id'] = cluster_id
     return _sh_create(data)
@@ -94,10 +88,7 @@ def shard_add(cluster_id):
     logger.debug("shard_add({cluster_id})".format(**locals()))
     if cluster_id not in ShardedClusters():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     result = ShardedClusters().member_add(cluster_id, data)
     return send_result(200, result)
 
@@ -134,10 +125,7 @@ def router_add(cluster_id):
     logger.debug("router_add({cluster_id})".format(**locals()))
     if cluster_id not in ShardedClusters():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = get_json(json_data)
+    data = get_json(request.body)
     result = ShardedClusters().router_add(cluster_id, data)
     return send_result(200, result)
 

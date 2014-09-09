@@ -7,10 +7,7 @@ import time
 
 from signal import SIGTERM
 
-try:
-    from subprocess import DEVNULL
-except ImportError:
-    DEVNULL = open(os.devnull, 'r+b')
+DEVNULL = open(os.devnull, 'r+b')
 
 
 class Daemon(object):
@@ -74,7 +71,8 @@ class Daemon(object):
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("%s\n" % pid)
+        with open(self.pidfile, 'w+') as fd:
+            fd.write("%s\n" % pid)
 
     def delpid(self):
         """remove pidfile"""
@@ -86,9 +84,8 @@ class Daemon(object):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pidfile_fd = file(self.pidfile, 'r')
-            pid = int(pidfile_fd.read().strip())
-            pidfile_fd.close()
+            with open(self.pidfile, 'r') as fd:
+                pid = int(fd.read().strip())
         except IOError:
             pid = None
 
@@ -107,9 +104,8 @@ class Daemon(object):
         """
         # Get the pid from the pidfile
         try:
-            pidfile_fd = file(self.pidfile, 'r')
-            pid = int(pidfile_fd.read().strip())
-            pidfile_fd.close()
+            with open(self.pidfile, 'r') as fd:
+                pid = int(fd.read().strip())
         except IOError:
             pid = None
 
