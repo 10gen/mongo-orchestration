@@ -29,7 +29,7 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 + **authentication**  - support authentication by keyFile
 
 ##Requires
-- [Python 2.7](http://www.python.org/download/)  
+- [Python 2.6, 2.7, or >= 3.2](http://www.python.org/download/)  
 - [requests](http://docs.python-requests.org/en/latest/user/install/#install)
 - [PyMongo 2.7.2](https://pypi.python.org/pypi/pymongo/2.7.2)
 - [CherryPy 3.5.0](http://www.cherrypy.org/)
