@@ -49,6 +49,8 @@ Arguments:
 + **-p** - port number, 8889 by default  
 + **start/stop/restart**: server's command  
 
+In addition, Mongo Orchestration can be influenced by the `MONGO_ORCHESTRATION_HOME` environment variable, which informs the server where to find the "configurations" directory for presets.
+
 ###Examples
 
 `python server.py start`
