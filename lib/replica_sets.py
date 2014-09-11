@@ -395,6 +395,18 @@ class ReplicaSet(object):
             time.sleep(8)
         return True
 
+    def await_replication(self):
+        """Wait for a replicated command to complete.
+
+        This is useful for determining if the primary of a replica set may be
+        stepped down without force=true.
+        """
+        self.connection().temporary.collection.insert(
+            {"a": 1},
+            w=len(self.members())
+        )
+        self.connection().drop_database('temporary')
+
     def check_member_state(self):
         """Verify that all RS members have an acceptable state."""
         bad_states = (3, 4, 5, 6, 9)
@@ -517,6 +529,15 @@ class ReplicaSets(Singleton, Container):
     def servers(self, repl_id):
         """return list of servers"""
         return self[repl_id].servers()
+
+    def command(self, repl_id, command, *args):
+        """Call a method on a ReplicaSet by id."""
+        repl = self[repl_id]
+        try:
+            return getattr(repl, command)(*args)
+        except AttributeError:
+            raise ValueError("Cannot issue the command %r to ReplicaSet %s"
+                             % (command, repl_id))
 
     def member_info(self, repl_id, member_id):
         """return information about member
