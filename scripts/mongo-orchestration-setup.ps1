@@ -49,6 +49,8 @@ if (($server -eq "22-release") -Or ($server -eq "20-release")) {
     $TEST_PARAMS='"vv" : true, '
 } elseif ($server -eq "24-release") {
     $TEST_PARAMS='"setParameter" : {"textSearchEnabled": true}, "vv" : true, '
+} elseif ($server -eq "27-nightly") {
+    $TEST_PARAMS='"setParameter":{"enableTestCommands": 1, "authenticationMechanisms": "MONGODB-CR,SCRAM-SHA-1"}, "vv" : true, '
 } else {
     $TEST_PARAMS='"setParameter":{"enableTestCommands": 1}, "vv" : true, '
 }
