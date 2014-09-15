@@ -15,6 +15,10 @@ work_dir = os.path.split(os.path.join(os.getcwd(), __file__))[0]
 pid_file = os.path.join(work_dir, 'server.pid')
 log_file = os.path.join(work_dir, 'server.log')
 
+# Set MONGO_ORCHESTRATION_HOME to current working directory if unset.
+if not 'MONGO_ORCHESTRATION_HOME' in os.environ:
+    os.environ['MONGO_ORCHESTRATION_HOME'] = work_dir
+
 DEFAULT_PORT = 8889
 
 import logging
