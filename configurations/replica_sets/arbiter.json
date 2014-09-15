@@ -11,7 +11,11 @@
                 "smallfiles": true
             }, 
             "rsParams": {
-                "priority": 99
+                "priority": 99,
+                "tags": {
+                    "ordinal": "one",
+                    "dc": "ny"
+                }
             }
         }, 
         {
@@ -25,18 +29,25 @@
                 "smallfiles": true
             }, 
             "rsParams": {
-                "priority": 1.1
+                "priority": 1.1,
+                "tags": {
+                    "ordinal": "two",
+                    "dc": "pa"
+                }
             }
         }, 
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true, 
+                "nohttpinterface": true,
                 "journal": true,
-                "noprealloc": true, 
-                "nssize": 1, 
+                "noprealloc": true,
+                "nssize": 1,
                 "oplogSize": 1,
                 "smallfiles": true
+            },
+            "rsParams": {
+                "arbiterOnly": true
             }
         }
     ]

@@ -1,5 +1,18 @@
 #!/usr/bin/python
 # coding=utf-8
+# Copyright 2012-2014 MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import os
 import platform
@@ -12,6 +25,8 @@ import tempfile
 sys.path.insert(0, '../')
 
 import lib.process as process
+import lib.errors
+
 from nose.plugins.attrib import attr
 
 from tests import unittest, SkipTest
@@ -79,7 +94,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertFalse(port in self.pp._PortPool__closed)
 
     def test_refresh(self):
-        ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        ports = set([random.randint(1025, 2000) for i in range(15)])
         self.pp.change_range(port_sequence=ports)
         ports_opened = self.pp._PortPool__ports.copy()
         test_port = ports_opened.pop()
@@ -96,7 +111,7 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(len(self.pp._PortPool__ports) == 1)
 
     def test_refresh_only_closed(self):
-        ports = set([random.randint(1025, 2000) for _ in xrange(15)])
+        ports = set([random.randint(1025, 2000) for _ in range(15)])
         self.pp.change_range(port_sequence=ports)
         closed_num = len(self.pp._PortPool__closed)
         self.pp.port(), self.pp.port()
@@ -116,7 +131,7 @@ class PortPoolTestCase(unittest.TestCase):
         ports = self.pp._PortPool__closed.union(self.pp._PortPool__ports)
         self.assertTrue(ports == set(range(1025, 1033 + 1)))
 
-        random_ports = set([random.randint(1025, 2000) for i in xrange(15)])
+        random_ports = set([random.randint(1025, 2000) for i in range(15)])
         self.pp.change_range(port_sequence=random_ports)
         ports = self.pp._PortPool__closed.union(self.pp._PortPool__ports)
         self.assertTrue(ports == random_ports)
@@ -184,9 +199,11 @@ class ProcessTestCase(unittest.TestCase):
         fd_cfg, config_path = tempfile.mkstemp()
         os.close(fd_cfg)
         self.tmp_files.append(config_path)
-        self.assertRaises(OSError, process.mprocess, 'fake-process_', config_path, None, 30)
+        self.assertRaises(OSError, process.mprocess,
+                          'fake-process_', config_path, None, 30)
         process.write_config({"fake": True}, config_path)
-        self.assertRaises(OSError, process.mprocess, 'mongod', config_path, None, 30)
+        self.assertRaises(lib.errors.TimeoutError, process.mprocess,
+                          'mongod', config_path, None, 30)
 
     def test_mprocess(self):
         port = self.pp.port(check=True)
@@ -213,7 +230,7 @@ class ProcessTestCase(unittest.TestCase):
         process.kill_mprocess(proc)
         if platform.system() == 'Windows':
             raise SkipTest("Cannot test mongod startup timeout on Windows.")
-        with self.assertRaises(OSError):
+        with self.assertRaises(lib.errors.TimeoutError):
             result = process.mprocess(self.bin_path, config_path, port, 0.1)
             print(result)
 
@@ -222,11 +239,13 @@ class ProcessTestCase(unittest.TestCase):
         self.tmp_files.append(config_path)
         port = self.pp.port()
         self.listen_port(port, max_connection=0)
-        pid, host = process.mprocess(self.executable, config_path, port=port, timeout=2)
-        self.assertTrue(pid > 0)
+        proc, host = process.mprocess(self.executable, config_path,
+                                      port=port, timeout=2)
+        self.assertTrue(proc.pid > 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
         self.sockets.pop(port).close()
-        self.assertRaises(OSError, process.mprocess, self.executable, '', port, 1)
+        self.assertRaises(OSError, process.mprocess,
+                          self.executable, '', port, 1)
 
     def test_kill_mprocess(self):
         p = subprocess.Popen([self.executable])

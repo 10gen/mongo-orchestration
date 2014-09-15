@@ -1,6 +1,4 @@
-#!/usr/bin/python
-# coding=utf-8
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2014 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,24 +14,11 @@
 
 import sys
 
-sys.path.insert(0, '../')
+PY3 = (sys.version_info[0] == 3)
 
-from lib.singleton import Singleton
-from nose.plugins.attrib import attr
-from tests import unittest
-
-
-@attr('singleton')
-@attr('test')
-class SingletonTestCase(unittest.TestCase):
-
-    def test_singleton(self):
-        a = Singleton()
-        b = Singleton()
-        self.assertEqual(id(a), id(b))
-        c = Singleton()
-        self.assertEqual(id(c), id(b))
-
-
-if __name__ == '__main__':
-    unittest.main()
+if PY3:
+    def reraise(exctype, value, trace=None):
+        raise exctype(str(value)).with_traceback(trace)
+else:
+    exec("""def reraise(exctype, value, trace=None):
+    raise exctype, str(value), trace""")

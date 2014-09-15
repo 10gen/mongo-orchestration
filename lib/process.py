@@ -1,5 +1,18 @@
 #!/usr/bin/python
 # coding=utf-8
+# Copyright 2012-2014 MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import errno
 import json
@@ -18,6 +31,7 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
+from lib.errors import TimeoutError
 from lib.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -46,7 +60,7 @@ class PortPool(Singleton):
         if port_sequence:
             self.__ports = set(port_sequence)
         else:
-            self.__ports = set(xrange(min_port, max_port + 1))
+            self.__ports = set(range(min_port, max_port + 1))
         self.__closed = set()
         self.refresh()
 
@@ -140,7 +154,8 @@ def repair_mongo(name, dbpath):
     t_start = time.time()
     while time.time() - t_start < timeout:
         proc.stdout.flush()
-        if "dbexit: really exiting now" in proc.stdout.readline():
+        line = str(proc.stdout.readline())
+        if "dbexit: really exiting now" in line:
             return
     return
 
@@ -175,10 +190,11 @@ def mprocess(name, config_path, port=None, timeout=180):
 
         if proc.poll() is not None:
             logger.debug("process is not alive")
-            raise OSError
+            raise OSError("Process started, but died immediately.")
     except (OSError, TypeError) as err:
-        logger.debug("exception while executing process: {err}".format(err=err))
-        raise OSError
+        message = "exception while executing process: {err}".format(err=err)
+        logger.debug(message)
+        raise OSError(message)
     if timeout > 0 and wait_for(port, timeout):
         logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
         return (proc, host)
@@ -187,8 +203,9 @@ def mprocess(name, config_path, port=None, timeout=180):
         logger.debug("terminate process with pid={proc.pid}".format(**locals()))
         kill_mprocess(proc)
         proc_alive(proc) and time.sleep(3)  # wait while process stoped
-        message = "could not connect to process during {timeout} seconds".format(timeout=timeout)
-        raise OSError(errno.ETIMEDOUT, message)
+        message = ("Could not connect to process during "
+                   "{timeout} seconds".format(timeout=timeout))
+        raise TimeoutError(errno.ETIMEDOUT, message)
     return (proc, host)
 
 
@@ -227,8 +244,8 @@ def remove_path(path):
     if os.path.isfile(path):
         try:
             shutil.os.remove(path)
-        except OSError as err:
-            print err
+        except OSError:
+            logger.exception("Could not remove path: %s" % path)
 
 
 def write_config(params, config_path=None):
@@ -254,7 +271,7 @@ def write_config(params, config_path=None):
             cfg[key] = json.dumps(value)
 
     with open(config_path, 'w') as fd:
-        data = reduce(lambda s, item: "{s}\n{key}={value}".format(s=s, key=item[0], value=item[1]), cfg.items(), '')
+        data = '\n'.join('%s=%s' % (key, item) for key, item in cfg.items())
         fd.write(data)
     return config_path
 

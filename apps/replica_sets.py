@@ -1,51 +1,33 @@
 #!/usr/bin/python
 # coding=utf-8
+# Copyright 2012-2014 MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-import json
-import traceback
 import sys
 
+from bottle import request, run
+
 sys.path.insert(0, '..')
-from apps import setup_versioned_routes, Route
+
+from apps import (error_wrap, get_json, Route,
+                  send_result, setup_versioned_routes)
 from lib.common import *
 from lib.replica_sets import ReplicaSets
-from bottle import request, response, run
 
-
-def send_result(code, result=None):
-    logger.debug("send_result({code}, {result})".format(**locals()))
-    content = None
-    response.content_type = None
-    if result is not None:
-        content = json.dumps(result)
-        response.content_type = "application/json"
-    response.status = code
-    return content
-
-
-def error_wrap(f):
-    def wrap(*arg, **kwd):
-        f_name = f.func_name
-        logger.debug("{f_name}({arg}, {kwd})".format(f_name=f_name, arg=arg, kwd=kwd))
-        try:
-            return f(*arg, **kwd)
-        except StandardError:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.error("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.error(err_message)
-            return send_result(500, err_message)
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.critical("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.critical(err_message)
-            return send_result(500, err_message)
-
-    return wrap
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def _rs_create(params):
@@ -66,10 +48,7 @@ def _build_server_info(member_docs):
 @error_wrap
 def rs_create():
     logger.debug("rs_create()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
     return _rs_create(data)
 
@@ -93,10 +72,7 @@ def rs_info(rs_id):
 @error_wrap
 def rs_create_by_id(rs_id):
     logger.debug("rs_create_by_id()")
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
     data['id'] = rs_id
     return _rs_create(data)
@@ -116,10 +92,7 @@ def member_add(rs_id):
     logger.debug("member_add({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     member_id = ReplicaSets().member_add(rs_id, data)
     result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)
@@ -207,10 +180,7 @@ def member_update(rs_id, member_id):
     member_id = int(member_id)
     if rs_id not in ReplicaSets():
         return send_result(404)
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     ReplicaSets().member_update(rs_id, member_id, data)
     result = ReplicaSets().member_info(rs_id, member_id)
     return send_result(200, result)

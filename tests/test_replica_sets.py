@@ -1,5 +1,18 @@
 #!/usr/bin/python
 # coding=utf-8
+# Copyright 2012-2014 MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import logging
 import os
@@ -486,7 +499,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         members1 = sorted(self.repl.config['members'], key=lambda item: item['_id'])
         members2 = sorted(self.repl.members(), key=lambda item: item['_id'])
         self.assertEqual(len(members1), len(members2))
-        for i in xrange(len(members1)):
+        for i in range(len(members1)):
             self.assertEqual(members1[i]['host'], members2[i]['host'])
             self.assertEqual(members1[i]['_id'], members2[i]['_id'])
 

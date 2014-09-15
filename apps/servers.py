@@ -1,55 +1,37 @@
 #!/usr/bin/python
 # coding=utf-8
+# Copyright 2012-2014 MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-import json
-import traceback
 import sys
+
+from bottle import request, run
 
 sys.path.insert(0, '..')
 
-from apps import setup_versioned_routes, Route
+from apps import (error_wrap, get_json, Route,
+                  send_result, setup_versioned_routes)
 from lib.common import *
+from lib.errors import RequestError
 from lib.servers import Servers
-from bottle import request, response, run
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 __version__ = '0.9'
-
-
-def send_result(code, result=None):
-    logger.debug("send_result({code}, {result})".format(**locals()))
-    content = None
-    response.content_type = None
-    if result is not None:
-        content = json.dumps(result)
-        response.content_type = "application/json"
-    response.status = code
-    return content
-
-
-def error_wrap(f):
-    def wrap(*arg, **kwd):
-        f_name = f.func_name
-        logger.debug("{f_name}({arg}, {kwd})".format(f_name=f_name, arg=arg, kwd=kwd))
-        try:
-            return f(*arg, **kwd)
-        except StandardError:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.error("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.error(err_message)
-            return send_result(500, err_message)
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-            logger.critical("Exception {exc_type} {exc_value} while {f_name}".format(**locals()))
-            logger.critical(err_message)
-            return send_result(500, err_message)
-
-    return wrap
 
 
 def _host_create(params):
@@ -83,10 +65,7 @@ def releases_list():
 
 @error_wrap
 def host_create():
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'servers')
     return _host_create(data)
 
@@ -109,10 +88,7 @@ def host_info(host_id):
 
 @error_wrap
 def host_create_by_id(host_id):
-    data = {}
-    json_data = request.body.read()
-    if json_data:
-        data = json.loads(json_data)
+    data = get_json(request.body)
     data = preset_merge(data, 'servers')
     data['id'] = host_id
     return _host_create(data)
@@ -132,7 +108,9 @@ def host_command(host_id):
     logger.debug("host_command({host_id})".format(**locals()))
     if host_id not in Servers():
         return send_result(404)
-    command = json.loads(request.body.read())['action']
+    command = get_json(request.body).get('action')
+    if command is None:
+        raise RequestError('Expected body with an {"action": ...}.')
     Servers().command(host_id, command)
     return send_result(200)
 
