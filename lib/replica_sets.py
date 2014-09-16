@@ -401,11 +401,11 @@ class ReplicaSet(object):
         This is useful for determining if the primary of a replica set may be
         stepped down without force=true.
         """
-        self.connection().temporary.collection.insert(
+        self.connection()._mongo_orchestration.temp_collection.insert(
             {"a": 1},
-            w=len(self.members())
+            w=len(self.members()) - len(self.arbiters())
         )
-        self.connection().drop_database('temporary')
+        self.connection().drop_database('_mongo_orchestration')
 
     def check_member_state(self):
         """Verify that all RS members have an acceptable state."""
