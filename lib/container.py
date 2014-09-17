@@ -47,6 +47,8 @@ class Container(object):
                                           % (release, self.releases))
         if self.default_release:
             return self.releases[self.default_release]
+        if self.releases:
+            return self.releases.values()[0]
         return ''
 
     def __getitem__(self, key):
