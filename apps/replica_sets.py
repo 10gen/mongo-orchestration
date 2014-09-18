@@ -70,6 +70,18 @@ def rs_info(rs_id):
 
 
 @error_wrap
+def rs_command(rs_id):
+    logger.debug("rs_command({rs_id})".format(**locals()))
+    if rs_id not in ReplicaSets():
+        return send_result(404)
+    command = get_json(request.body).get('action')
+    if command is None:
+        raise RequestError('Expected body with an {"action": ...}.')
+    result = ReplicaSets().command(rs_id, command)
+    return send_result(200, result)
+
+
+@error_wrap
 def rs_create_by_id(rs_id):
     logger.debug("rs_create_by_id()")
     data = get_json(request.body)
@@ -190,6 +202,7 @@ ROUTES = {
     Route('/replica_sets', method='POST'): rs_create,
     Route('/replica_sets', method='GET'): rs_list,
     Route('/replica_sets/<rs_id>', method='GET'): rs_info,
+    Route('/replica_sets/<rs_id>', method='POST'): rs_command,
     Route('/replica_sets/<rs_id>', method='PUT'): rs_create_by_id,
     Route('/replica_sets/<rs_id>', method='DELETE'): rs_del,
     Route('/replica_sets/<rs_id>/members', method='POST'): member_add,

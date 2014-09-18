@@ -575,6 +575,24 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl.member_command(1, 'stop')
         self.assertFalse(self.repl.wait_while_reachable(servers, timeout=10))
 
+    def test_reset(self):
+        self.repl_cfg = {'members': [{}, {}, {}]}
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        server_ids = [m['server_id'] for m in self.repl.members()]
+        all_hosts = map(Servers().hostname, server_ids)
+
+        # Shut down all members of the ReplicaSet.
+        for server_id in server_ids:
+            Servers().command(server_id, 'stop')
+
+        # Reset the ReplicaSet. --- We should be able to connect to all members.
+        self.repl.reset()
+
+        for host in all_hosts:
+            # No ConnectionFailure/AutoReconnect.
+            pymongo.MongoClient(host)
+
 
 @attr('rs')
 @attr('test')

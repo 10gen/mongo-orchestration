@@ -131,6 +131,21 @@ class ReplicaSet(object):
             self.cleanup()
             return False
 
+    def reset(self):
+        """Ensure all members are running and available."""
+        # Need to use self.server_map, in case no Servers are left running.
+        for member_id in self.server_map:
+            host = self.id2host(member_id)
+            server_id = self._servers.id_by_hostname(host)
+            # Reset each member.
+            self._servers.command(server_id, 'reset')
+        # Wait for all members to have a state of 1, 2, or 7.
+        # Note that this also waits for a primary to become available.
+        self.waiting_member_state()
+        # Wait for Server states to match the config from the primary.
+        self.waiting_config_state()
+        return self.info()
+
     def repl_update(self, config):
         """Reconfig Replicaset with new config"""
         cfg = config.copy()
@@ -525,6 +540,15 @@ class ReplicaSets(Singleton, Container):
             member_id - member index
         """
         return self[repl_id].member_info(member_id)
+
+    def command(self, rs_id, command, *args):
+        """Call a ReplicaSet method."""
+        rs = self._storage[rs_id]
+        try:
+            return getattr(rs, command)(*args)
+        except AttributeError:
+            raise ValueError("Cannot issue the command %r to ReplicaSet %s"
+                             % (command, rs_id))
 
     def member_del(self, repl_id, member_id):
         """remove member from replica set (reconfig replica)
