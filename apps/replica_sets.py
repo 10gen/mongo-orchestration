@@ -24,6 +24,7 @@ sys.path.insert(0, '..')
 from apps import (error_wrap, get_json, Route,
                   send_result, setup_versioned_routes)
 from lib.common import *
+from lib.errors import RequestError
 from lib.replica_sets import ReplicaSets
 
 logging.basicConfig(level=logging.DEBUG)
@@ -67,6 +68,18 @@ def rs_info(rs_id):
         return send_result(404)
     result = ReplicaSets().info(rs_id)
     return send_result(200, result)
+
+
+@error_wrap
+def rs_command(rs_id):
+    logger.debug("rs_command({rs_id})".format(**locals()))
+    if rs_id not in ReplicaSets():
+        return send_result(404)
+    command = get_json(request.body).get('action')
+    if command is None:
+        raise RequestError('Expected body with an {"action": ...}.')
+    ReplicaSets().command(rs_id, command)
+    return send_result(200)
 
 
 @error_wrap
@@ -192,6 +205,7 @@ ROUTES = {
     Route('/replica_sets/<rs_id>', method='GET'): rs_info,
     Route('/replica_sets/<rs_id>', method='PUT'): rs_create_by_id,
     Route('/replica_sets/<rs_id>', method='DELETE'): rs_del,
+    Route('/replica_sets/<rs_id>', method='POST'): rs_command,
     Route('/replica_sets/<rs_id>/members', method='POST'): member_add,
     Route('/replica_sets/<rs_id>/members', method='GET'): members,
     Route('/replica_sets/<rs_id>/secondaries', method='GET'): secondaries,

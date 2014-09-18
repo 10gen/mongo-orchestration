@@ -338,6 +338,13 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertEqual(len(self.rs.hidden(repl_id)), 0)
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
+    def test_await_replication(self):
+        repl_id = self.rs.create({'members': [
+            {}, {'rsParams': {'slaveDelay': 5, 'priority': 0}}]})
+        start_time = time.time()
+        self.rs.command(repl_id, 'await_replication')
+        self.assertGreaterEqual(time.time() - start_time, 5)
+
 
 @attr('rs')
 @attr('test')
@@ -574,6 +581,13 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue(self.repl.wait_while_reachable(servers, timeout=10))
         self.repl.member_command(1, 'stop')
         self.assertFalse(self.repl.wait_while_reachable(servers, timeout=10))
+
+    def test_await_replication(self):
+        self.repl = ReplicaSet({'members': [
+            {}, {'rsParams': {'slaveDelay': 5, 'priority': 0}}]})
+        start_time = time.time()
+        self.repl.await_replication()
+        self.assertGreaterEqual(time.time() - start_time, 5)
 
 
 @attr('rs')
