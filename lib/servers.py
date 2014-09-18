@@ -20,6 +20,7 @@ import os
 import platform
 import stat
 import tempfile
+import time
 
 from uuid import uuid4
 
@@ -244,6 +245,18 @@ class Server(object):
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
             self.port = int(self.hostname.split(':')[1])
+
+            # Wait for Server to respond to isMaster.
+            for i in range(timeout):
+                try:
+                    self.run_command('isMaster')
+                    break
+                except pymongo.errors.ConnectionFailure:
+                    time.sleep(1)
+            else:
+                raise lib.errors.TimeoutError(
+                    "Server did not respond to 'isMaster' after %d attempts."
+                    % timeout)
         except (OSError, lib.errors.TimeoutError):
             logger.exception("Could not start Server.")
             raise
@@ -262,6 +275,11 @@ class Server(object):
         """
         self.stop()
         return self.start(timeout)
+
+    def reset(self):
+        """Ensure Server has started and responds to isMaster."""
+        self.start()
+        return self.info()
 
     def _add_auth(self):
         try:

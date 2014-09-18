@@ -316,6 +316,14 @@ class ServerTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(self.server.cfg['dbpath']))
         self.assertFalse(os.path.exists(self.server.config_path))
 
+    def test_reset(self):
+        self.server.stop()
+        self.assertRaises(pymongo.errors.ConnectionFailure,
+                          pymongo.MongoClient, self.server.hostname)
+        self.server.reset()
+        # No ConnectionFailure.
+        pymongo.MongoClient(self.server.hostname)
+
 
 @attr('servers')
 @attr('auth')
