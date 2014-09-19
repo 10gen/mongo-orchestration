@@ -219,6 +219,23 @@ class ShardedCluster(object):
         """remove member from configuration"""
         return self._remove(member_id)
 
+    def reset(self):
+        """Ensure all shards, configs, and routers are running and available."""
+        # Ensure all shards by calling "reset" on each.
+        for shard_id in self._shards:
+            if self._shards[shard_id].get('isReplicaSet'):
+                singleton = ReplicaSets()
+            elif self._shards[shard_id].get('isServer'):
+                singleton = Servers()
+            singleton.command(self._shards[shard_id]['_id'], 'reset')
+        # Ensure all config servers by calling "reset" on each.
+        for config_id in self._configsvrs:
+            Servers().command(config_id, 'reset')
+        # Ensure all routers by calling "reset" on each.
+        for router_id in self._routers:
+            Servers().command(router_id, 'reset')
+        return self.info()
+
     def info(self):
         """return info about configuration"""
         uri = ','.join(x['hostname'] for x in self.routers)
@@ -331,6 +348,15 @@ class ShardedClusters(Singleton, Container):
         """return info about member"""
         cluster = self._storage[cluster_id]
         return cluster.member_info(member_id)
+
+    def command(self, cluster_id, command, *args):
+        """Call a ShardedCluster method."""
+        cluster = self._storage[cluster_id]
+        try:
+            return getattr(cluster, command)(*args)
+        except AttributeError:
+            raise ValueError("Cannot issue the command %r to ShardedCluster %s"
+                             % (command, cluster_id))
 
     def member_del(self, cluster_id, member_id):
         """remove member from cluster cluster"""

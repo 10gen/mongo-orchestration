@@ -79,6 +79,18 @@ def info(cluster_id):
 
 
 @error_wrap
+def sh_command(cluster_id):
+    logger.debug("sh_command({cluster_id})".format(**locals()))
+    if cluster_id not in ShardedClusters():
+        return send_result(404)
+    command = get_json(request.body).get('action')
+    if command is None:
+        raise RequestError('Expected body with an {"action": ...}.')
+    result = ShardedClusters().command(cluster_id, command)
+    return send_result(200, result)
+
+
+@error_wrap
 def sh_create_by_id(cluster_id):
     logger.debug("sh_create()")
     data = get_json(request.body)
@@ -174,6 +186,7 @@ ROUTES = {
     Route('/sharded_clusters', method='POST'): sh_create,
     Route('/sharded_clusters', method='GET'): sh_list,
     Route('/sharded_clusters/<cluster_id>', method='GET'): info,
+    Route('/sharded_clusters/<cluster_id>', method='POST'): sh_command,
     Route('/sharded_clusters/<cluster_id>', method='PUT'): sh_create_by_id,
     Route('/sharded_clusters/<cluster_id>', method='DELETE'): sh_del,
     Route('/sharded_clusters/<cluster_id>/shards', method='POST'): shard_add,
