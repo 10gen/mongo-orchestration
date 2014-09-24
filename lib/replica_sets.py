@@ -15,18 +15,23 @@
 # limitations under the License.
 
 import logging
-logger = logging.getLogger(__name__)
-from uuid import uuid4
-from lib.singleton import Singleton
-from lib.container import Container
-import pymongo
-from lib.servers import Servers
-import time
-import lib.errors
-import tempfile
 import sys
+import tempfile
+import time
 import traceback
 
+from uuid import uuid4
+
+import pymongo
+
+import lib.errors
+
+from lib.compat import reraise
+from lib.singleton import Singleton
+from lib.container import Container
+from lib.servers import Servers
+
+logger = logging.getLogger(__name__)
 Servers()
 
 
@@ -73,8 +78,12 @@ class ReplicaSet(object):
                                         'dbAdminAnyDatabase',
                                         'readWriteAnyDatabase',
                                         'userAdminAnyDatabase'])
+                # Make sure user propagates to secondaries before proceeding.
+                c.admin.command('getLastError', w=len(self.servers()))
             except pymongo.errors.OperationFailure:
-                pass
+                reraise(lib.errors.ReplicaSetError,
+                        "Could not add user %s to the replica set."
+                        % self.login)
             finally:
                 c.close()
 
