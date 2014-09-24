@@ -7,7 +7,6 @@
                 "journal": true,
                 "noprealloc": true, 
                 "nssize": 1, 
-                "oplogSize": 1,
                 "smallfiles": true
             }, 
             "rsParams": {
@@ -25,7 +24,6 @@
                 "journal": true,
                 "noprealloc": true, 
                 "nssize": 1, 
-                "oplogSize": 1,
                 "smallfiles": true
             }, 
             "rsParams": {
@@ -43,7 +41,6 @@
                 "journal": true,
                 "noprealloc": true,
                 "nssize": 1,
-                "oplogSize": 1,
                 "smallfiles": true
             },
             "rsParams": {

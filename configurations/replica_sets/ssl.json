@@ -10,7 +10,6 @@
                 "journal": true,
                 "noprealloc": true, 
                 "nssize": 1, 
-                "oplogSize": 1, 
                 "port": 27017, 
                 "smallfiles": true
             }, 
@@ -27,7 +26,6 @@
                 "journal": true,
                 "noprealloc": true, 
                 "nssize": 1, 
-                "oplogSize": 1, 
                 "port": 27018, 
                 "smallfiles": true
             }, 
@@ -44,7 +42,6 @@
                 "journal": true,
                 "noprealloc": true, 
                 "nssize": 1, 
-                "oplogSize": 1, 
                 "port": 27019, 
                 "smallfiles": true
             },
