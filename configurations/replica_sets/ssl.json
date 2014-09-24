@@ -47,6 +47,9 @@
                 "oplogSize": 1, 
                 "port": 27019, 
                 "smallfiles": true
+            },
+            "rsParams": {
+                "arbiterOnly": true
             }
         }
     ], 

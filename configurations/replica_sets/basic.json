@@ -37,6 +37,9 @@
                 "nssize": 1, 
                 "oplogSize": 1,
                 "smallfiles": true
+            },
+            "rsParams": {
+                "arbiterOnly": true
             }
         }
     ]
