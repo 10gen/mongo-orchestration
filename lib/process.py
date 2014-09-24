@@ -31,7 +31,8 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
-from lib.errors import TimeoutError
+from lib.compat import reraise
+from lib.errors import TimeoutError, RequestError
 from lib.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -262,8 +263,14 @@ def write_config(params, config_path=None):
     cfg = params.copy()
     if 'setParameter' in cfg:
         set_parameters = cfg.pop('setParameter')
-        for key, value in set_parameters.items():
-            cfg['setParameter = ' + key] = value
+        try:
+            for key, value in set_parameters.items():
+                cfg['setParameter = ' + key] = value
+        except AttributeError:
+            reraise(RequestError,
+                    'Not a valid value for setParameter: %r '
+                    'Expected "setParameter": {<param name> : value, ...}'
+                    % set_parameters)
 
     # fix boolean value
     for key, value in cfg.items():
