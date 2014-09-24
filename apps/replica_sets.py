@@ -151,11 +151,11 @@ def passives(rs_id):
 
 
 @error_wrap
-def hosts(rs_id):
+def servers(rs_id):
     logger.debug("hosts({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().hosts(rs_id)))
+    return send_result(200, _build_server_info(ReplicaSets().servers(rs_id)))
 
 
 @error_wrap
@@ -211,7 +211,7 @@ ROUTES = {
     Route('/replica_sets/<rs_id>/arbiters', method='GET'): arbiters,
     Route('/replica_sets/<rs_id>/hidden', method='GET'): hidden,
     Route('/replica_sets/<rs_id>/passives', method='GET'): passives,
-    Route('/replica_sets/<rs_id>/hosts', method='GET'): hosts,
+    Route('/replica_sets/<rs_id>/servers', method='GET'): servers,
     Route('/replica_sets/<rs_id>/primary', method='GET'): rs_member_primary,
     Route('/replica_sets/<rs_id>/members/<member_id>',
           method='GET'): member_info,
