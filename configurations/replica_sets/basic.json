@@ -10,7 +10,11 @@
                 "smallfiles": true
             }, 
             "rsParams": {
-                "priority": 99
+                "priority": 99,
+                "tags": {
+                    "ordinal": "one",
+                    "dc": "ny"
+                }
             }
         }, 
         {
@@ -23,7 +27,11 @@
                 "smallfiles": true
             }, 
             "rsParams": {
-                "priority": 1.1
+                "priority": 1.1,
+                "tags": {
+                    "ordinal": "two",
+                    "dc": "pa"
+                }
             }
         }, 
         {
