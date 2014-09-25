@@ -23,6 +23,7 @@ sys.path.insert(0, '..')
 
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
+from mongo_orchestration.apps.links import base_link, server_link
 from mongo_orchestration.common import *
 from mongo_orchestration.errors import RequestError
 from mongo_orchestration.servers import Servers
@@ -31,39 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 __version__ = '0.9'
-
-
-def _base_link(rel, rel_self=False):
-    """Helper for getting a link document under the API root, given a rel."""
-    links = {
-        'get-releases': {'rel': 'get-releases', 'href': '/v1/releases',
-                         'method': 'GET'},
-        'service': {'rel': 'service', 'href': '/v1', 'method': 'GET'}
-    }
-    link = links[rel]
-    link[rel] = 'self' if rel_self else rel
-    return link
-
-
-def _server_link(rel, server_id=None, rel_self=False):
-    """Helper for getting a Server link document, given a rel."""
-    if server_id is None:
-        href = '/v1/servers'
-    else:
-        href = '/v1/servers/' + server_id
-    links = {
-        'get-servers': {'href': href, 'method': 'GET'},
-        'add-server': {'href': href, 'method': 'POST'},
-        'add-server-by-id': {'href': href, 'method': 'PUT'},
-        'delete-server': {'href': href, 'method': 'DELETE'},
-        'get-server-info': {'href': href, 'method': 'GET'},
-        'server-command': {'href': href, 'method': 'POST',
-                           'template': {'action': "<action name>"},
-                           'actions': ['start', 'stop', 'restart', 'freeze']}
-    }
-    link = links[rel]
-    link['rel'] = 'self' if rel_self else rel
-    return link
 
 
 def _host_create(params):
@@ -81,7 +49,7 @@ def _host_create(params):
     result = Servers().info(host_id)
     server_id = result['id']
     result['links'] = [
-        _server_link(rel, server_id)
+        server_link(rel, server_id)
         for rel in ('delete-server', 'get-server-info', 'server-command')
     ]
     return result
@@ -94,10 +62,10 @@ def base_uri():
         "service": "mongo-orchestration",
         "version": __version__,
         "links": [
-            _server_link('get-servers'),
-            _server_link('add-server'),
-            _base_link('get-releases'),
-            _base_link('service', rel_self=True)
+            server_link('get-servers'),
+            server_link('add-server'),
+            base_link('get-releases'),
+            base_link('service', rel_self=True)
         ]
     }
     return send_result(200, data)
@@ -108,8 +76,8 @@ def releases_list():
     response = {
         'releases': Servers().releases,
         'links': [
-            _base_link('get-releases', rel_self=True),
-            _base_link('service')
+            base_link('get-releases', rel_self=True),
+            base_link('service')
         ]
     }
     return send_result(200, response)
@@ -120,11 +88,11 @@ def host_create():
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
     result = {'server': _host_create(data)}
-    result['server']['links'].append(_server_link('add-server', rel_self=True))
+    result['server']['links'].append(server_link('add-server', rel_self=True))
     result['links'] = [
-        _server_link('get-servers'),
-        _base_link('get-releases'),
-        _base_link('service')
+        server_link('get-servers'),
+        base_link('get-releases'),
+        base_link('service')
     ]
     return send_result(200, result)
 
@@ -136,15 +104,15 @@ def host_list():
     for server_id in Servers():
         server_info = {'id': server_id}
         server_info['links'] = [
-            _server_link(rel, server_id)
+            server_link(rel, server_id)
             for rel in ('delete-server', 'get-server-info', 'server-command')
         ]
         servers.append(server_info)
     response = {'links': [
-        _server_link('add-server'),
-        _server_link('get-servers', rel_self=True),
-        _base_link('get-releases'),
-        _base_link('service')
+        server_link('add-server'),
+        server_link('get-servers', rel_self=True),
+        base_link('get-releases'),
+        base_link('service')
     ]}
     response['servers'] = servers
     return send_result(200, response)
@@ -156,11 +124,10 @@ def host_info(host_id):
     if host_id not in Servers():
         return send_result(404)
     result = Servers().info(host_id)
-    server_id = result['id']
     result['links'] = [
-        _server_link('delete-server', server_id),
-        _server_link('get-server-info', server_id, rel_self=True),
-        _server_link('server-command', server_id)
+        server_link('delete-server', host_id),
+        server_link('get-server-info', host_id, rel_self=True),
+        server_link('server-command', host_id)
     ]
     return send_result(200, result)
 
@@ -171,9 +138,8 @@ def host_create_by_id(host_id):
     data = preset_merge(data, 'servers')
     data['id'] = host_id
     result = {'server': _host_create(data)}
-    server_id = result['server']['id']
     result['server']['links'].append(
-        _server_link('add-server-by-id', server_id, rel_self=True)
+        server_link('add-server-by-id', host_id, rel_self=True)
     )
     return send_result(200, result)
 
@@ -198,8 +164,9 @@ def host_command(host_id):
     result = {
         'command_result': Servers().command(host_id, command),
         'links': [
-            _server_link(rel, server_id)
-            for rel in ('delete-server', 'get-server-info', 'server-command')
+            server_link('delete-server', host_id),
+            server_link('get-server-info', host_id),
+            server_link('server-command', host_id, rel_self=True)
         ]
     }
     return send_result(200, result)
