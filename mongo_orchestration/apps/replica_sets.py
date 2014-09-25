@@ -23,25 +23,60 @@ sys.path.insert(0, '..')
 
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
+from mongo_orchestration.apps.links import (
+    base_link, server_link, replica_set_link)
 from mongo_orchestration.common import *
 from mongo_orchestration.replica_sets import ReplicaSets
 
 logger = logging.getLogger(__name__)
 
 
+def _all_replica_set_links(rs_id, self_rel=None):
+    # Does not include the rel 'add-replica-set-by-id',
+    # since you can't re-add a replica set (given that the id is provided here).
+    return [
+        replica_set_link(rel, rs_id, rel_self=(rel == self_rel))
+        for rel in (
+            'get-replica-set-info',
+            'delete-replica-set', 'replica-set-command',
+            'get-replica-set-members', 'add-replica-set-member',
+            'get-replica-set-secondaries', 'get-replica-set-primary',
+            'get-replica-set-arbiters', 'get-replica-set-hidden-members',
+            'get-replica-set-passive-members', 'get-replica-set-servers'
+        )
+    ]
+
+
 def _rs_create(params):
     rs_id = ReplicaSets().create(params)
     result = ReplicaSets().info(rs_id)
-    return send_result(200, result)
+    result['links'] = _all_replica_set_links(rs_id)
+    return result
 
 
-def _build_server_info(member_docs):
+def _build_member_links(rs_id, member_doc):
+    server_id = member_doc['server_id']
+    member_id = member_doc['_id']
+    member_links = [
+        server_link('delete-server', server_id),
+        server_link('get-server-info', server_id),
+        server_link('server-command', server_id),
+        replica_set_link('get-replica-set-member-info', rs_id, member_id),
+        replica_set_link('delete-replica-set-member', rs_id, member_id),
+        replica_set_link('update-replica-set-member-config',
+                         rs_id, member_id)
+    ]
+    return member_links
+
+
+def _build_members_info(rs_id, member_docs, rel_self):
     server_info = []
     for member_doc in member_docs:
-        server_info.append({
-            "member_id": member_doc['_id'],
-            "uri": '/servers/' + member_doc['server_id']})
-    return server_info
+        member_doc['links'] = _build_member_links(rs_id, member_doc)
+        server_info.append(member_doc)
+    result = {'members': server_info}
+    result['links'] = _all_replica_set_links(rs_id, rel_self)
+    return result
 
 
 @error_wrap
@@ -49,14 +84,34 @@ def rs_create():
     logger.debug("rs_create()")
     data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
-    return _rs_create(data)
+    result = {'replica_set': _rs_create(data)}
+    result['links'] = [
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('add-server'),
+        server_link('get-servers'),
+        replica_set_link('get-replica-sets'),
+        replica_set_link('add-replica-set', rel_self=True)
+    ]
+    return send_result(200, result)
 
 
 @error_wrap
 def rs_list():
     logger.debug("rs_list()")
-    data = [info for info in ReplicaSets()]
-    return send_result(200, data)
+    replica_sets = []
+    for rs_id in ReplicaSets():
+        repl_info = {'id': rs_id}
+        repl_info['links'] = _all_replica_set_links(rs_id, 'get-replica-sets')
+        replica_sets.append(repl_info)
+    response = {'links': [
+        replica_set_link('add-replica-set'),
+        replica_set_link('get-replica-sets', rel_self=True),
+        base_link('get-releases'),
+        base_link('service')
+    ]}
+    response['replica_sets'] = replica_sets
+    return send_result(200, response)
 
 
 @error_wrap
@@ -65,6 +120,7 @@ def rs_info(rs_id):
     if rs_id not in ReplicaSets():
         return send_result(404)
     result = ReplicaSets().info(rs_id)
+    result['links'] = _all_replica_set_links(rs_id, 'get-replica-set-info')
     return send_result(200, result)
 
 
@@ -76,7 +132,12 @@ def rs_command(rs_id):
     command = get_json(request.body).get('action')
     if command is None:
         raise RequestError('Expected body with an {"action": ...}.')
-    result = ReplicaSets().command(rs_id, command)
+    result = {
+        'command_result': ReplicaSets().command(rs_id, command),
+        'links': _all_replica_set_links(rs_id, 'replica-set-command')
+    }
+    result['links'].append(
+        replica_set_link('replica-set-command', rel_self=True))
     return send_result(200, result)
 
 
@@ -86,7 +147,17 @@ def rs_create_by_id(rs_id):
     data = get_json(request.body)
     data = preset_merge(data, 'replica_sets')
     data['id'] = rs_id
-    return _rs_create(data)
+    result = {'replica_set': _rs_create(data)}
+    result['replica_set']['links'].append(
+        replica_set_link('add-replica-set-by-id', rs_id, rel_self=True)
+    )
+    result['links'] = [
+        replica_set_link('add-replica-set'),
+        replica_set_link('get-replica-sets'),
+        base_link('get-releases'),
+        base_link('service')
+    ]
+    return send_result(200, result)
 
 
 @error_wrap
@@ -105,7 +176,10 @@ def member_add(rs_id):
         return send_result(404)
     data = get_json(request.body)
     member_id = ReplicaSets().member_add(rs_id, data)
-    result = ReplicaSets().member_info(rs_id, member_id)
+    member_info = ReplicaSets().member_info(rs_id, member_id)
+    result = {'member': member_info}
+    result['member']['links'] = _build_member_links(rs_id, member_info)
+    result['links'] = _all_replica_set_links(rs_id, 'add-replica-set-member')
     return send_result(200, result)
 
 
@@ -114,7 +188,11 @@ def members(rs_id):
     logger.debug("members({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().members(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().members(rs_id),
+        rel_self='get-replica-set-members')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -122,7 +200,11 @@ def secondaries(rs_id):
     logger.debug("secondaries({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().secondaries(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().secondaries(rs_id),
+        rel_self='get-replica-set-secondaries')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -130,7 +212,11 @@ def arbiters(rs_id):
     logger.debug("arbiters({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().arbiters(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().arbiters(rs_id),
+        rel_self='get-replica-set-arbiters')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -138,7 +224,11 @@ def hidden(rs_id):
     logger.debug("hidden({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().hidden(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().hidden(rs_id),
+        rel_self='get-replica-set-hidden-members')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -146,7 +236,11 @@ def passives(rs_id):
     logger.debug("passives({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().passives(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().passives(rs_id),
+        rel_self='get-replica-set-passive-members')
+    return send_result(200, pasives)
 
 
 @error_wrap
@@ -154,7 +248,11 @@ def servers(rs_id):
     logger.debug("hosts({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info(ReplicaSets().servers(rs_id)))
+    result = _build_members_info(
+        rs_id,
+        ReplicaSets().servers(rs_id),
+        rel_self='get-replica-set-servers')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -162,7 +260,11 @@ def rs_member_primary(rs_id):
     logger.debug("rs_member_primary({rs_id})".format(**locals()))
     if rs_id not in ReplicaSets():
         return send_result(404)
-    return send_result(200, _build_server_info([ReplicaSets().primary(rs_id)])[0])
+    primary = ReplicaSets().primary(rs_id)
+    result = {'primary': primary}
+    result['primary']['links'] = _build_member_links(rs_id, primary)
+    result['links'] = _all_replica_set_links(rs_id, 'get-replica-set-primary')
+    return send_result(200, result)
 
 
 @error_wrap
@@ -171,7 +273,10 @@ def member_info(rs_id, member_id):
     member_id = int(member_id)
     if rs_id not in ReplicaSets():
         return send_result(404)
-    result = ReplicaSets().member_info(rs_id, member_id)
+    member = ReplicaSets().member_info(rs_id, member_id)
+    result = {'member': member}
+    result['member']['links'] = _build_member_links(rs_id, member)
+    result['links'] = _all_replica_set_links(rs_id, 'get-replica-set-members')
     return send_result(200, result)
 
 
@@ -182,7 +287,7 @@ def member_del(rs_id, member_id):
     if rs_id not in ReplicaSets():
         return send_result(404)
     result = ReplicaSets().member_del(rs_id, member_id)
-    return send_result(200, result)
+    return send_result(204, result)
 
 
 @error_wrap
@@ -193,7 +298,11 @@ def member_update(rs_id, member_id):
         return send_result(404)
     data = get_json(request.body)
     ReplicaSets().member_update(rs_id, member_id, data)
-    result = ReplicaSets().member_info(rs_id, member_id)
+    member = ReplicaSets().member_info(rs_id, member_id)
+    result = {'member': member}
+    result['member']['links'] = _build_member_links(rs_id, member)
+    result['links'] = _all_replica_set_links(
+        rs_id, 'replica-set-update-member-config')
     return send_result(200, result)
 
 
