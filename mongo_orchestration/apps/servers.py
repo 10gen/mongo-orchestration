@@ -23,11 +23,13 @@ sys.path.insert(0, '..')
 
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
-from mongo_orchestration.apps.links import base_link, server_link
+from mongo_orchestration.apps.links import (
+    base_link, server_link, all_server_links, all_base_links)
 from mongo_orchestration.common import *
 from mongo_orchestration.errors import RequestError
 from mongo_orchestration.servers import Servers
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -61,12 +63,7 @@ def base_uri():
     data = {
         "service": "mongo-orchestration",
         "version": __version__,
-        "links": [
-            server_link('get-servers'),
-            server_link('add-server'),
-            base_link('get-releases'),
-            base_link('service', rel_self=True)
-        ]
+        "links": all_base_links(rel_to='service')
     }
     return send_result(200, data)
 
@@ -75,10 +72,7 @@ def base_uri():
 def releases_list():
     response = {
         'releases': Servers().releases,
-        'links': [
-            base_link('get-releases', rel_self=True),
-            base_link('service')
-        ]
+        'links': all_base_links(rel_to='get-releases')
     }
     return send_result(200, response)
 
@@ -88,12 +82,8 @@ def host_create():
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
     result = {'server': _host_create(data)}
-    result['server']['links'].append(server_link('add-server', rel_self=True))
-    result['links'] = [
-        server_link('get-servers'),
-        base_link('get-releases'),
-        base_link('service')
-    ]
+    result['server']['links'].append(server_link('add-server', self_rel=True))
+    result['links'] = all_base_links(rel_to='add-server')
     return send_result(200, result)
 
 
@@ -103,17 +93,10 @@ def host_list():
     servers = []
     for server_id in Servers():
         server_info = {'id': server_id}
-        server_info['links'] = [
-            server_link(rel, server_id)
-            for rel in ('delete-server', 'get-server-info', 'server-command')
-        ]
+        server_info['links'] = all_server_links(
+            server_id, rel_to='get-servers')
         servers.append(server_info)
-    response = {'links': [
-        server_link('add-server'),
-        server_link('get-servers', rel_self=True),
-        base_link('get-releases'),
-        base_link('service')
-    ]}
+    response = {'links': all_base_links(rel_to='get-servers')}
     response['servers'] = servers
     return send_result(200, response)
 
@@ -124,11 +107,7 @@ def host_info(host_id):
     if host_id not in Servers():
         return send_result(404)
     result = Servers().info(host_id)
-    result['links'] = [
-        server_link('delete-server', host_id),
-        server_link('get-server-info', host_id, rel_self=True),
-        server_link('server-command', host_id)
-    ]
+    result['links'] = all_server_links(host_id, rel_to='get-server-info')
     return send_result(200, result)
 
 
@@ -139,8 +118,9 @@ def host_create_by_id(host_id):
     data['id'] = host_id
     result = {'server': _host_create(data)}
     result['server']['links'].append(
-        server_link('add-server-by-id', host_id, rel_self=True)
+        server_link('add-server-by-id', host_id, self_rel=True)
     )
+    result['links'] = all_base_links()
     return send_result(200, result)
 
 
@@ -163,11 +143,7 @@ def host_command(host_id):
         raise RequestError('Expected body with an {"action": ...}.')
     result = {
         'command_result': Servers().command(host_id, command),
-        'links': [
-            server_link('delete-server', host_id),
-            server_link('get-server-info', host_id),
-            server_link('server-command', host_id, rel_self=True)
-        ]
+        'links': all_server_links(host_id, rel_to='server-command')
     }
     return send_result(200, result)
 
