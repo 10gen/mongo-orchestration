@@ -79,6 +79,7 @@ class ReplicaSet(object):
                                         'readWriteAnyDatabase',
                                         'userAdminAnyDatabase'])
                 # Make sure user propagates to secondaries before proceeding.
+                c.admin.authenticate(self.login, self.password)
                 c.admin.command('getLastError', w=len(self.servers()))
             except pymongo.errors.OperationFailure:
                 reraise(lib.errors.ReplicaSetError,
