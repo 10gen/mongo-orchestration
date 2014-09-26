@@ -111,8 +111,8 @@ def host_command(host_id):
     command = get_json(request.body).get('action')
     if command is None:
         raise RequestError('Expected body with an {"action": ...}.')
-    Servers().command(host_id, command)
-    return send_result(200)
+    result = Servers().command(host_id, command)
+    return send_result(200, result)
 
 
 ROUTES = {

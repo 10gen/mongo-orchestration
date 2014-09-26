@@ -61,6 +61,9 @@ class ContainerTestCase(unittest.TestCase):
         self.assertEqual(self.container.bin_path(), releases[default_release])
         # Clear default release.
         self.container.set_settings(releases)
+        self.assertEqual(self.container.bin_path(), releases['20-release'])
+        # Clear all releases.
+        self.container.set_settings({})
         self.assertEqual(self.container.bin_path(), '')
 
     def test_getitem(self):

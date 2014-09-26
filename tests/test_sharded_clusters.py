@@ -27,6 +27,7 @@ sys.path.insert(0, '../')
 
 from lib import set_releases, cleanup_storage
 from lib.sharded_clusters import ShardedCluster, ShardedClusters
+from lib.replica_sets import ReplicaSets
 from lib.servers import Servers
 from lib.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
@@ -558,6 +559,40 @@ class ShardTestCase(unittest.TestCase):
         self.assertEqual(tags_repl, self.sh.member_info('sh03')['tags'])
 
         self.sh.cleanup()
+
+    def test_reset(self):
+        all_hosts = []
+
+        # Start a ShardedCluster with 1 router and 1 config server.
+        self.sh = ShardedCluster({})
+        # Add 1 Server shard and 1 ReplicaSet shard.
+        server_id = self.sh.member_add(params={})['_id']
+        all_hosts.append(Servers().hostname(server_id))
+        repl_id = self.sh.member_add(params={'members': [{}, {}, {}]})['_id']
+
+        # Shut down the standalone.
+        Servers().command(server_id, 'stop')
+        # Shut down each member of the replica set.
+        server_ids = [m['server_id'] for m in ReplicaSets().members(repl_id)]
+        for s_id in server_ids:
+            Servers().command(s_id, 'stop')
+            all_hosts.append(Servers().hostname(s_id))
+        # Shut down config server and router.
+        config_id = self.sh.configsvrs[0]['id']
+        print("config_id=%r" % config_id)
+        all_hosts.append(Servers().hostname(config_id))
+        router_id = self.sh.routers[0]['id']
+        print("router_id=%r" % router_id)
+        all_hosts.append(Servers().hostname(router_id))
+        Servers().command(config_id, 'stop')
+        Servers().command(router_id, 'stop')
+
+        # Reset the ShardedCluster.
+        self.sh.reset()
+        # Everything is up.
+        for host in all_hosts:
+            # No ConnectionFailure/AutoReconnect.
+            pymongo.MongoClient(host)
 
 
 if __name__ == '__main__':
