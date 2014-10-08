@@ -104,7 +104,8 @@ class MyDaemon(Daemon):
     def set_args(self, args):
         self.args = args
 
-if __name__ == "__main__":
+
+def main():
     daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     args = read_env()
     daemon.set_args(args)
@@ -116,3 +117,7 @@ if __name__ == "__main__":
         daemon.run()
     if args.command == 'restart':
         daemon.restart()
+
+
+if __name__ == "__main__":
+    main()
