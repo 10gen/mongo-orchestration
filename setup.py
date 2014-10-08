@@ -9,11 +9,11 @@ if sys.version_info[:2] == (2, 6):
     extra_test_deps.append('unittest2')
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
-    from setuptools import setup  # NOQA
+    from setuptools import setup, find_packages
 
 setup(
     name='pymongo-orchestration',
@@ -26,6 +26,7 @@ setup(
                       'requests>=1.1'] + extra_deps,
     tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
     test_suite='nose.collector',
+    packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
