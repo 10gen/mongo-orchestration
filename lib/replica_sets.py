@@ -277,6 +277,14 @@ class ReplicaSet(object):
         result = {'_id': member_id, 'uri': server_info['uri'], 'server_id': server_id, 'procInfo': server_info['procInfo'], 'statuses': server_info['statuses']}
         result['rsInfo'] = {}
         if server_info['procInfo']['alive']:
+            # Can't call serverStatus on arbiter when running with auth enabled.
+            # (SERVER-5479)
+            if self.login and self.password:
+                arbiter_ids = map(lambda member: member['_id'], self.arbiters())
+                if member_id in arbiter_ids:
+                    result['rsInfo'] = {
+                        'arbiterOnly': True, 'secondary': False, 'primary': False}
+                    return result
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
             logger.debug("member {member_id} repl info: {repl}".format(**locals()))
             for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
