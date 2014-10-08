@@ -635,6 +635,19 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
+    def test_auth_arbiter_member_info(self):
+        self.repl = ReplicaSet({'members': [
+            {}, {'rsParams': {'arbiterOnly': True}}]})
+        info = self.repl.member_info(1)
+        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+            self.assertIn(key, info)
+        rs_info = info['rsInfo']
+        for key in ('primary', 'secondary', 'arbiterOnly'):
+            self.assertIn(key, rs_info)
+        self.assertFalse(rs_info['primary'])
+        self.assertFalse(rs_info['secondary'])
+        self.assertTrue(rs_info['arbiterOnly'])
+
 
 @attr('quick-rs')
 @attr('rs')
