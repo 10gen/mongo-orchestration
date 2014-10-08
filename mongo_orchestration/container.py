@@ -16,7 +16,7 @@
 
 import logging
 
-from lib.errors import MongoOrchestrationError
+from mongo_orchestration.errors import MongoOrchestrationError
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

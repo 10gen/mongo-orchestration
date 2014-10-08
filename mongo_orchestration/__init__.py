@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from lib.servers import Servers
-from lib.replica_sets import ReplicaSets
-from lib.sharded_clusters import ShardedClusters
+from mongo_orchestration.servers import Servers
+from mongo_orchestration.replica_sets import ReplicaSets
+from mongo_orchestration.sharded_clusters import ShardedClusters
 
 
 def set_releases(releases=None, default_release=None):
