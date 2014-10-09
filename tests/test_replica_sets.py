@@ -24,9 +24,9 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from lib.replica_sets import ReplicaSet, ReplicaSets
-from lib.servers import Servers
-from lib.process import PortPool, HOSTNAME
+from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
+from mongo_orchestration.servers import Servers
+from mongo_orchestration.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
 from tests import unittest, SkipTest
 

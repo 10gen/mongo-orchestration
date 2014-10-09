@@ -8,7 +8,7 @@ import sys
 
 from bson import SON
 
-from daemon import Daemon
+from mongo_orchestration.daemon import Daemon
 
 work_dir = os.path.split(os.path.join(os.getcwd(), __file__))[0]
 
@@ -70,7 +70,7 @@ def read_env():
 
 def setup(releases, default_release):
     """setup storages"""
-    from lib import set_releases, cleanup_storage
+    from mongo_orchestration import set_releases, cleanup_storage
     set_releases(releases, default_release)
     atexit.register(cleanup_storage)
 
@@ -79,9 +79,9 @@ def get_app():
     """return bottle app that includes all sub-apps"""
     from bottle import default_app
     default_app.push()
-    for module in ("apps.servers",
-                   "apps.replica_sets",
-                   "apps.sharded_clusters"):
+    for module in ("mongo_orchestration.apps.servers",
+                   "mongo_orchestration.apps.replica_sets",
+                   "mongo_orchestration.apps.sharded_clusters"):
         __import__(module)
     app = default_app.pop()
     return app
@@ -104,7 +104,8 @@ class MyDaemon(Daemon):
     def set_args(self, args):
         self.args = args
 
-if __name__ == "__main__":
+
+def main():
     daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     args = read_env()
     daemon.set_args(args)
@@ -116,3 +117,7 @@ if __name__ == "__main__":
         daemon.run()
     if args.command == 'restart':
         daemon.restart()
+
+
+if __name__ == "__main__":
+    main()

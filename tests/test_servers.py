@@ -26,8 +26,8 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from lib.servers import Server, Servers
-from lib.process import PortPool
+from mongo_orchestration.servers import Server, Servers
+from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
 from tests import unittest
 

@@ -22,8 +22,8 @@ from bson import SON
 
 sys.path.insert(0, '../')
 
-from lib.container import Container
-from lib.errors import MongoOrchestrationError
+from mongo_orchestration.container import Container
+from mongo_orchestration.errors import MongoOrchestrationError
 from nose.plugins.attrib import attr
 from tests import unittest
 
