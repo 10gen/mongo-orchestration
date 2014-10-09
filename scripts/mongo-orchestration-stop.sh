@@ -5,7 +5,7 @@ else
 fi
 
 cd $WORKSPACE/mongo-orchestration
-$python_bin server.py stop
+$python_bin mongo_orchestration/server.py stop
 
 echo "====== CLEANUP ======"
 echo "*** Killing any existing MongoDB Processes which may not have shut down on a prior job."
