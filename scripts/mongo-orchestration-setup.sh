@@ -81,8 +81,8 @@ if [ "$2" == "single_server" ]; then
 
 elif [ "$2" == "replica_set" ]; then
     
-    echo curl -i -H "Accept: application/json" -X POST -d "{$AUTH_PARAMS $SSL_PARAMS \"id\": \"repl0\", \"members\":[{\"rsParams\":{\"priority\": 99}, \"procParams\": {$TEST_PARAMS \"dbpath\":\"$DATAPATH/db27017\", \"port\": 27017, \"logpath\":\"$LOGPATH/\
-db27017.log\", \"nojournal\": true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"ipv6\": true}}, {\"rsParams\": {\"priority\": 1.1}, \"procParams\":{$TEST_PARAMS \"dbpath\":\
+    echo curl -i -H "Accept: application/json" -X POST -d "{$AUTH_PARAMS $SSL_PARAMS \"id\": \"repl0\", \"members\":[{\"rsParams\":{\"priority\": 99, \"tags\":{\"ordinal\": \"one\", \"dc\": \"ny\"}}, \"procParams\": {$TEST_PARAMS \"dbpath\":\"$DATAPATH/db27017\", \"port\": 27017, \"logpath\":\"$LOGPATH/\
+db27017.log\", \"nojournal\": true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"ipv6\": true}}, {\"rsParams\": {\"priority\": 1.1, \"tags\":{\"ordinal\": \"two\", \"dc\":\"two\"}, \"procParams\":{$TEST_PARAMS \"dbpath\":\
 \"$DATAPATH/db27018\", \"port\": 27018, \"logpath\":\"$LOGPATH/db27018.log\", \"nojournal\": true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"ipv6\": true}}, \
 {\"procParams\":{$TEST_PARAMS \"dbpath\":\"$DATAPATH/db27019\", \"port\": 27019, \"logpath\":\"$LOGPATH/27019.log\", \"nojournal\": true, \"nohttpinterface\": true, \"noprealloc\":true, \"smallfiles\":true, \"nssize\":1, \"oplogSize\": 150, \"ipv6\": true}}]}" http://localhost:8889/replica_sets
     curl -i -H "Accept: application/json" -X POST -d "{$AUTH_PARAMS $SSL_PARAMS \"id\": \"repl0\", \"members\":[{\"rsParams\":{\"priority\": 99}, \"procParams\": {$TEST_PARAMS \"dbpath\":\"$DATAPATH/db27017\", \"port\": 27017, \"logpath\":\"$LOGPATH/db270\
