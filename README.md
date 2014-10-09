@@ -7,7 +7,7 @@ See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for document
 
 ##Features
 
-Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**  
+Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 
 ###Hosts
 + **setup** - setup host using options
@@ -29,39 +29,39 @@ Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
 + **authentication**  - support authentication by keyFile
 
 ##Requires
-- [Python 2.6, 2.7, or >= 3.2](http://www.python.org/download/)  
+- [Python 2.6, 2.7, or >= 3.2](http://www.python.org/download/)
 - [requests](http://docs.python-requests.org/en/latest/user/install/#install)
 - [PyMongo 2.7.2](https://pypi.python.org/pypi/pymongo/2.7.2)
 - [CherryPy 3.5.0](http://www.cherrypy.org/)
 
 ##Installing
 
-Install Mongo Orchestration using `python setup.py install`. Note that this may require administrator privileges.
+Install Mongo Orchestration using `python setup.py install`. Note that this may require administrator privileges. This will place a script called `mongo-orchestration` on your path, which you can use to control the Mongo Orchestration server.
 
 ##Usage
-`python server.py [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`  
-  
-Arguments:  
+`mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`
+
+Arguments:
 + **-h** - show help info
 + **-f, --config** - path to config file
 + **-e, --env** - release name from config file
-+ **--no-fork** - don't start as service  
-+ **-p** - port number, 8889 by default  
-+ **start/stop/restart**: server's command  
++ **--no-fork** - don't start as service
++ **-p** - port number, 8889 by default
++ **start/stop/restart**: server's command
 
 In addition, Mongo Orchestration can be influenced by the `MONGO_ORCHESTRATION_HOME` environment variable, which informs the server where to find the "configurations" directory for presets.
 
 ###Examples
 
-`python server.py start`
+`mongo-orchestration start`
 
 Starts Mongo Orchestration as service on port 8889.
 
-`python server.py stop`
+`mongo-orchestration stop`
 
 Stop the server.
 
-`python server.py -f mongo-orchestration.config -e 26-release -p 8888 --no-fork start`
+`mongo-orchestration -f mongo-orchestration.config -e 26-release -p 8888 --no-fork start`
 
 Starts Mongo Orchestration on port 8888 using `26-release` defined in `mongo-orchestration.config`. Stops with *Ctrl+C*.
 
@@ -101,19 +101,19 @@ scripts/mo configurations/sh/auth.json start
 
 
 ## Command line scripts
-  
+
 + **cmd_hosts.py** - manage hosts
 + **cmd_rs.py**    - manage replica sets
 + **cmd_sh.py**    - manage shard clusters
 
 ### cmd_hosts.py - manage hosts
 
-command format: `command host_id  [params]`  
+command format: `command host_id  [params]`
 **Note: two space between args**
 
 commands:
-+ **create {host params}** - create new host  
-Example: `create {"name": "mongod"}`  
++ **create {host params}** - create new host
+Example: `create {"name": "mongod"}`
 
 ```javascript
 ========= Response data =========
@@ -141,8 +141,8 @@ result code:  200
  'uri': 'EPBYMINW0164T1:1035'}
 =================================
 ```
-+ **info [host-id]**  - show information about host  
-Example: `info 1`  
++ **info [host-id]**  - show information about host
+Example: `info 1`
 
 ```javascript
 ========= Response data =========
@@ -171,8 +171,8 @@ result code:  200
 =================================
 ```
 
-+ **list** - show all hosts  
-Example: `list`  
++ **list** - show all hosts
+Example: `list`
 
 ```javascript
 ========= Response data =========
@@ -182,8 +182,8 @@ result code:  200
 1 e42ec4e4-8ba9-4200-9ba5-375b4c490cf8
 ```
 
-+ **stop [host_id]** - stop host  
-Example: `stop 1`  
++ **stop [host_id]** - stop host
+Example: `stop 1`
 
 ```javascript
 ========= Response data =========
@@ -192,15 +192,15 @@ result code:  200
 =================================
 ```
 
-+ **start [host_id]** - start host  
-Example: `start 1`  
++ **start [host_id]** - start host
+Example: `start 1`
 
 ```javascript
 200
 ```
 
-+ **restart [host_id]** - restart host  
-Example: `javascriptrestart 1`  
++ **restart [host_id]** - restart host
+Example: `javascriptrestart 1`
 
 ```
 ========= Response data =========
@@ -209,8 +209,8 @@ result code:  200
 =================================
 ```
 
-+ **delete [host_id]** - delete host  
-Example: `delete 1`  
++ **delete [host_id]** - delete host
+Example: `delete 1`
 
 ```javascript
 ========= Response data =========
@@ -222,18 +222,18 @@ result code:  204
 
 ### cmd_rs.py - manage replica sets
 
-command format: `command rs_id  [member_id]  [params]`  
-**command** - command  
-**rs_id** - replica id or replica index  
-**member_id** - member id  
-**params** - json string  
+command format: `command rs_id  [member_id]  [params]`
+**command** - command
+**rs_id** - replica id or replica index
+**member_id** - member id
+**params** - json string
 
 **Note: two space between args**
 
 commands:
 + **help** - show help information
-+ **create** - create new replica set  
-Example: `create {"id":"default", "members": [{},{},{"rsParams": {"arbiterOnly":true}}, {"rsParams":{"hidden":true, "priority":0}}]}`  
++ **create** - create new replica set
+Example: `create {"id":"default", "members": [{},{},{"rsParams": {"arbiterOnly":true}}, {"rsParams":{"hidden":true, "priority":0}}]}`
 
 ```javascript
 ========= Response data =========
@@ -248,8 +248,8 @@ result code:  200
 ['default']
 ```
 
-+ **list** - show list of replicas , format: index replica-id  
-Example: `list`  
++ **list** - show list of replicas , format: index replica-id
+Example: `list`
 
 ```javascript
 ========= Response data =========
@@ -259,8 +259,8 @@ result code:  200
 1 default
 ```
 
-+ **info [index or replica-id]** - show information about replica set  
-Example: `info 1`  
++ **info [index or replica-id]** - show information about replica set
+Example: `info 1`
 
 ```javascript
 ========= Response data =========
@@ -274,8 +274,8 @@ result code:  200
 =================================
 ```
 
-+ **arbiters [index or replica-id]** - show list of arbiters hosts  
-Example: `arbiters 1`  
++ **arbiters [index or replica-id]** - show list of arbiters hosts
+Example: `arbiters 1`
 
 ```javascript
 ========= Response data =========
@@ -284,8 +284,8 @@ result code:  200
 =================================
 ```
 
-+ **hidden [index or replica-id]** - show hidden hosts  
-Example: `hidden 1`  
++ **hidden [index or replica-id]** - show hidden hosts
+Example: `hidden 1`
 
 ```javascript
 ========= Response data =========
@@ -294,8 +294,8 @@ result code:  200
 =================================
 ```
 
-+ **secondaries** - show secondaries hosts  
-Example: `secondaries [index or replica-id]`  
++ **secondaries** - show secondaries hosts
+Example: `secondaries [index or replica-id]`
 
 ```javascript
 ========= Response data =========
@@ -305,8 +305,8 @@ result code:  200
 =================================
 ```
 
-+ **primary [index or replica-id]** - show information about primary host  
-Example: `primary 1`  
++ **primary [index or replica-id]** - show information about primary host
+Example: `primary 1`
 
 ```javascript
 ========= Response data =========
@@ -329,8 +329,8 @@ result code:  200
 =================================
 ```
 
-+ **stepdown [index or replica-id]** - stepdown primary host  
-Example: `stepdown 1`  
++ **stepdown [index or replica-id]** - stepdown primary host
+Example: `stepdown 1`
 
 ```javascript
 ========= Response data =========
@@ -339,8 +339,8 @@ result code:  200
 =================================
 ```
 
-+ **members** - show all replicaset's members  
-Example: `members [index or replica-id]`  
++ **members** - show all replicaset's members
+Example: `members [index or replica-id]`
 
 ```javascript
 ========= Response data =========
@@ -352,8 +352,8 @@ result code:  200
 =================================
 ```
 
-+ **member_add [index or replica-id]  {member config}** - add new member to replica set  
-Example: `member_add 1  {"rsParams": {"hidden": true, "priority": 0}}`  
++ **member_add [index or replica-id]  {member config}** - add new member to replica set
+Example: `member_add 1  {"rsParams": {"hidden": true, "priority": 0}}`
 
 ```javascript
 ========= Response data =========
@@ -366,8 +366,8 @@ result code:  200
 =================================
 ```
 
-+ **member_info [index or replica-id]  [member-id]** - show information about member  
-Example: `member_info 1  4`  
++ **member_info [index or replica-id]  [member-id]** - show information about member
+Example: `member_info 1  4`
 
 ```javascript
 ========= Response data =========
@@ -390,8 +390,8 @@ result code:  200
 =================================
 ```
 
-+ **member_update [index or replica-id]  [member-id]** - update member params  
-Example: `member_update 1  4  {"rsParams": {"hidden":false, "priority": 3}}`  
++ **member_update [index or replica-id]  [member-id]** - update member params
+Example: `member_update 1  4  {"rsParams": {"hidden":false, "priority": 3}}`
 
 ```javascript
 ========= Response data =========
@@ -414,8 +414,8 @@ result code:  200
 =================================
 ```
 
-+ **member_command [index or replica-id]  [member-id]  [command]** - start/stop/restart host  
-Example: `member_command 1  4  stop`  
++ **member_command [index or replica-id]  [member-id]  [command]** - start/stop/restart host
+Example: `member_command 1  4  stop`
 
 ```javascript
 ========= Response data =========
@@ -424,8 +424,8 @@ result code:  200
 =================================
 ```
 
-+ **member_freeze [index or replica-id]  [member-id]  [timeout]** - Forces the current node to become ineligible to become primary for the period specified  
-Example: `member_freeze 1  1  60`  
++ **member_freeze [index or replica-id]  [member-id]  [timeout]** - Forces the current node to become ineligible to become primary for the period specified
+Example: `member_freeze 1  1  60`
 
 ```javascript
 ========= Response data =========
@@ -433,8 +433,8 @@ result code:  200
 =================================
 ```
 
-+ **member_delete [index or replcia-id]  [member-id]** - remove host from replica set  
-Example: `member_delete 1  4`  
++ **member_delete [index or replcia-id]  [member-id]** - remove host from replica set
+Example: `member_delete 1  4`
 
 ```javascript
 ========= Response data =========
@@ -443,8 +443,8 @@ True
 =================================
 ```
 
-+ **delete [index or replica-id]** - remove replica set  
-Example: `delete 1`  
++ **delete [index or replica-id]** - remove replica set
+Example: `delete 1`
 
 ```javascript
 ========= Response data =========
@@ -457,11 +457,11 @@ result code:  204
 
 ### cmd_sh.py - manage shard cluster
 
-command format: `command sh_id  [member_id]  [params]`  
-**command** - command  
+command format: `command sh_id  [member_id]  [params]`
+**command** - command
 **sh_id** - shard cluster id or index
-**member_id** - member id  
-**params** - json string  
+**member_id** - member id
+**params** - json string
 
 **Note: two space between args**
 
@@ -469,10 +469,10 @@ commands:
 + **help** - show help information
 + **create** - create new shard cluster
 
-Example: 
+Example:
 ```javascript
 create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "configsvrs": [{"port": 2315}], "members": [{"id": "sh01", "shardParams": {}}, {"id": "sh02", "shardParams": {"port": 2320}}, {"id": "sh-rs-01", "shardParams": {"id": "rs1", "members": [{}, {}]}}]}
-```  
+```
 
 ```javascript
 ========= Response data =========
@@ -495,8 +495,8 @@ result code:  200
 ['shard_cluster_1']
 ```
 
-+ **list** - show list of clusters , format: index cluster-id  
-Example: `list`  
++ **list** - show list of clusters , format: index cluster-id
+Example: `list`
 
 ```javascript
 ========= Response data =========
@@ -506,8 +506,8 @@ result code:  200
 1 shard_cluster_1
 ```
 
-+ **info [index or cluter-id]** - show info about cluster  
-Example: `info 1`  
++ **info [index or cluter-id]** - show info about cluster
+Example: `info 1`
 
 ```javascript
 ========= Response data =========
@@ -540,8 +540,8 @@ result code:  200
 =================================
 ```
 
-+ **routers [index or cluster-id]** - show routers  
-Example: `routers 1`  
++ **routers [index or cluster-id]** - show routers
+Example: `routers 1`
 
 ```javascript
 ========= Response data =========
@@ -551,8 +551,8 @@ result code:  200
 =================================
 ```
 
-+ **router_add** - add new router  
-Example: `router_add [index or cluster-id]  {"port": 2525, "logpath": "/tmp/router2"}`  
++ **router_add** - add new router
+Example: `router_add [index or cluster-id]  {"port": 2525, "logpath": "/tmp/router2"}`
 
 ```javascript
 ========= Response data =========
@@ -573,8 +573,8 @@ result code:  200
 =================================
 ```
 
-+ **members** - show cluster's members  
-Example: `members [index or cluster-id]`  
++ **members** - show cluster's members
+Example: `members [index or cluster-id]`
 
 ```javascript
 ========= Response data =========
@@ -589,8 +589,8 @@ result code:  200
 =================================
 ```
 
-+ **member_add [index or cluster-id]  {member config}** - add new member to cluster  
-Example: `member_add 1  {"id": "shardX", "shardParams": {"port": 2527, "dbpath": "/tmp/memberX", "logpath": "/tmp/memberX.log", "ipv6": true, "nojournal": true}}`   
++ **member_add [index or cluster-id]  {member config}** - add new member to cluster
+Example: `member_add 1  {"id": "shardX", "shardParams": {"port": 2527, "dbpath": "/tmp/memberX", "logpath": "/tmp/memberX.log", "ipv6": true, "nojournal": true}}`
 
 ```javascript
 ========= Response data =========
@@ -601,8 +601,8 @@ result code:  200
 =================================
 ```
 
-+ **member_add [index or cluster-id]  {member config}** - add new member to cluster  
-Example: `member_add 1  {"id": "shard-rs", "shardParams": {"id": "repl-test", "members": [{}, {}, {"rsParams": {"arbiterOnly": true}}]}}`   
++ **member_add [index or cluster-id]  {member config}** - add new member to cluster
+Example: `member_add 1  {"id": "shard-rs", "shardParams": {"id": "repl-test", "members": [{}, {}, {"rsParams": {"arbiterOnly": true}}]}}`
 
 ```javascript
 ========= Response data =========
@@ -611,8 +611,8 @@ result code:  200
 =================================
 ```
 
-+ **member_info [index or cluster-id]  [member-id]** - show information about member  
-Example: `member_info 1  shardX`  
++ **member_info [index or cluster-id]  [member-id]** - show information about member
+Example: `member_info 1  shardX`
 
 ```javascript
 ========= Response data =========
@@ -623,8 +623,8 @@ result code:  200
 =================================
 ```
 
-+ **member_info [index or cluster-id]  [member-id]** - show information about member  
-Example: `member_info 1  shard-rs`  
++ **member_info [index or cluster-id]  [member-id]** - show information about member
+Example: `member_info 1  shard-rs`
 
 ```javascript
 ========= Response data =========
@@ -633,8 +633,8 @@ result code:  200
 =================================
 ```
 
-+ **member_delete [index or cluster-id]  [member-id]** - remove sahrd from cluster  
-Example: `member_delete 1  sh01`  
++ **member_delete [index or cluster-id]  [member-id]** - remove sahrd from cluster
+Example: `member_delete 1  sh01`
 
 ```javascript
 ========= Response data =========
@@ -646,8 +646,8 @@ result code:  200
 =================================
 ```
 
-+ **member_delete [index or cluster-id]  [member-id]** - remove shard from cluster  
-Example: `member_delete 1  sh01`  
++ **member_delete [index or cluster-id]  [member-id]** - remove shard from cluster
+Example: `member_delete 1  sh01`
 
 ```javascript
 ========= Response data =========
@@ -659,8 +659,8 @@ result code:  200
 =================================
 ```
 
-+ **delete [index or cluster-id]** - remove cluster  
-Example: `delete shard_cluster_1`  
++ **delete [index or cluster-id]** - remove cluster
+Example: `delete shard_cluster_1`
 
 ```javascript
 ========= Response data =========
