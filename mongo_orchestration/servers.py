@@ -24,12 +24,12 @@ import time
 
 from uuid import uuid4
 
-import lib.errors
-import lib.process
 import pymongo
 
-from lib.singleton import Singleton
-from lib.container import Container
+from mongo_orchestration import process
+from mongo_orchestration.errors import ServersError, TimeoutError
+from mongo_orchestration.singleton import Singleton
+from mongo_orchestration.container import Container
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,9 @@ class Server(object):
 
         # find open port
         if 'port' not in cfg:
-            cfg['port'] = lib.process.PortPool().port(check=True)
+            cfg['port'] = process.PortPool().port(check=True)
 
-        return lib.process.write_config(cfg), cfg
+        return process.write_config(cfg), cfg
 
     def __init_mongos(self, params, ssl):
         cfg = params.copy()
@@ -93,9 +93,9 @@ class Server(object):
             cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
 
         if 'port' not in cfg:
-            cfg['port'] = lib.process.PortPool().port(check=True)
+            cfg['port'] = process.PortPool().port(check=True)
 
-        return lib.process.write_config(cfg), cfg
+        return process.write_config(cfg), cfg
 
     def __init__(self, name, procParams, sslParams={}, auth_key=None, login='', password=''):
         """Args:
@@ -186,7 +186,7 @@ class Server(object):
 
     @property
     def is_alive(self):
-        return lib.process.proc_alive(self.proc)
+        return process.proc_alive(self.proc)
 
     def info(self):
         """return info about server as dict object"""
@@ -238,9 +238,9 @@ class Server(object):
         try:
             if self.cfg.get('dbpath', None) and self._is_locked:
                 # repair if needed
-                lib.process.repair_mongo(self.name, self.cfg['dbpath'])
+                process.repair_mongo(self.name, self.cfg['dbpath'])
 
-            self.proc, self.hostname = lib.process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.proc, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
             self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
@@ -254,10 +254,10 @@ class Server(object):
                 except pymongo.errors.ConnectionFailure:
                     time.sleep(1)
             else:
-                raise lib.errors.TimeoutError(
+                raise TimeoutError(
                     "Server did not respond to 'isMaster' after %d attempts."
                     % timeout)
-        except (OSError, lib.errors.TimeoutError):
+        except (OSError, TimeoutError):
             logger.exception("Could not start Server.")
             raise
         if not self.admin_added and self.login:
@@ -267,7 +267,7 @@ class Server(object):
 
     def stop(self):
         """stop server"""
-        return lib.process.kill_mprocess(self.proc)
+        return process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300):
         """restart server: stop() and start()
@@ -300,7 +300,7 @@ class Server(object):
 
     def cleanup(self):
         """remove server data"""
-        lib.process.cleanup_mprocess(self.config_path, self.cfg)
+        process.cleanup_mprocess(self.config_path, self.cfg)
 
 
 class Servers(Singleton, Container):
@@ -337,8 +337,7 @@ class Servers(Singleton, Container):
         if server_id is None:
             server_id = str(uuid4())
         if server_id in self:
-            raise lib.errors.ServersError(
-                "Server with id %s already exists." % server_id)
+            raise ServersError("Server with id %s already exists." % server_id)
 
         bin_path = self.bin_path(version)
         server = Server(os.path.join(bin_path, name), procParams, sslParams,

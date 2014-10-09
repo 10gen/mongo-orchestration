@@ -19,12 +19,11 @@ import tempfile
 
 from uuid import uuid4
 
-import lib.errors
-
-from lib.container import Container
-from lib.servers import Servers
-from lib.replica_sets import ReplicaSets
-from lib.singleton import Singleton
+from mongo_orchestration.container import Container
+from mongo_orchestration.errors import ShardedClusterError
+from mongo_orchestration.servers import Servers
+from mongo_orchestration.replica_sets import ReplicaSets
+from mongo_orchestration.singleton import Singleton
 from pymongo import MongoClient
 
 logging.basicConfig(level=logging.DEBUG)
@@ -296,7 +295,7 @@ class ShardedClusters(Singleton, Container):
         """
         sh_id = params.get('id', str(uuid4()))
         if sh_id in self:
-            raise lib.errors.ShardedClusterError(
+            raise ShardedClusterError(
                 "Sharded cluster with id %s already exists." % sh_id)
         params['id'] = sh_id
         cluster = ShardedCluster(params)

@@ -25,11 +25,11 @@ import time
 
 sys.path.insert(0, '../')
 
-from lib import set_releases, cleanup_storage
-from lib.sharded_clusters import ShardedCluster, ShardedClusters
-from lib.replica_sets import ReplicaSets
-from lib.servers import Servers
-from lib.process import PortPool, HOSTNAME
+from mongo_orchestration import set_releases, cleanup_storage
+from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
+from mongo_orchestration.replica_sets import ReplicaSets
+from mongo_orchestration.servers import Servers
+from mongo_orchestration.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
 from tests import unittest, SkipTest
 

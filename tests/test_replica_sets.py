@@ -24,9 +24,9 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from lib.replica_sets import ReplicaSet, ReplicaSets
-from lib.servers import Servers
-from lib.process import PortPool, HOSTNAME
+from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
+from mongo_orchestration.servers import Servers
+from mongo_orchestration.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
 from tests import unittest, SkipTest
 
@@ -634,6 +634,19 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertTrue(isinstance(db.foo.find_one(), dict))
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
+
+    def test_auth_arbiter_member_info(self):
+        self.repl = ReplicaSet({'members': [
+            {}, {'rsParams': {'arbiterOnly': True}}]})
+        info = self.repl.member_info(1)
+        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+            self.assertIn(key, info)
+        rs_info = info['rsInfo']
+        for key in ('primary', 'secondary', 'arbiterOnly'):
+            self.assertIn(key, rs_info)
+        self.assertFalse(rs_info['primary'])
+        self.assertFalse(rs_info['secondary'])
+        self.assertTrue(rs_info['arbiterOnly'])
 
 
 @attr('quick-rs')

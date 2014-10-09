@@ -1,3 +1,0 @@
-1. Implement router_delete
-2. Double spaces between params in cmd_sh.py
-3. ssl support

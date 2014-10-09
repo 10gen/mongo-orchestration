@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, '../')
 
-from lib.singleton import Singleton
+from mongo_orchestration.singleton import Singleton
 from nose.plugins.attrib import attr
 from tests import unittest
 

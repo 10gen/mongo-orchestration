@@ -31,9 +31,9 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
-from lib.compat import reraise
-from lib.errors import TimeoutError, RequestError
-from lib.singleton import Singleton
+from mongo_orchestration.compat import reraise
+from mongo_orchestration.errors import TimeoutError, RequestError
+from mongo_orchestration.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 

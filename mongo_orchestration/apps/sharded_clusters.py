@@ -21,10 +21,10 @@ from bottle import request, run
 
 sys.path.insert(0, '..')
 
-from apps import (error_wrap, get_json, Route,
-                  send_result, setup_versioned_routes)
-from lib.common import *
-from lib.sharded_clusters import ShardedClusters
+from mongo_orchestration.apps import (error_wrap, get_json, Route,
+                                      send_result, setup_versioned_routes)
+from mongo_orchestration.common import *
+from mongo_orchestration.sharded_clusters import ShardedClusters
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

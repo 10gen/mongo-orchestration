@@ -24,12 +24,11 @@ from uuid import uuid4
 
 import pymongo
 
-import lib.errors
-
-from lib.compat import reraise
-from lib.singleton import Singleton
-from lib.container import Container
-from lib.servers import Servers
+from mongo_orchestration.compat import reraise
+from mongo_orchestration.singleton import Singleton
+from mongo_orchestration.container import Container
+from mongo_orchestration.errors import ReplicaSetError
+from mongo_orchestration.servers import Servers
 
 logger = logging.getLogger(__name__)
 Servers()
@@ -66,7 +65,7 @@ class ReplicaSet(object):
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
-            raise lib.errors.ReplicaSetError("Could not create replica set.")
+            raise ReplicaSetError("Could not create replica set.")
 
         if self.login:
             logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
@@ -82,14 +81,14 @@ class ReplicaSet(object):
                 c.admin.authenticate(self.login, self.password)
                 c.admin.command('getLastError', w=len(self.servers()))
             except pymongo.errors.OperationFailure:
-                reraise(lib.errors.ReplicaSetError,
+                reraise(ReplicaSetError,
                         "Could not add user %s to the replica set."
                         % self.login)
             finally:
                 c.close()
 
         if not self.waiting_config_state():
-            raise lib.errors.ReplicaSetError(
+            raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
 
     def __len__(self):
@@ -193,7 +192,7 @@ class ReplicaSet(object):
         repl_config['members'].append(member_config)
         if not self.repl_update(repl_config):
             self.member_del(member_id, reconfig=True)
-            raise lib.errors.MongoOrchestrationError()
+            raise ReplicaSetError("Could not add member to ReplicaSet.")
         return member_id
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
@@ -277,6 +276,14 @@ class ReplicaSet(object):
         result = {'_id': member_id, 'uri': server_info['uri'], 'server_id': server_id, 'procInfo': server_info['procInfo'], 'statuses': server_info['statuses']}
         result['rsInfo'] = {}
         if server_info['procInfo']['alive']:
+            # Can't call serverStatus on arbiter when running with auth enabled.
+            # (SERVER-5479)
+            if self.login and self.password:
+                arbiter_ids = map(lambda member: member['_id'], self.arbiters())
+                if member_id in arbiter_ids:
+                    result['rsInfo'] = {
+                        'arbiterOnly': True, 'secondary': False, 'primary': False}
+                    return result
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
             logger.debug("member {member_id} repl info: {repl}".format(**locals()))
             for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
@@ -485,7 +492,8 @@ class ReplicaSets(Singleton, Container):
         """
         repl_id = rs_params.get('id', None)
         if repl_id is not None and repl_id in self:
-            raise lib.errors.ReplicaSetError("replica set with id={id} already exists".format(id=repl_id))
+            raise ReplicaSetError(
+                "replica set with id={id} already exists".format(id=repl_id))
         repl = ReplicaSet(rs_params)
         self[repl.repl_id] = repl
         return repl.repl_id
