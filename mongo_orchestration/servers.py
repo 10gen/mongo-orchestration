@@ -27,6 +27,7 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration import process
+from mongo_orchestration.common import update
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -38,7 +39,8 @@ class Server(object):
     """Class Server represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 100}
+    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 100,
+                      "setParameter": {"enableTestCommands": 1}}
 
     def __init_db(self, dbpath):
         if not dbpath:
@@ -59,7 +61,8 @@ class Server(object):
 
     def __init_mongod(self, params, ssl):
         cfg = self.mongod_default.copy()
-        cfg.update(params)
+        # Do a deep merge to preserve setParameter in params argument.
+        update(cfg, params)
         cfg.update(ssl)
 
         # create db folder
