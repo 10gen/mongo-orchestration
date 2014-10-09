@@ -192,7 +192,7 @@ class ReplicaSet(object):
         repl_config['members'].append(member_config)
         if not self.repl_update(repl_config):
             self.member_del(member_id, reconfig=True)
-            raise mongo_orchestration.errors.MongoOrchestrationError()
+            raise ReplicaSetError("Could not add member to ReplicaSet.")
         return member_id
 
     def run_command(self, command, arg=None, is_eval=False, member_id=None):
