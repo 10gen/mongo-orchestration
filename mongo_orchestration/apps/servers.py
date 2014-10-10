@@ -24,7 +24,8 @@ sys.path.insert(0, '..')
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
 from mongo_orchestration.apps.links import (
-    base_link, server_link, all_server_links, all_base_links)
+    base_link, server_link, all_server_links, all_base_links,
+    sharded_cluster_link, replica_set_link)
 from mongo_orchestration.common import *
 from mongo_orchestration.errors import RequestError
 from mongo_orchestration.servers import Servers
@@ -50,10 +51,7 @@ def _host_create(params):
                                params.get('version', ''))
     result = Servers().info(host_id)
     server_id = result['id']
-    result['links'] = [
-        server_link(rel, server_id)
-        for rel in ('delete-server', 'get-server-info', 'server-command')
-    ]
+    result['links'] = all_server_links(server_id)
     return result
 
 
@@ -81,9 +79,15 @@ def releases_list():
 def host_create():
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
-    result = {'server': _host_create(data)}
-    result['server']['links'].append(server_link('add-server', self_rel=True))
-    result['links'] = all_base_links(rel_to='add-server')
+    result = _host_create(data)
+    result['links'].extend([
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers'),
+        server_link('add-server', self_rel=True),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ])
     return send_result(200, result)
 
 
@@ -96,7 +100,14 @@ def host_list():
         server_info['links'] = all_server_links(
             server_id, rel_to='get-servers')
         servers.append(server_info)
-    response = {'links': all_base_links(rel_to='get-servers')}
+    response = {'links': [
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers', self_rel=True),
+        server_link('add-server'),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ]}
     response['servers'] = servers
     return send_result(200, response)
 
@@ -108,6 +119,7 @@ def host_info(host_id):
         return send_result(404)
     result = Servers().info(host_id)
     result['links'] = all_server_links(host_id, rel_to='get-server-info')
+    result['links'].append(server_link('get-servers'))
     return send_result(200, result)
 
 
@@ -116,11 +128,16 @@ def host_create_by_id(host_id):
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
     data['id'] = host_id
-    result = {'server': _host_create(data)}
-    result['server']['links'].append(
-        server_link('add-server-by-id', host_id, self_rel=True)
-    )
-    result['links'] = all_base_links()
+    result = _host_create(data)
+    result['links'].extend([
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers'),
+        server_link('add-server'),
+        server_link('add-server-by-id', host_id, self_rel=True),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ])
     return send_result(200, result)
 
 
@@ -145,6 +162,7 @@ def host_command(host_id):
         'command_result': Servers().command(host_id, command),
         'links': all_server_links(host_id, rel_to='server-command')
     }
+    result['links'].append(server_link('get-servers'))
     return send_result(200, result)
 
 

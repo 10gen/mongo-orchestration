@@ -1,7 +1,5 @@
 """Utilities for building links for discoverable API."""
 
-from lib.sharded_clusters import ShardedClusters
-
 
 def base_link(rel, self_rel=False):
     """Helper for getting a link document under the API root, given a rel."""
@@ -11,7 +9,7 @@ def base_link(rel, self_rel=False):
         'service': {'rel': 'service', 'href': '/v1', 'method': 'GET'}
     }
     link = links[rel]
-    link[rel] = 'self' if self_rel else rel
+    link['rel'] = 'self' if self_rel else rel
     return link
 
 
@@ -62,7 +60,7 @@ def replica_set_link(rel, repl_id=None, member_id=None, self_rel=False):
     """Helper for getting a ReplicaSet link document, given a rel."""
     base_href = '/v1/replica_sets'
     repl_href = '{base_href}/{repl_id}'.format(**locals())
-    member_href = '{repl_href}/{member_id}'.format(**locals())
+    member_href = '{repl_href}/members/{member_id}'.format(**locals())
     links = {
         'get-replica-set-info': {'method': 'GET', 'href': repl_href},
         'get-replica-sets': {'method': 'GET', 'href': base_href},
@@ -146,27 +144,13 @@ def all_sharded_cluster_links(cluster_id, shard_id=None,
     # Does not include the rel 'add-sharded-cluster-by-id',
     # since you can't re-add a sharded cluster
     # (given that the id is provided here).
-    router_ids = (r['id'] for r in ShardedClusters().routers(cluster_id))
-    shard_ids = (s['id'] for s in ShardedClusters().members(cluster_id))
-    router_links = [
-        sharded_cluster_link('delete-router', cluster_id, router_id=r_id)
-        for r_id in router_ids
-    ]
-    shard_links = []
-    for s_id in shard_ids:
-        shard_links.append(
-            sharded_cluster_link('delete-shard', cluster_id, shard_id=s_id))
-        shard_links.append(
-            sharded_cluster_link('get-shard-info', cluster_id, shard_id=s_id))
     return [
         sharded_cluster_link(rel, cluster_id, shard_id, router_id,
                              self_rel=(rel == rel_to))
         for rel in (
-            'add-sharded-cluster', 'get-sharded-clusters',
-            'get-sharded-cluster-info', 'sharded-cluster-command',
-            'add-sharded-cluster-by-id', 'delete-sharded-cluster',
-            'add-shard', 'get-shards',
-            'get-configsvrs', 'get-routers',
-            'add-router'
+            'get-sharded-clusters', 'get-sharded-cluster-info',
+            'sharded-cluster-command', 'delete-sharded-cluster',
+            'add-shard', 'get-shards', 'get-configsvrs',
+            'get-routers', 'add-router'
         )
-    ] + router_links + shard_links
+    ]
