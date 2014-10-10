@@ -52,5 +52,5 @@ else
 fi
 
 cd "${WORKSPACE}/mongo-orchestration"
-echo $python_bin mongo_orchestration/server.py start -f $config_file -e $2
-$python_bin mongo_orchestration/server.py start -f $config_file -e $2
+echo export PYTHONPATH=.; $python_bin mongo_orchestration/server.py start -f $config_file -e $2
+export PYTHONPATH=.; $python_bin mongo_orchestration/server.py start -f $config_file -e $2
