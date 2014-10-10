@@ -24,18 +24,38 @@ sys.path.insert(0, '..')
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
 from mongo_orchestration.apps.links import (
-    sharded_cluster_link, all_replica_set_links, all_server_links,
-    all_sharded_cluster_links, all_base_links)
+    sharded_cluster_link, all_sharded_cluster_links, base_link,
+    server_link, replica_set_link)
 from mongo_orchestration.common import *
 from mongo_orchestration.sharded_clusters import ShardedClusters
 
 logger = logging.getLogger(__name__)
 
 
+def _server_or_rs_link(shard_doc):
+    resource_id = shard_doc['_id']
+    if shard_doc.get('isReplicaSet'):
+        return replica_set_link('get-replica-set-info', resource_id)
+    return server_link('get-server-info', resource_id)
+
+
 def _sh_create(params):
     cluster_id = ShardedClusters().create(params)
     result = ShardedClusters().info(cluster_id)
     result['links'] = all_sharded_cluster_links(cluster_id)
+    for router in result['routers']:
+        router['links'] = [
+            server_link('get-server-info', server_id=router['id'])
+        ]
+    for cfg in result['configsvrs']:
+        cfg['links'] = [
+            server_link('get-server-info', server_id=cfg['id'])
+        ]
+    for sh in result['shards']:
+        sh['links'] = [
+            sharded_cluster_link('get-shard-info', cluster_id, sh['id']),
+            _server_or_rs_link(sh)
+        ]
     return result
 
 
@@ -44,8 +64,15 @@ def sh_create():
     logger.debug("sh_create()")
     data = get_json(request.body)
     data = preset_merge(data, 'sharded_clusters')
-    result = {'sharded_cluster': _sh_create(data)}
-    result['links'] = all_base_links('add-sharded-cluster')
+    result = _sh_create(data)
+    result['links'].extend([
+        base_link('service'),
+        base_link('get-releases'),
+        sharded_cluster_link('get-sharded-clusters'),
+        sharded_cluster_link('add-sharded-cluster', self_rel=True),
+        replica_set_link('get-replica-sets'),
+        server_link('get-servers')
+    ])
     return send_result(200, result)
 
 
@@ -58,7 +85,14 @@ def sh_list():
         cluster_info['links'] = all_sharded_cluster_links(
             cluster_id, rel_to='get-sharded-clusters')
         sharded_clusters.append(cluster_info)
-    response = {'links': all_base_links('get-sharded-clusters')}
+    response = {'links': [
+        base_link('service'),
+        base_link('get-releases'),
+        sharded_cluster_link('get-sharded-clusters', self_rel=True),
+        sharded_cluster_link('add-sharded-cluster'),
+        replica_set_link('get-replica-sets'),
+        server_link('get-servers')
+    ]}
     response['sharded_clusters'] = sharded_clusters
     return send_result(200, response)
 
@@ -71,6 +105,19 @@ def info(cluster_id):
     result = ShardedClusters().info(cluster_id)
     result['links'] = all_sharded_cluster_links(
         cluster_id, rel_to='get-sharded-cluster-info')
+    for router in result['routers']:
+        router['links'] = [
+            server_link('get-server-info', server_id=router['id'])
+        ]
+    for cfg in result['configsvrs']:
+        cfg['links'] = [
+            server_link('get-server-info', server_id=cfg['id'])
+        ]
+    for sh in result['shards']:
+        sh['links'] = [
+            sharded_cluster_link('get-shard-info', cluster_id, sh['id']),
+            _server_or_rs_link(sh)
+        ]
     return send_result(200, result)
 
 
@@ -96,12 +143,17 @@ def sh_create_by_id(cluster_id):
     data = get_json(request.body)
     data = preset_merge(data, 'sharded_clusters')
     data['id'] = cluster_id
-    result = {'sharded_cluster': _sh_create(data)}
-    result['sharded_cluster']['links'].append(
+    result = _sh_create(data)
+    result['links'].extend([
         sharded_cluster_link('add-sharded-cluster-by-id',
-                             cluster_id, self_rel=True)
-    )
-    result['links'] = all_base_links()
+                             cluster_id, self_rel=True),
+        base_link('service'),
+        base_link('get-releases'),
+        sharded_cluster_link('get-sharded-clusters'),
+        sharded_cluster_link('add-sharded-cluster'),
+        replica_set_link('get-replica-sets'),
+        server_link('get-servers')
+    ])
     return send_result(200, result)
 
 
@@ -120,10 +172,17 @@ def shard_add(cluster_id):
     if cluster_id not in ShardedClusters():
         return send_result(404)
     data = get_json(request.body)
-    shard_info = ShardedClusters().member_add(cluster_id, data)
-    result = {'shard': shard_info}
-    result['shard']['links'] = _build_shard_links(cluster_id, shard_info)
-    result['links'] = all_sharded_cluster_links(cluster_id)
+    result = ShardedClusters().member_add(cluster_id, data)
+    resource_id = result['_id']
+    shard_id = result['id']
+    result['links'] = [
+        sharded_cluster_link('get-shard-info', cluster_id, shard_id),
+        sharded_cluster_link('delete-shard', cluster_id, shard_id),
+        sharded_cluster_link('add-shard', cluster_id, self_rel=True),
+        sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+        sharded_cluster_link('get-shards', cluster_id)
+    ]
+    result['links'].append(_server_or_rs_link(result))
     return send_result(200, result)
 
 
@@ -136,19 +195,21 @@ def shards(cluster_id):
     for shard_info in ShardedClusters().members(cluster_id):
         shard_id = shard_info['id']
         resource_id = shard_info['_id']
-        links = [
-            sharded_cluster_link(rel, cluster_id, shard_id=shard_id)
-            for rel in ('add-shard', 'delete-shard', 'get-shard-info')
+        shard_info['links'] = [
+            sharded_cluster_link('get-shard-info', cluster_id, shard_id),
+            sharded_cluster_link('delete-shard', cluster_id, shard_id),
+            sharded_cluster_link('get-sharded-cluster-info', cluster_id),
         ]
-        if shard_info.get('isReplicaSet'):
-            links.extend(all_replica_set_links(resource_id))
-        else:
-            links.extend(all_server_links(resource_id))
-        shard_info['links'] = links
+        shard_info['links'].append(_server_or_rs_link(shard_info))
         shard_docs.append(shard_info)
     result = {
         'shards': shard_docs,
-        'links': all_sharded_cluster_links(cluster_id, rel_to='get-shards')
+        'links': [
+            sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+            sharded_cluster_link('get-shards', cluster_id, self_rel=True),
+            sharded_cluster_link('get-configsvrs', cluster_id),
+            sharded_cluster_link('get-routers', cluster_id)
+        ]
     }
     return send_result(200, result)
 
@@ -161,12 +222,18 @@ def configsvrs(cluster_id):
     config_docs = []
     for config_info in ShardedClusters().configsvrs(cluster_id):
         server_id = config_info['id']
-        config_info['links'] = all_server_links(server_id)
+        config_info['links'] = [
+            server_link('get-server-info', server_id)
+        ]
         config_docs.append(config_info)
     result = {
         'configsvrs': config_docs,
-        'links': all_sharded_cluster_links(cluster_id,
-                                           rel_to='get-configsvrs')
+        'links': [
+            sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+            sharded_cluster_link('get-shards', cluster_id),
+            sharded_cluster_link('get-configsvrs', cluster_id, self_rel=True),
+            sharded_cluster_link('get-routers', cluster_id)
+        ]
     }
     return send_result(200, result)
 
@@ -182,15 +249,19 @@ def routers(cluster_id):
         server_id = router_info['id']
         links = [
             sharded_cluster_link('delete-router',
-                                 cluster_id, router_id=server_id)
+                                 cluster_id, router_id=server_id),
+            server_link('get-server-info', server_id)
         ]
-        links.extend(all_server_links(server_id))
         router_info['links'] = links
         router_docs.append(router_info)
     result = {
         'routers': router_docs,
-        'links': all_sharded_cluster_links(cluster_id,
-                                           rel_to='get-routers')
+        'links': [
+            sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+            sharded_cluster_link('get-shards', cluster_id),
+            sharded_cluster_link('get-configsvrs', cluster_id),
+            sharded_cluster_link('get-routers', cluster_id, self_rel=True)
+        ]
     }
     return send_result(200, result)
 
@@ -201,14 +272,15 @@ def router_add(cluster_id):
     if cluster_id not in ShardedClusters():
         return send_result(404)
     data = get_json(request.body)
-    router_info = ShardedClusters().router_add(cluster_id, data)
+    result = ShardedClusters().router_add(cluster_id, data)
     router_id = result['id']
-    result = {'router': router_info}
-    result['router']['links'] = sharded_cluster_link(
-        'delete-router', cluster_id, router_id=router_id)
-    result['router']['links'].extend(all_server_links(router_id))
-    result['links'] = all_sharded_cluster_links(
-        cluster_id, rel_to='add-router')
+    result['links'] = [
+        server_link('get-server-info', router_id),
+        sharded_cluster_link('add-router', cluster_id, self_rel=True),
+        sharded_cluster_link('delete-router', cluster_id, router_id),
+        sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+        sharded_cluster_link('get-routers', cluster_id),
+    ]
     return send_result(200, result)
 
 
@@ -226,19 +298,18 @@ def shard_info(cluster_id, shard_id):
     logger.debug("shard_info({cluster_id}, {shard_id})".format(**locals()))
     if cluster_id not in ShardedClusters():
         return send_result(404)
-    shard_info = ShardedClusters().member_info(cluster_id, shard_id)
-    result = {'shard': shard_info}
-    links = [
-        sharded_cluster_link(rel, cluster_id, shard_id=shard_id)
-        for rel in ('add-shard', 'delete-shard', 'get-shard-info')
+    result = ShardedClusters().member_info(cluster_id, shard_id)
+    resource_id = result['_id']
+    shard_id = result['id']
+    result['links'] = [
+        sharded_cluster_link(
+            'get-shard-info', cluster_id, shard_id, self_rel=True),
+        sharded_cluster_link('delete-shard', cluster_id, shard_id),
+        sharded_cluster_link('add-shard', cluster_id),
+        sharded_cluster_link('get-sharded-cluster-info', cluster_id),
+        sharded_cluster_link('get-shards', cluster_id)
     ]
-    if shard_info.get('isReplicaSet'):
-        links.extend(all_replica_set_links(resource_id))
-    else:
-        links.extend(all_server_links(resource_id))
-    result['shard']['links'] = links
-    result['links'] = all_sharded_cluster_links(
-        cluster_id, rel_to='get-shard-info')
+    result['links'].append(_server_or_rs_link(result))
     return send_result(200, result)
 
 
