@@ -52,5 +52,14 @@ else
 fi
 
 cd "${WORKSPACE}/mongo-orchestration"
-echo export PYTHONPATH=.; $python_bin mongo_orchestration/server.py start -f $config_file -e $2
-export PYTHONPATH=.; $python_bin mongo_orchestration/server.py start -f $config_file -e $2
+# Install Mongo Orchestration in a virtualenv
+virtualenv -p $python_bin mo_env
+echo virtualenv -p $python_bin mo_env
+source mo_env/bin/activate
+echo source mo_env/bin/activate
+python setup.py install
+echo python setup.py install
+mongo-orchestration start -f $config_file -e $2
+echo mongo-orchestration start -f $config_file -e $2
+deactivate
+echo deactivate
