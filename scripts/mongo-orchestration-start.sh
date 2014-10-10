@@ -51,7 +51,9 @@ else
     python_bin=/usr/bin/python
 fi
 
-cd "${WORKSPACE}/mongo-orchestration"
+# Use /tmp to avoid shbang line getting too long. See
+# http://www.in-ulm.de/~mascheck/various/shebang/#errors
+cd /tmp/mongo-orchestration
 # Install Mongo Orchestration in a virtualenv
 virtualenv -p $python_bin mo_env
 echo virtualenv -p $python_bin mo_env

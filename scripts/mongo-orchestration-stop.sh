@@ -4,7 +4,7 @@ else
     python_bin=/usr/bin/python
 fi
 
-cd $WORKSPACE/mongo-orchestration
+cd /tmp/mongo-orchestration
 $python_bin mongo_orchestration/server.py stop
 
 echo "====== CLEANUP ======"
