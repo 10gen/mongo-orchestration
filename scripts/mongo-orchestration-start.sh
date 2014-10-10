@@ -26,7 +26,6 @@ do
     kill -9 $x
 done
 echo "remove old files"
-rm -rf /tmp/mongo-*
 rm -f /tmp/test-*
 du -sh /tmp
 
