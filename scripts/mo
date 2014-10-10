@@ -27,7 +27,7 @@ function a {
 }
 
 function id {
-    local id_line=$(grep id $1)
+    local id_line=$(grep id $1 | head -n 1)
     echo $(expr "$id_line" : '.*: *"\(.*\)" *,*')
 }
 
