@@ -74,6 +74,37 @@ The Mongo Orchestration repository has a set of predefined [configurations](http
 
         scripts/mo configurations/replica_sets/ssl_auth.json start
 
+- Use `curl` to create a basic sharded cluster with the id "myCluster":
+
+        curl -XPUT http://localhost:8889/v1/sharded_clusters/myCluster -d@configurations/sharded_clusters/basic.json
+
+**Helpful hint**: You can prettify JSON responses from the server by piping the response into `python -m json.tool`, e.g.:
+
+    $ curl http://localhost:8889/v1/servers/myServer | python -m json.tool
+    
+    {
+        "id": "myServer",
+        "mongodb_uri": "mongodb://localhost:1025",
+        "orchestration": "servers",
+        "procInfo": {
+            "alive": true,
+            "name": "mongod",
+            "optfile": "/var/folders/v9/spc2j6cx3db71l__k89_8ng80000gp/T/mongo-KHUACD",
+            "params": {
+                "dbpath": "/var/folders/v9/spc2j6cx3db71l__k89_8ng80000gp/T/mongo-vAgYaQ",
+                "ipv6": true,
+                "journal": true,
+                "logappend": true,
+                "noprealloc": true,
+                "oplogSize": 100,
+                "port": 1025,
+                "smallfiles": true
+            },
+            "pid": 51320
+        },
+        // etc.
+    }
+
 ##Tests
 
 ###Run all tests
