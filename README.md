@@ -22,7 +22,17 @@ Mongo Orchestration is an HTTP server that provides a REST API for creating and 
 
 ##Installation
 
-Install Mongo Orchestration using `python setup.py install`. Note that this may require administrator privileges. This will place a script called `mongo-orchestration` on your path, can be used to control the Mongo Orchestration server.
+The easiest way to install Mongo Orchestration is with [`pip`](https://pypi.python.org/pypi/pip):
+
+    pip install mongo-orchestration
+
+You can also install the development version of Mongo Orchestration manually:
+
+    git clone https://github.com/mongodb/mongo-orchestration.git
+    cd mongo-orchestration
+    python setup.py install
+
+Cloning the repository this way will also give you access to [predefined configurations](https://github.com/mongodb/mongo-orchestration/blob/master/README.md#predefined-configurations) for Mongo Orchestration as well as the "mo" script. Note that you may have to run the above commands with `sudo`, depending on where you're installing Mongo Orchestration and what privileges you have. Installation will place a `mongo-orchestration` script on your path.
 
 ##Usage
 `mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`
