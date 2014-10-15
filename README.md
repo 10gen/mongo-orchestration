@@ -1,52 +1,47 @@
-[![Build Status](https://jenkins.10gen.com/job/mongo-orchestration/badge/icon)](https://jenkins.10gen.com/job/mongo-orchestration/)
-
-
 See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for documentation.
 
-**mongo-orchestration** - http server which provide rest api to management mongo's configurations
+Mongo Orchestration is an HTTP server that provides a REST API for creating and managing MongoDB configurations.
 
 ##Features
 
-Supported configurations: **Host**, **ReplicaSet**, **ShardCluster**
-
-###Hosts
-+ **setup** - setup host using options
-+ **control** - start/stop/restart instance
-+ **information** - return information about host
-
-###ReplicaSet
-+ **setup** - setup replica set using configuration structure
-+ **configure** - add/remove members
-+ **control** - start/stop/restart members
-+ **information** - return information about replicaset
-+ **authentication**  - support authentication by keyFile
-
-
-###Shard Cluster
-+ **setup** - setup shard cluster using configuration structure
-+ **configure** - add/remove members
-+ **information** - return information about replicaset
-+ **authentication**  - support authentication by keyFile
+- Start and stop mongod servers, replica sets, and sharded clusters.
+- Add and remove replica set members.
+- Add and remove shards and mongos routers.
+- Reset replica sets and clusters to restart all members that were stopped.
+- Freeze secondary members of replica sets.
+- Retrieve information about MongoDB resources.
+- Interaction all through REST interface.
 
 ##Requires
 - [Python 2.6, 2.7, or >= 3.2](http://www.python.org/download/)
 - [PyMongo 2.7.2](https://pypi.python.org/pypi/pymongo/2.7.2)
 - [CherryPy 3.5.0](http://www.cherrypy.org/)
 
-##Installing
+##Installation
 
-Install Mongo Orchestration using `python setup.py install`. Note that this may require administrator privileges. This will place a script called `mongo-orchestration` on your path, which you can use to control the Mongo Orchestration server.
+The easiest way to install Mongo Orchestration is with [`pip`](https://pypi.python.org/pypi/pip):
+
+    pip install mongo-orchestration
+
+You can also install the development version of Mongo Orchestration manually:
+
+    git clone https://github.com/mongodb/mongo-orchestration.git
+    cd mongo-orchestration
+    python setup.py install
+
+Cloning the repository this way will also give you access to [predefined configurations](https://github.com/mongodb/mongo-orchestration/blob/master/README.md#predefined-configurations) for Mongo Orchestration as well as the "mo" script. Note that you may have to run the above commands with `sudo`, depending on where you're installing Mongo Orchestration and what privileges you have. Installation will place a `mongo-orchestration` script on your path.
 
 ##Usage
 `mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}`
 
 Arguments:
-+ **-h** - show help info
+
++ **-h** - show help
 + **-f, --config** - path to config file
-+ **-e, --env** - release name from config file
-+ **--no-fork** - don't start as service
-+ **-p** - port number, 8889 by default
-+ **start/stop/restart**: server's command
++ **-e, --env** - default release to use, as specified in the config file
++ **--no-fork** - run server in foreground
++ **-p** - port number (8889 by default)
++ **start/stop/restart**: start, stop, or restart the server, respectively
 
 In addition, Mongo Orchestration can be influenced by the `MONGO_ORCHESTRATION_HOME` environment variable, which informs the server where to find the "configurations" directory for presets.
 
@@ -67,606 +62,55 @@ Starts Mongo Orchestration on port 8888 using `26-release` defined in `mongo-orc
 ###Configuration File
 Mongo Orchestration may be given a JSON configuration file with the `--config` option specifying where to find MongoDB binaries. See [`mongo-orchestration.config`](https://github.com/mongodb/mongo-orchestration/blob/master/mongo-orchestration.config) for an example. When no configuration file is provided, Mongo Orchestration uses whatever binaries are on the user's PATH.
 
-## Predefined configurations
-There is a set of predefined configurations in the repository. They can be started with the `mo` script from the `scripts` folder.
-
-To start a single node without ssl or auth:
-```bash
-scripts/mo configurations/hosts/clean.json start
-```
-
-To get status on a single node without ssl or auth:
-```bash
-scripts/mo configurations/hosts/clean.json status
-
-To stop a single node without ssl or auth:
-```bash
-scripts/mo configurations/hosts/clean.json stop
-
-To start a single node with ssl, but no auth:
-```bash
-scripts/mo configurations/hosts/ssl.json start
-```
-
-To start a replica set with ssl and auth:
-```bash
-scripts/mo configurations/rs/ssl_auth.json start
-```
-
-To start a sharded cluster with auth:
-```bash
-scripts/mo configurations/sh/auth.json start
-```
-
-
-## Command line scripts
-
-+ **cmd_hosts.py** - manage hosts
-+ **cmd_rs.py**    - manage replica sets
-+ **cmd_sh.py**    - manage shard clusters
-
-### cmd_hosts.py - manage hosts
-
-command format: `command host_id  [params]`
-**Note: two space between args**
-
-commands:
-+ **create {host params}** - create new host
-Example: `create {"name": "mongod"}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'id': 'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
- 'procInfo': {'alive': True,
-               'name': 'mongod',
-               'optfile': '/tmp/mongo-kGmDvJ',
-               'params': {'dbpath': '/tmp/mongo-ehOPTO',
-                           'nojournal': 'true',
-                           'noprealloc': 'true',
-                           'oplogSize': 10,
-                           'port': 1035,
-                           'smallfiles': 'true'},
-               'pid': 31186},
- 'serverInfo': {'bits': 64,
-                 'debug': False,
-                 'gitVersion': 'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
-                 'maxBsonObjectSize': 16777216,
-                 'ok': 1.0,
-                 'sysInfo': 'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
-                 'version': '2.2.0',
-                 'versionArray': [2, 2, 0, 0]},
- 'statuses': {'locked': False, 'mongos': False, 'primary': True},
- 'uri': 'EPBYMINW0164T1:1035'}
-=================================
-```
-+ **info [host-id]**  - show information about host
-Example: `info 1`
-
-```javascript
-========= Response data =========
-result code:  200
-{'id': 'e42ec4e4-8ba9-4200-9ba5-375b4c490cf8',
- 'procInfo': {'alive': True,
-               'name': 'mongod',
-               'optfile': '/tmp/mongo-kGmDvJ',
-               'params': {'dbpath': '/tmp/mongo-ehOPTO',
-                           'nojournal': 'true',
-                           'noprealloc': 'true',
-                           'oplogSize': 10,
-                           'port': 1035,
-                           'smallfiles': 'true'},
-               'pid': 31186},
- 'serverInfo': {'bits': 64,
-                 'debug': False,
-                 'gitVersion': 'f5e83eae9cfbec7fb7a071321928f00d1b0c5207',
-                 'maxBsonObjectSize': 16777216,
-                 'ok': 1.0,
-                 'sysInfo': 'Linux ip-10-2-29-40 2.6.21.7-2.ec2.v1.2.fc8xen #1 SMP Fri Nov 20 17:48:28 EST 2009 x86_64 BOOST_LIB_VERSION=1_49',
-                 'version': '2.2.0',
-                 'versionArray': [2, 2, 0, 0]},
- 'statuses': {'locked': False, 'mongos': False, 'primary': True},
- 'uri': 'EPBYMINW0164T1:1035'}
-=================================
-```
-
-+ **list** - show all hosts
-Example: `list`
-
-```javascript
-========= Response data =========
-result code:  200
-['e42ec4e4-8ba9-4200-9ba5-375b4c490cf8']
-=================================
-1 e42ec4e4-8ba9-4200-9ba5-375b4c490cf8
-```
-
-+ **stop [host_id]** - stop host
-Example: `stop 1`
-
-```javascript
-========= Response data =========
-result code:  200
-''
-=================================
-```
-
-+ **start [host_id]** - start host
-Example: `start 1`
-
-```javascript
-200
-```
-
-+ **restart [host_id]** - restart host
-Example: `javascriptrestart 1`
-
-```
-========= Response data =========
-result code:  200
-''
-=================================
-```
-
-+ **delete [host_id]** - delete host
-Example: `delete 1`
-
-```javascript
-========= Response data =========
-result code:  204
-''
-=================================
-```
-
-
-### cmd_rs.py - manage replica sets
-
-command format: `command rs_id  [member_id]  [params]`
-**command** - command
-**rs_id** - replica id or replica index
-**member_id** - member id
-**params** - json string
-
-**Note: two space between args**
-
-commands:
-+ **help** - show help information
-+ **create** - create new replica set
-Example: `create {"id":"default", "members": [{},{},{"rsParams": {"arbiterOnly":true}}, {"rsParams":{"hidden":true, "priority":0}}]}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'auth_key': None,
- 'id': 'default',
- 'members': [{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
-              {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
-              {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
-              {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]}
-=================================
-['default']
-```
-
-+ **list** - show list of replicas , format: index replica-id
-Example: `list`
-
-```javascript
-========= Response data =========
-result code:  200
-['default']
-=================================
-1 default
-```
-
-+ **info [index or replica-id]** - show information about replica set
-Example: `info 1`
-
-```javascript
-========= Response data =========
-result code:  200
-{'auth_key': None,
- 'id': 'default',
- 'members': [{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
-              {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
-              {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
-              {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]}
-=================================
-```
-
-+ **arbiters [index or replica-id]** - show list of arbiters hosts
-Example: `arbiters 1`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': 2, 'host': 'EPBYMINW0164T1:1027'}]
-=================================
-```
-
-+ **hidden [index or replica-id]** - show hidden hosts
-Example: `hidden 1`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
-=================================
-```
-
-+ **secondaries** - show secondaries hosts
-Example: `secondaries [index or replica-id]`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
- {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
-=================================
-```
-
-+ **primary [index or replica-id]** - show information about primary host
-Example: `primary 1`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 0,
- 'procInfo': {'alive': True,
-               'name': 'mongod',
-               'optfile': '/tmp/mongo-qiIHUz',
-               'params': {'dbpath': '/tmp/mongo-tgT1tD',
-                           'nojournal': 'true',
-                           'noprealloc': 'true',
-                           'oplogSize': 10,
-                           'port': 1025,
-                           'replSet': 'default',
-                           'smallfiles': 'true'},
-               'pid': 26806},
- 'rsInfo': {'primary': True, 'secondary': False},
- 'statuses': {'locked': False, 'mongos': False, 'primary': True},
- 'uri': 'EPBYMINW0164T1:1025'}
-=================================
-```
-
-+ **stepdown [index or replica-id]** - stepdown primary host
-Example: `stepdown 1`
-
-```javascript
-========= Response data =========
-result code:  200
-''
-=================================
-```
-
-+ **members** - show all replicaset's members
-Example: `members [index or replica-id]`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
- {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
- {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
- {'_id': 3, 'host': 'EPBYMINW0164T1:1028'}]
-=================================
-```
-
-+ **member_add [index or replica-id]  {member config}** - add new member to replica set
-Example: `member_add 1  {"rsParams": {"hidden": true, "priority": 0}}`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': 0, 'host': 'EPBYMINW0164T1:1025'},
- {'_id': 1, 'host': 'EPBYMINW0164T1:1026'},
- {'_id': 2, 'host': 'EPBYMINW0164T1:1027'},
- {'_id': 3, 'host': 'EPBYMINW0164T1:1028'},
- {'_id': 4, 'host': 'EPBYMINW0164T1:1030'}]
-=================================
-```
-
-+ **member_info [index or replica-id]  [member-id]** - show information about member
-Example: `member_info 1  4`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 4,
- 'procInfo': {'alive': True,
-               'name': 'mongod',
-               'optfile': '/tmp/mongo-XDk4wy',
-               'params': {'dbpath': '/tmp/mongo-1KL3aQ',
-                           'nojournal': 'true',
-                           'noprealloc': 'true',
-                           'oplogSize': 10,
-                           'port': 1030,
-                           'replSet': 'default',
-                           'smallfiles': 'true'},
-               'pid': 28377},
- 'rsInfo': {'hidden': True, 'primary': False, 'secondary': True},
- 'statuses': {'locked': False, 'mongos': False, 'primary': False},
- 'uri': 'EPBYMINW0164T1:1030'}
-=================================
-```
-
-+ **member_update [index or replica-id]  [member-id]** - update member params
-Example: `member_update 1  4  {"rsParams": {"hidden":false, "priority": 3}}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 4,
- 'procInfo': {'alive': True,
-               'name': 'mongod',
-               'optfile': '/tmp/mongo-XDk4wy',
-               'params': {'dbpath': '/tmp/mongo-1KL3aQ',
-                           'nojournal': 'true',
-                           'noprealloc': 'true',
-                           'oplogSize': 10,
-                           'port': 1030,
-                           'replSet': 'default',
-                           'smallfiles': 'true'},
-               'pid': 28377},
- 'rsInfo': {'primary': True, 'secondary': False},
- 'statuses': {'locked': False, 'mongos': False, 'primary': True},
- 'uri': 'EPBYMINW0164T1:1030'}
-=================================
-```
-
-+ **member_command [index or replica-id]  [member-id]  [command]** - start/stop/restart host
-Example: `member_command 1  4  stop`
-
-```javascript
-========= Response data =========
-result code:  200
-''
-=================================
-```
-
-+ **member_freeze [index or replica-id]  [member-id]  [timeout]** - Forces the current node to become ineligible to become primary for the period specified
-Example: `member_freeze 1  1  60`
-
-```javascript
-========= Response data =========
-result code:  200
-=================================
-```
-
-+ **member_delete [index or replcia-id]  [member-id]** - remove host from replica set
-Example: `member_delete 1  4`
-
-```javascript
-========= Response data =========
-result code:  200
-True
-=================================
-```
-
-+ **delete [index or replica-id]** - remove replica set
-Example: `delete 1`
-
-```javascript
-========= Response data =========
-result code:  204
-''
-=================================
-```
-
-
-
-### cmd_sh.py - manage shard cluster
-
-command format: `command sh_id  [member_id]  [params]`
-**command** - command
-**sh_id** - shard cluster id or index
-**member_id** - member id
-**params** - json string
-
-**Note: two space between args**
-
-commands:
-+ **help** - show help information
-+ **create** - create new shard cluster
-
-Example:
-```javascript
-create create {"id": "shard_cluster_1", "routers": [{"port": 2323}, {}], "configsvrs": [{"port": 2315}], "members": [{"id": "sh01", "shardParams": {}}, {"id": "sh02", "shardParams": {"port": 2320}}, {"id": "sh-rs-01", "shardParams": {"id": "rs1", "members": [{}, {}]}}]}
-```
-
-```javascript
-========= Response data =========
-result code:  200
-{'configsvrs': [{'hostname': '127.0.0.1:2315',
-                  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
- 'id': 'shard_cluster_1',
- 'members': [{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-               'id': 'sh01',
-               'isHost': True},
-              {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
-              {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
-               'id': 'sh02',
-               'isHost': True}],
- 'routers': [{'hostname': '127.0.0.1:2323',
-               'id': '9f6b743b-24d2-40eb-860f-1b0c474625da'},
-              {'hostname': '127.0.0.1:1025',
-               'id': '84c7a69d-ea44-4b54-9525-c394b143c799'}]}
-=================================
-['shard_cluster_1']
-```
-
-+ **list** - show list of clusters , format: index cluster-id
-Example: `list`
-
-```javascript
-========= Response data =========
-result code:  200
-['shard_cluster_1']
-=================================
-1 shard_cluster_1
-```
-
-+ **info [index or cluter-id]** - show info about cluster
-Example: `info 1`
-
-```javascript
-========= Response data =========
-result code:  200
-{'configsvrs': [{'hostname': '127.0.0.1:2315',
-                  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}],
- 'id': 'shard_cluster_1',
- 'members': [{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-               'id': 'sh01',
-               'isHost': True},
-              {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
-              {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
-               'id': 'sh02',
-               'isHost': True}],
- 'routers': [{'hostname': '127.0.0.1:2323',
-               'id': '9f6b743b-24d2-40eb-860f-1b0c474625da'},
-              {'hostname': '127.0.0.1:1025',
-               'id': '84c7a69d-ea44-4b54-9525-c394b143c799'}]}
-=================================
-```
-
-+ **configsvrs [index or cluster-id]** - show list of config servers
-Example: `configsvrs 1`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'hostname': '127.0.0.1:2315',
-  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
-=================================
-```
-
-+ **routers [index or cluster-id]** - show routers
-Example: `routers 1`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'hostname': '127.0.0.1:2315',
-  'id': 'd28f2b3d-245f-4b3c-8dff-96a3d3a7ca7a'}]
-=================================
-```
-
-+ **router_add** - add new router
-Example: `router_add [index or cluster-id]  {"port": 2525, "logpath": "/tmp/router2"}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'hostname': '127.0.0.1:2525',
- 'id': 'eae3af8c-c8b0-4e69-85f9-fab69ef51b32'}
-=================================
-```
-
-+ **router_delete** - delete router
-Example: `router_add [index or cluster-id] [router-id]`
-
-```javascript
-========= Response data =========
-result code:  200
-{'ok': 1,
- 'routers': [u'e5858165-929b-48bc-ac0d-87cf31655ea8', u'302ed013-5ce7-45e0-b5ba-132e6d52caec']}
-=================================
-```
-
-+ **members** - show cluster's members
-Example: `members [index or cluster-id]`
-
-```javascript
-========= Response data =========
-result code:  200
-[{'_id': '31ee0ea7-e7b7-4df4-b8fd-1e3cc5398b72',
-  'id': 'sh01',
-  'isHost': True},
- {'_id': 'rs1', 'id': 'sh-rs-01', 'isReplicaSet': True},
- {'_id': '67806256-fdd3-475d-a33f-b68302e74636',
-  'id': 'sh02',
-  'isHost': True}]
-=================================
-```
-
-+ **member_add [index or cluster-id]  {member config}** - add new member to cluster
-Example: `member_add 1  {"id": "shardX", "shardParams": {"port": 2527, "dbpath": "/tmp/memberX", "logpath": "/tmp/memberX.log", "ipv6": true, "nojournal": true}}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 'b380299e-6edf-4445-9f86-327a44fb9c1d',
- 'id': 'shardX',
- 'isHost': True}
-=================================
-```
-
-+ **member_add [index or cluster-id]  {member config}** - add new member to cluster
-Example: `member_add 1  {"id": "shard-rs", "shardParams": {"id": "repl-test", "members": [{}, {}, {"rsParams": {"arbiterOnly": true}}]}}`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 'repl-test', 'id': 'shard-rs', 'isReplicaSet': True}
-=================================
-```
-
-+ **member_info [index or cluster-id]  [member-id]** - show information about member
-Example: `member_info 1  shardX`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 'b380299e-6edf-4445-9f86-327a44fb9c1d',
- 'id': 'shardX',
- 'isHost': True}
-=================================
-```
-
-+ **member_info [index or cluster-id]  [member-id]** - show information about member
-Example: `member_info 1  shard-rs`
-
-```javascript
-========= Response data =========
-result code:  200
-{'_id': 'repl-test', 'id': 'shard-rs', 'isReplicaSet': True}
-=================================
-```
-
-+ **member_delete [index or cluster-id]  [member-id]** - remove sahrd from cluster
-Example: `member_delete 1  sh01`
-
-```javascript
-========= Response data =========
-result code:  200
-{'msg': 'draining started successfully',
- 'ok': 1.0,
- 'shard': 'sh01',
- 'state': 'started'}
-=================================
-```
-
-+ **member_delete [index or cluster-id]  [member-id]** - remove shard from cluster
-Example: `member_delete 1  sh01`
-
-```javascript
-========= Response data =========
-result code:  200
-{'msg': 'removeshard completed successfully',
- 'ok': 1.0,
- 'shard': 'sh01',
- 'state': 'completed'}
-=================================
-```
-
-+ **delete [index or cluster-id]** - remove cluster
-Example: `delete shard_cluster_1`
-
-```javascript
-========= Response data =========
-result code:  204
-''
-=================================
-```
+## Predefined Configurations
+The Mongo Orchestration repository has a set of predefined [configurations](https://github.com/mongodb/mongo-orchestration/tree/master/configurations) that can be used to start, restart, or stop MongoDB processes. You can use a tool like `curl` to send these files directly to the Mongo Orchestration server, or use the `mo` script in the `scripts` directory. Some examples:
+
+- Start a single node without SSL or auth:
+
+        scripts/mo configurations/servers/clean.json start
+
+- Get the status of a single node without SSL or auth:
+
+        scripts/mo configurations/servers/clean.json status
+
+- Stop a single node without SSL or auth:
+
+        scripts/mo configurations/servers/clean.json stop
+
+- Start a replica set with ssl and auth:
+
+        scripts/mo configurations/replica_sets/ssl_auth.json start
+
+- Use `curl` to create a basic sharded cluster with the id "myCluster":
+
+        curl -XPUT http://localhost:8889/v1/sharded_clusters/myCluster -d@configurations/sharded_clusters/basic.json
+
+**Helpful hint**: You can prettify JSON responses from the server by piping the response into `python -m json.tool`, e.g.:
+
+    $ curl http://localhost:8889/v1/servers/myServer | python -m json.tool
+    
+    {
+        "id": "myServer",
+        "mongodb_uri": "mongodb://localhost:1025",
+        "orchestration": "servers",
+        "procInfo": {
+            "alive": true,
+            "name": "mongod",
+            "optfile": "/var/folders/v9/spc2j6cx3db71l__k89_8ng80000gp/T/mongo-KHUACD",
+            "params": {
+                "dbpath": "/var/folders/v9/spc2j6cx3db71l__k89_8ng80000gp/T/mongo-vAgYaQ",
+                "ipv6": true,
+                "journal": true,
+                "logappend": true,
+                "noprealloc": true,
+                "oplogSize": 100,
+                "port": 1025,
+                "smallfiles": true
+            },
+            "pid": 51320
+        },
+        // etc.
+    }
 
 ##Tests
 
