@@ -1,6 +1,3 @@
-[![Build Status](https://jenkins.10gen.com/job/mongo-orchestration/badge/icon)](https://jenkins.10gen.com/job/mongo-orchestration/)
-
-
 See the [wiki](https://github.com/mongodb/mongo-orchestration/wiki) for documentation.
 
 Mongo Orchestration is an HTTP server that provides a REST API for creating and managing MongoDB configurations.
