@@ -3,6 +3,7 @@
     "procParams": {
         "ipv6": true, 
         "logappend": true,
-        "journal": true
+        "journal": true,
+        "setParameter": {"enableTestCommands": 1}
     }
 }
