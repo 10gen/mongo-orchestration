@@ -26,7 +26,6 @@ from mongo_orchestration.apps import (error_wrap, get_json, Route,
 from mongo_orchestration.common import *
 from mongo_orchestration.sharded_clusters import ShardedClusters
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
