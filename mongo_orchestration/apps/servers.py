@@ -27,7 +27,6 @@ from mongo_orchestration.common import *
 from mongo_orchestration.errors import RequestError
 from mongo_orchestration.servers import Servers
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

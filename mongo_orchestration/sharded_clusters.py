@@ -26,7 +26,6 @@ from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.singleton import Singleton
 from pymongo import MongoClient
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
