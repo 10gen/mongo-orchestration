@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import sys
 
 extra_deps = []
@@ -26,6 +27,11 @@ setup(
     tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
     test_suite='nose.collector',
     packages=find_packages(),
+    package_data={
+        'mongo_orchestration': [
+            os.path.join('configurations', config_dir, '*.json')
+            for config_dir in ('servers', 'replica_sets', 'sharded_clusters')]
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
