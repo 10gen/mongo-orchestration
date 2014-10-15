@@ -43,7 +43,7 @@ Arguments:
 + **-p** - port number (8889 by default)
 + **start/stop/restart**: start, stop, or restart the server, respectively
 
-In addition, Mongo Orchestration can be influenced by the `MONGO_ORCHESTRATION_HOME` environment variable, which informs the server where to find the "configurations" directory for presets.
+In addition, Mongo Orchestration can be influenced by the `MONGO_ORCHESTRATION_HOME` environment variable, which informs the server where to find the "configurations" directory for presets as well as where to put the log and pid files.
 
 ###Examples
 
@@ -67,23 +67,25 @@ The Mongo Orchestration repository has a set of predefined [configurations](http
 
 - Start a single node without SSL or auth:
 
-        scripts/mo configurations/servers/clean.json start
+        mo configurations/servers/clean.json start
 
 - Get the status of a single node without SSL or auth:
 
-        scripts/mo configurations/servers/clean.json status
+        mo configurations/servers/clean.json status
 
 - Stop a single node without SSL or auth:
 
-        scripts/mo configurations/servers/clean.json stop
+        mo configurations/servers/clean.json stop
 
 - Start a replica set with ssl and auth:
 
-        scripts/mo configurations/replica_sets/ssl_auth.json start
+        mo configurations/replica_sets/ssl_auth.json start
 
 - Use `curl` to create a basic sharded cluster with the id "myCluster":
 
         curl -XPUT http://localhost:8889/v1/sharded_clusters/myCluster -d@configurations/sharded_clusters/basic.json
+
+Note that in order to run the `mo` script, you need to be in the same directory as "configurations".
 
 **Helpful hint**: You can prettify JSON responses from the server by piping the response into `python -m json.tool`, e.g.:
 
