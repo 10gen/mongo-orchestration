@@ -33,8 +33,9 @@ def update(d, u):
 def preset_merge(data, cluster_type):
     preset = data.get('preset', None)
     if preset is not None:
-        path = os.path.join(os.environ.get("MONGO_ORCHESTRATION_HOME"),
-                            'configurations', cluster_type, preset)
+        base_path = os.environ.get("MONGO_ORCHESTRATION_HOME",
+                                   os.path.dirname(__file__))
+        path = os.path.join(base_path, 'configurations', cluster_type, preset)
         preset_data = {}
         with open(path, "r") as preset_file:
             preset_data = json.loads(preset_file.read())
