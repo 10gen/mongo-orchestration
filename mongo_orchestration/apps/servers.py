@@ -23,10 +23,14 @@ sys.path.insert(0, '..')
 
 from mongo_orchestration.apps import (error_wrap, get_json, Route,
                                       send_result, setup_versioned_routes)
+from mongo_orchestration.apps.links import (
+    base_link, server_link, all_server_links, all_base_links,
+    sharded_cluster_link, replica_set_link)
 from mongo_orchestration.common import *
 from mongo_orchestration.errors import RequestError
 from mongo_orchestration.servers import Servers
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -46,34 +50,66 @@ def _host_create(params):
                                host_id,
                                params.get('version', ''))
     result = Servers().info(host_id)
-    return send_result(200, result)
+    server_id = result['id']
+    result['links'] = all_server_links(server_id)
+    return result
 
 
 @error_wrap
 def base_uri():
     logger.debug("base_uri()")
-    data = {"service": "mongo-orchestration",
-            "version": __version__}
+    data = {
+        "service": "mongo-orchestration",
+        "version": __version__,
+        "links": all_base_links(rel_to='service')
+    }
     return send_result(200, data)
 
 
 @error_wrap
 def releases_list():
-    return send_result(200, Servers().releases)
+    response = {
+        'releases': Servers().releases,
+        'links': all_base_links(rel_to='get-releases')
+    }
+    return send_result(200, response)
 
 
 @error_wrap
 def host_create():
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
-    return _host_create(data)
+    result = _host_create(data)
+    result['links'].extend([
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers'),
+        server_link('add-server', self_rel=True),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ])
+    return send_result(200, result)
 
 
 @error_wrap
 def host_list():
     logger.debug("host_list()")
-    data = [info for info in Servers()]
-    return send_result(200, data)
+    servers = []
+    for server_id in Servers():
+        server_info = {'id': server_id}
+        server_info['links'] = all_server_links(
+            server_id, rel_to='get-servers')
+        servers.append(server_info)
+    response = {'links': [
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers', self_rel=True),
+        server_link('add-server'),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ]}
+    response['servers'] = servers
+    return send_result(200, response)
 
 
 @error_wrap
@@ -82,6 +118,8 @@ def host_info(host_id):
     if host_id not in Servers():
         return send_result(404)
     result = Servers().info(host_id)
+    result['links'] = all_server_links(host_id, rel_to='get-server-info')
+    result['links'].append(server_link('get-servers'))
     return send_result(200, result)
 
 
@@ -90,7 +128,17 @@ def host_create_by_id(host_id):
     data = get_json(request.body)
     data = preset_merge(data, 'servers')
     data['id'] = host_id
-    return _host_create(data)
+    result = _host_create(data)
+    result['links'].extend([
+        base_link('service'),
+        base_link('get-releases'),
+        server_link('get-servers'),
+        server_link('add-server'),
+        server_link('add-server-by-id', host_id, self_rel=True),
+        replica_set_link('get-replica-sets'),
+        sharded_cluster_link('get-sharded-clusters')
+    ])
+    return send_result(200, result)
 
 
 @error_wrap
@@ -110,7 +158,11 @@ def host_command(host_id):
     command = get_json(request.body).get('action')
     if command is None:
         raise RequestError('Expected body with an {"action": ...}.')
-    result = Servers().command(host_id, command)
+    result = {
+        'command_result': Servers().command(host_id, command),
+        'links': all_server_links(host_id, rel_to='server-command')
+    }
+    result['links'].append(server_link('get-servers'))
     return send_result(200, result)
 
 
