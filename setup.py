@@ -17,7 +17,7 @@ except ImportError:
     from setuptools import setup, find_packages
 
 setup(
-    name='pymongo-orchestration',
+    name='mongo-orchestration',
     version='0.1',
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
