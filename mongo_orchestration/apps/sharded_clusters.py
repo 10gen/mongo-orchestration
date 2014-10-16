@@ -277,7 +277,7 @@ def router_add(cluster_id):
     result['links'] = [
         server_link('get-server-info', router_id),
         sharded_cluster_link('add-router', cluster_id, self_rel=True),
-        sharded_cluster_link('delete-router', cluster_id, router_id),
+        sharded_cluster_link('delete-router', cluster_id, router_id=router_id),
         sharded_cluster_link('get-sharded-cluster-info', cluster_id),
         sharded_cluster_link('get-routers', cluster_id),
     ]
