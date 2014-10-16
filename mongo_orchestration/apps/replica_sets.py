@@ -327,7 +327,7 @@ def member_update(rs_id, member_id):
     data = get_json(request.body)
     ReplicaSets().member_update(rs_id, member_id, data)
     result = ReplicaSets().member_info(rs_id, member_id)
-    result['links'] = _build_member_links(rs_id, member)
+    result['links'] = _build_member_links(rs_id, result)
     result['links'].extend(_build_member_parent_links(rs_id))
     result['links'].append(replica_set_link(
         'update-replica-set-member-config', rs_id, member_id, self_rel=True))
