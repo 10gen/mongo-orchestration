@@ -29,7 +29,8 @@ _SERVER_LINKS = {
     'get-server-info': {'method': 'GET', 'href': '{servers_href}/{server_id}'},
     'server-command': {'method': 'POST', 'href': '{servers_href}/{server_id}',
                        'template': {'action': "<action name>"},
-                       'actions': ['start', 'stop', 'restart', 'freeze']}
+                       'actions': ['start', 'stop', 'restart', 'freeze',
+                                   'stepdown', 'reset']}
 }
 _REPLICA_SET_LINKS = {
     'get-replica-set-info': {
