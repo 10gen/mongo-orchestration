@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-param([string]$python_bin="C:\\Python27\\python.exe")
-
-cd $env:WORKSPACE\mongo-orchestration
-& $python_bin server.py stop
+echo "Activating virtual environment"
+D:\jenkins\mo_env\Scripts\activate.ps1
+echo "Attempting to stop Mongo Orchestration gracefully..."
+mongo-orchestration.exe stop
 
 echo "====== CLEANUP ======"
 
@@ -23,6 +23,8 @@ echo "====== CLEANUP ======"
 # Don't show these in the build log.
 $ErrorActionPreference = 'SilentlyContinue'
 
+echo "Removing virtual environment"
+del -Recurse -Force D:\jenkins\mo_env
 echo "*** Killing any existing MongoDB Processes which may not have shut down on a prior job."
 $mongods = (Get-Process mongod)
 echo "Found existing mongod Processes: $mongods"

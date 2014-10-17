@@ -46,12 +46,13 @@ $ErrorActionPreference = 'Continue'
 
 echo "====== END CLEANUP ======"
 
-echo "Copying mongo-orchestration to $env:WORKSPACE\mongo-orchestration"
-copy-item -recurse D:\jenkins\mongo-orchestration $env:WORKSPACE\mongo-orchestration
-cd $env:WORKSPACE\mongo-orchestration
-
-echo "Start-Process -FilePath $python_bin -ArgumentList server.py,start,-f,$configuration_file,-e,$server,--no-fork"
-Start-Process -FilePath $python_bin -ArgumentList server.py,start,-f,$($configuration_file),-e,$($server),--no-fork
-
+echo "Creating virtualenv"
+del -Recurse -Force D:\jenkins\mo_env
+C:\Python27\Scripts\virtualenv.exe D:\jenkins\mo_env
+echo "Activating virtual environment"
+D:\jenkins\mo_env\Scripts\activate.ps1
+cd $WORKSPACE
+echo "Start-Process -FilePath mongo-orchestration.exe -ArgumentList start,-f,$configuration_file,-e,$server,--no-fork"
+Start-Process -FilePath mongo-orchestration.exe -ArgumentList start,-f,$($configuration_file),-e,$($server),--no-fork
 echo "Sleeping 5 seconds to allow some time for Mongo Orchestration to start..."
 Start-Sleep -s 5
