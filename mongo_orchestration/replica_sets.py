@@ -39,7 +39,7 @@ class ReplicaSet(object):
 
     _servers = Servers()  # singleton to manage servers instances
     # replica set's default parameters
-    default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
+    default_params = {'arbiterOnly': False, 'hidden': False, 'slaveDelay': 0}
 
     def __init__(self, rs_params):
         """create replica set according members config
@@ -286,7 +286,7 @@ class ReplicaSet(object):
                     return result
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
             logger.debug("member {member_id} repl info: {repl}".format(**locals()))
-            for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
+            for key in ('votes', 'tags', 'arbiterOnly', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
             result['rsInfo']['primary'] = repl.get('ismaster', False)
