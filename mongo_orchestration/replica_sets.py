@@ -223,7 +223,7 @@ class ReplicaSet(object):
         try:
             admin = self.connection().admin
             config = admin.command('replSetGetConfig')['config']
-        except pymongo.OperationFailure:
+        except pymongo.errors.OperationFailure:
             # replSetGetConfig was introduced in 2.7.5.
             config = self.connection().local.system.replset.find_one()
         return config
