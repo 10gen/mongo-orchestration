@@ -39,7 +39,7 @@ class ReplicaSet(object):
 
     _servers = Servers()  # singleton to manage servers instances
     # replica set's default parameters
-    default_params = {'arbiterOnly': False, 'buildIndexes': False, 'hidden': False, 'slaveDelay': 0}
+    default_params = {'arbiterOnly': False, 'hidden': False, 'slaveDelay': 0}
 
     def __init__(self, rs_params):
         """create replica set according members config
@@ -220,7 +220,12 @@ class ReplicaSet(object):
     @property
     def config(self):
         """return replica set config, use rs.conf() command"""
-        config = self.connection().local.system.replset.find_one()
+        try:
+            admin = self.connection().admin
+            config = admin.command('replSetGetConfig')['config']
+        except pymongo.OperationFailure:
+            # replSetGetConfig was introduced in 2.7.5.
+            config = self.connection().local.system.replset.find_one()
         return config
 
     def member_create(self, params, member_id):
@@ -449,9 +454,12 @@ class ReplicaSet(object):
         for member in config['members']:
             cfg_member_info = self.default_params.copy()
             cfg_member_info.update(member)
-            'priority' in cfg_member_info and cfg_member_info.pop('priority')  # no way to check 'priority' value
-            'votes' in cfg_member_info and cfg_member_info.pop('votes')  # no way to check 'votes' value
-            'tags' in cfg_member_info and cfg_member_info.pop('tags')  # no way to check 'tags' value
+            # Remove attributes we can't check.
+            for attr in ('priority', 'votes', 'tags', 'buildIndexes'):
+                try:
+                    cfg_member_info.pop(attr)
+                except KeyError:
+                    pass
             cfg_member_info['host'] = cfg_member_info['host'].lower()
 
             real_member_info = self.default_params.copy()
