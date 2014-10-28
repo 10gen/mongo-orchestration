@@ -456,10 +456,7 @@ class ReplicaSet(object):
             cfg_member_info.update(member)
             # Remove attributes we can't check.
             for attr in ('priority', 'votes', 'tags', 'buildIndexes'):
-                try:
-                    cfg_member_info.pop(attr)
-                except KeyError:
-                    pass
+                cfg_member_info.pop(attr, None)
             cfg_member_info['host'] = cfg_member_info['host'].lower()
 
             real_member_info = self.default_params.copy()
