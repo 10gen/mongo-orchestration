@@ -133,15 +133,15 @@ class ReplicaSetsTestCase(unittest.TestCase):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
         info = self.rs.info(repl_id)
         self.assertTrue(isinstance(info, dict))
-        for item in ("id", "members", "uri", "mongodb_uri", "orchestration"):
+        for item in ("id", "mongodb_uri", "members", "orchestration"):
             self.assertTrue(item in info)
 
         self.assertEqual(info['id'], repl_id)
         self.assertEqual(len(info['members']), 2)
-        self.assertTrue(info['uri'].find(','))
-        self.assertTrue(info['uri'].find('replicaSet=' + repl_id))
-        self.assertTrue(info['mongodb_uri'].find(info['uri']))
-        self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
+        mongodb_uri = info['mongodb_uri']
+        for member in self.rs.members(repl_id):
+            self.assertIn(member['host'], mongodb_uri)
+        self.assertTrue(mongodb_uri.find('mongodb://') == 0)
         self.assertEqual(info['orchestration'], 'replica_sets')
 
     def test_info_with_auth(self):
@@ -153,7 +153,7 @@ class ReplicaSetsTestCase(unittest.TestCase):
 
     def test_primary(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
-        primary = self.rs.primary(repl_id)['uri']
+        primary = self.rs.primary(repl_id)['mongodb_uri']
         c = pymongo.MongoClient(primary)
         self.assertTrue(c.is_primary)
         c.close()
@@ -167,13 +167,14 @@ class ReplicaSetsTestCase(unittest.TestCase):
         primary_server = Servers()._storage[primary['server_id']]
         # No Exception.
         primary_server.stepdown()
-        self.assertNotEqual(primary['uri'], self.rs.primary(repl_id)['uri'])
+        self.assertNotEqual(primary['mongodb_uri'],
+                            self.rs.primary(repl_id)['mondob_uri'])
 
     def test_rs_del(self):
         self.rs.create({'members': [{}, {}]})
         repl_id = self.rs.create({'members': [{}, {}]})
         self.assertEqual(len(self.rs), 2)
-        primary = self.rs.primary(repl_id)['uri']
+        primary = self.rs.primary(repl_id)['mongodb_uri']
         self.assertTrue(pymongo.MongoClient(primary))
         self.rs.remove(repl_id)
         self.assertEqual(len(self.rs), 1)
@@ -243,19 +244,19 @@ class ReplicaSetsTestCase(unittest.TestCase):
     def test_member_info(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"arbiterOnly": True}}, {"rsParams": {"priority": 0, "hidden": True}}]})
         info = self.rs.member_info(repl_id, 0)
-        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
             self.assertTrue(key in info)
         self.assertEqual(info['_id'], 0)
         self.assertTrue(info['statuses']['primary'])
 
         info = self.rs.member_info(repl_id, 1)
-        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
             self.assertTrue(key in info)
         self.assertEqual(info['_id'], 1)
         self.assertTrue(info['rsInfo']['arbiterOnly'])
 
         info = self.rs.member_info(repl_id, 2)
-        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
             self.assertTrue(key in info)
         self.assertEqual(info['_id'], 2)
         self.assertTrue(info['rsInfo']['hidden'])
@@ -307,17 +308,17 @@ class ReplicaSetsTestCase(unittest.TestCase):
             {'members': [{"rsParams": {"priority": 19}},
                          {"rsParams": {"priority": 5}}, {}]})
         next_primary_info = self.rs.member_info(repl_id, 2)
-        next_primary = next_primary_info['uri']
+        next_primary = next_primary_info['mongodb_uri']
         secondary_info = self.rs.member_info(repl_id, 1)
         secondary_server = Servers()._storage[secondary_info['server_id']]
         primary_info = self.rs.member_info(repl_id, 0)
         primary_server = Servers()._storage[primary_info['server_id']]
         self.assertTrue(secondary_server.freeze(10))
         primary_server.stop()
-        self.assertEqual(self.rs.primary(repl_id)['uri'], next_primary)
+        self.assertEqual(self.rs.primary(repl_id)['mongodb_uri'], next_primary)
         time.sleep(12)
-        self.assertEqual(self.rs.primary(repl_id)['uri'],
-                         self.rs.member_info(repl_id, 1)['uri'])
+        self.assertEqual(self.rs.primary(repl_id)['mongodb_uri'],
+                         self.rs.member_info(repl_id, 1)['mongodb_uri'])
 
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority": 0, "hidden": True}}, {}]})
@@ -445,7 +446,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.assertTrue('_id' in result)
         h_id = Servers().id_by_hostname(result['host'])
         h_info = Servers().info(h_id)
-        self.assertEqual(result['host'], h_info['uri'])
+        self.assertIn(result['host'], h_info['mongodb_uri'])
         self.assertTrue(h_info['procInfo']['alive'])
         Servers().remove(h_id)
 
@@ -478,7 +479,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         member = [item for item in self.repl.config['members'] if item['_id'] == 1][0]
         result = self.repl.member_info(1)
         self.assertTrue(result['procInfo']['alive'])
-        self.assertEqual(member['host'], result['uri'])
+        self.assertIn(member['host'], result['mongodb_uri'])
         self.assertTrue(len(result['rsInfo']) > 0)
 
     def test_member_command(self):
@@ -639,7 +640,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.repl = ReplicaSet({'members': [
             {}, {'rsParams': {'arbiterOnly': True}}]})
         info = self.repl.member_info(1)
-        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
             self.assertIn(key, info)
         rs_info = info['rsInfo']
         for key in ('primary', 'secondary', 'arbiterOnly'):
@@ -731,7 +732,7 @@ class ReplicaSetsSingleTestCase(unittest.TestCase):
     def check_primary(self):
         # primary
         print("primary")
-        primary = self.rs.primary(self.repl_id)['uri']
+        primary = self.rs.primary(self.repl_id)['mongodb_uri']
         c = pymongo.MongoClient(primary)
         self.assertTrue(c.is_primary)
         c.close()
@@ -790,14 +791,14 @@ class ReplicaSetsSingleTestCase(unittest.TestCase):
         # member_info
         print("member_info")
         info = self.rs.member_info(self.repl_id, 0)
-        for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
             self.assertTrue(key in info)
         self.assertEqual(info['_id'], 0)
 
         for arbiter in self.rs.arbiters(self.repl_id):
             _id = arbiter['_id']
             info = self.rs.member_info(self.repl_id, _id)
-            for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+            for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
                 self.assertTrue(key in info)
             self.assertEqual(info['_id'], _id)
             self.assertTrue(info['rsInfo']['arbiterOnly'])
@@ -805,7 +806,7 @@ class ReplicaSetsSingleTestCase(unittest.TestCase):
         for hidden in self.rs.hidden(self.repl_id):
             _id = hidden['_id']
             info = self.rs.member_info(self.repl_id, _id)
-            for key in ('procInfo', 'uri', 'statuses', 'rsInfo'):
+            for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
                 self.assertTrue(key in info)
             self.assertEqual(info['_id'], _id)
             self.assertTrue(info['rsInfo']['hidden'])
@@ -822,10 +823,13 @@ class ReplicaSetsSingleTestCase(unittest.TestCase):
         # stepdown
         print("stepdown")
         time.sleep(5)
-        primary = self.rs.primary(self.repl_id)['uri']
+        primary = self.rs.primary(self.repl_id)['mongodb_uri']
         self.rs.primary_stepdown(self.repl_id, timeout=60)
-        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=lambda: primary != self.rs.primary(self.repl_id)['uri']))
-        self.assertNotEqual(primary, self.rs.primary(self.repl_id)['uri'])
+        primary_changed = lambda: primary != self.rs.primary(
+            self.repl_id)['mongodb_uri']
+        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=primary_changed))
+        self.assertNotEqual(primary,
+                            self.rs.primary(self.repl_id)['mongodb_uri'])
 
     def check_member_update(self):
         # member_update

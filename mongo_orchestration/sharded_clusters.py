@@ -115,7 +115,7 @@ class ShardedCluster(object):
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
-        cfgs = ','.join([Servers().info(item)['uri'] for item in self._configsvrs])
+        cfgs = ','.join([Servers().hostname(item) for item in self._configsvrs])
         params.update({'configdb': cfgs})
         self._routers.append(Servers().create(
             'mongos', params, sslParams=self.sslParams, autostart=True,
@@ -189,7 +189,7 @@ class ShardedCluster(object):
                 params['version'] = self._version
             logger.debug("servers create params: {params}".format(**locals()))
             server_id = Servers().create('mongod', **params)
-            result = self._add(Servers().info(server_id)['uri'], member_id)
+            result = self._add(Servers().hostname(server_id), member_id)
             if result.get('ok', 0) == 1:
                 self._shards[result['shardAdded']] = {'isServer': True, '_id': server_id}
                 # return self._shards[result['shardAdded']]
@@ -242,7 +242,6 @@ class ShardedCluster(object):
                 'shards': self.members,
                 'configsvrs': self.configsvrs,
                 'routers': self.routers,
-                'uri': uri,
                 'mongodb_uri': mongodb_uri,
                 'orchestration': 'sharded_clusters'}
 

@@ -171,12 +171,11 @@ class ReplicaSet(object):
 
     def info(self):
         """return information about replica set"""
-        uri = ','.join(x['host'] for x in self.members()) + '/?replicaSet=' + self.repl_id
-        mongodb_uri = 'mongodb://' + uri
+        hosts = ','.join(x['host'] for x in self.members())
+        mongodb_uri = 'mongodb://' + hosts + '/?replicaSet=' + self.repl_id
         return {"id": self.repl_id,
                 "auth_key": self.auth_key,
                 "members": self.members(),
-                "uri": uri,
                 "mongodb_uri": mongodb_uri,
                 "orchestration": 'replica_sets'}
 
@@ -243,7 +242,8 @@ class ReplicaSet(object):
         server_id = self._servers.create(
             'mongod', proc_params, self.sslParams, self.auth_key,
             version=self._version)
-        member_config.update({"_id": member_id, "host": self._servers.info(server_id)['uri']})
+        member_config.update({"_id": member_id,
+                              "host": self._servers.hostname(server_id)})
         return member_config
 
     def member_del(self, member_id, reconfig=True):
@@ -278,7 +278,10 @@ class ReplicaSet(object):
         """return information about member"""
         server_id = self._servers.id_by_hostname(self.id2host(member_id))
         server_info = self._servers.info(server_id)
-        result = {'_id': member_id, 'uri': server_info['uri'], 'server_id': server_id, 'procInfo': server_info['procInfo'], 'statuses': server_info['statuses']}
+        result = {'_id': member_id, 'server_id': server_id,
+                  'mongodb_uri': server_info['mongodb_uri'],
+                  'procInfo': server_info['procInfo'],
+                  'statuses': server_info['statuses']}
         result['rsInfo'] = {}
         if server_info['procInfo']['alive']:
             # Can't call serverStatus on arbiter when running with auth enabled.
@@ -377,7 +380,15 @@ class ReplicaSet(object):
     def hidden(self):
         """return list of hidden members"""
         members = [self.member_info(item["_id"]) for item in self.members()]
-        return [{"_id": member['_id'], "host": member['uri'], "server_id": self._servers.id_by_hostname(member['uri'])} for member in members if member['rsInfo'].get('hidden', False)]
+        result = []
+        for member in members:
+            if member['rsInfo'].get('hidden'):
+                server_id = member['server_id']
+                result.append({
+                    '_id': member['_id'],
+                    'host': self._servers.hostname(server_id),
+                    'server_id': server_id})
+        return result
 
     def passives(self):
         """return list of passive servers"""
@@ -462,7 +473,8 @@ class ReplicaSet(object):
             real_member_info = self.default_params.copy()
             info = self.member_info(member["_id"])
             real_member_info["_id"] = info['_id']
-            real_member_info["host"] = info["uri"].lower()
+            member_hostname = self._servers.hostname(info['server_id'])
+            real_member_info["host"] = member_hostname.lower()
             real_member_info.update(info['rsInfo'])
             logger.debug("real_member_info({member_id}): {info}".format(member_id=member['_id'], info=info))
             for key in cfg_member_info:
