@@ -148,15 +148,15 @@ class ServersTestCase(unittest.TestCase):
 
     def test_id_by_hostname(self):
         h_id = self.servers.create('mongod', {}, autostart=True)
-        h_uri = self.servers.info(h_id)['uri']
+        h_uri = self.servers.hostname(h_id)
         h2_id = self.servers.create('mongod', {}, autostart=True)
-        h2_uri = self.servers.info(h2_id)['uri']
+        h2_uri = self.servers.hostname(h2_id)
         self.assertTrue(self.servers.id_by_hostname(h_uri) == h_id)
         self.assertTrue(self.servers.id_by_hostname(h2_uri) == h2_id)
 
     def test_hostname(self):
         h_id = self.servers.create('mongod', {}, autostart=True)
-        h_uri = self.servers.info(h_id)['uri']
+        h_uri = self.servers.hostname(h_id)
         self.assertEqual(self.servers.hostname(h_id), h_uri)
 
     def test_is_alive(self):
@@ -210,7 +210,7 @@ class ServerTestCase(unittest.TestCase):
         self.server = Server(self.mongod, {'configsvr': True})
         self.server.start(30)
         mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
-        self.server2 = Server(mongos, {'configdb': self.server.info()['uri']})
+        self.server2 = Server(mongos, {'configdb': self.server.hostname})
         self.assertTrue(self.server2.start())
         self.assertTrue(self.server2.info()['statuses'].get('mongos', False))
         self.server2.stop()
@@ -222,10 +222,11 @@ class ServerTestCase(unittest.TestCase):
     def test_info(self):
         self.server.start(30)
         info = self.server.info()
-        for item in ("uri", "mongodb_uri", "statuses", "serverInfo", "procInfo", "orchestration"):
+        for item in ("mongodb_uri", "statuses", "serverInfo",
+                     "procInfo", "orchestration"):
             self.assertTrue(item in info)
 
-        self.assertTrue(info['mongodb_uri'].find(info['uri']))
+        self.assertTrue(info['mongodb_uri'].find(self.server.hostname))
         self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
         fd_log, log_path = tempfile.mkstemp()
         os.close(fd_log)
@@ -346,7 +347,9 @@ class ServerAuthTestCase(unittest.TestCase):
         self.server = Server(self.mongod, {'configsvr': True}, auth_key='secret')
         self.server.start(30)
         mongos = os.path.join(os.environ.get('MONGOBIN', ''), 'mongos')
-        self.server2 = Server(mongos, {'configdb': self.server.info()['uri']}, auth_key='secret', login='admin', password='admin')
+        self.server2 = Server(
+            mongos, {'configdb': self.server.hostname},
+            auth_key='secret', login='admin', password='admin')
         self.server2.start()
 
         for server in (self.server, self.server2):

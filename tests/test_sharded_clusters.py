@@ -159,15 +159,17 @@ class ShardsTestCase(unittest.TestCase):
         sh_id = self.sh.create(config)
         info = self.sh.info(sh_id)
         self.assertTrue(isinstance(info, dict))
-        for item in ("shards", "configsvrs", "routers", "uri", "mongodb_uri", "orchestration"):
+        for item in ("shards", "configsvrs", "routers",
+                     "mongodb_uri", "orchestration"):
             self.assertTrue(item in info)
 
         self.assertEqual(len(info['shards']), 2)
         self.assertEqual(len(info['configsvrs']), 3)
         self.assertEqual(len(info['routers']), 3)
-        self.assertTrue(info['uri'].find(','))
-        self.assertTrue(info['mongodb_uri'].find(info['uri']))
-        self.assertTrue(info['mongodb_uri'].find('mongodb://') == 0)
+        mongodb_uri = info['mongodb_uri']
+        for router in info['routers']:
+            self.assertIn(Servers().hostname(router['id']), mongodb_uri)
+        self.assertTrue(mongodb_uri.find('mongodb://') == 0)
         self.assertEqual(info['orchestration'], 'sharded_clusters')
 
     def test_configsvrs(self):
