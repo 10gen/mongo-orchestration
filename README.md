@@ -63,7 +63,7 @@ Starts Mongo Orchestration on port 8888 using `26-release` defined in `mongo-orc
 Mongo Orchestration may be given a JSON configuration file with the `--config` option specifying where to find MongoDB binaries. See [`mongo-orchestration.config`](https://github.com/mongodb/mongo-orchestration/blob/master/mongo-orchestration.config) for an example. When no configuration file is provided, Mongo Orchestration uses whatever binaries are on the user's PATH.
 
 ## Predefined Configurations
-The Mongo Orchestration repository has a set of predefined [configurations](https://github.com/mongodb/mongo-orchestration/tree/master/configurations) that can be used to start, restart, or stop MongoDB processes. You can use a tool like `curl` to send these files directly to the Mongo Orchestration server, or use the `mo` script in the `scripts` directory. Some examples:
+The Mongo Orchestration repository has a set of predefined [configurations](https://github.com/mongodb/mongo-orchestration/tree/master/mongo_orchestration/configurations) that can be used to start, restart, or stop MongoDB processes. You can use a tool like `curl` to send these files directly to the Mongo Orchestration server, or use the `mo` script in the `scripts` directory. Some examples:
 
 - Start a single node without SSL or auth:
 
