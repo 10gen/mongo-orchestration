@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import time
 
 if sys.version_info[:2] == (2, 6):
     import unittest2 as unittest
@@ -20,3 +21,12 @@ if sys.version_info[:2] == (2, 6):
 else:
     import unittest
     from unittest import SkipTest
+
+
+def assert_eventually(condition, message=None, max_tries=60):
+    for i in range(max_tries):
+        if condition():
+            break
+        time.sleep(1)
+    else:
+        raise AssertionError(message or "Failed after %d attempts." % max_tries)

@@ -58,7 +58,7 @@ class PortPoolTestCase(unittest.TestCase):
 
     def test_singleton(self):
         pp2 = process.PortPool(min_port=1025, max_port=1038)
-        self.failUnlessEqual(id(self.pp), id(pp2))
+        self.assertEqual(id(self.pp), id(pp2))
 
     def test_port_sequence(self):
         ports = set([1025, 1026, 1027, 1028, 30, 28, 22, 45])
@@ -190,10 +190,14 @@ class ProcessTestCase(unittest.TestCase):
             with self.assertRaises(IOError):
                 open(lock_file, 'r')
         else:
-            self.assertTrue(len(open(lock_file, 'r').read()) > 0)
+            with open(lock_file, 'r') as fd:
+                self.assertGreater(len(fd.read()), 0)
         proc.terminate()
         process.repair_mongo(self.bin_path, self.cfg['dbpath'])
-        self.assertFalse(len(open(lock_file, 'r').read()) > 0, "lock_file contains: {0}".format(open(lock_file, 'r').read()))
+        with open(lock_file, 'r') as fd:
+            contents = fd.read()
+            self.assertEqual(len(contents), 0,
+                             "lock_file contains: " + contents)
 
     def test_mprocess_fail(self):
         fd_cfg, config_path = tempfile.mkstemp()
@@ -262,7 +266,10 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(key_file))
         self.assertTrue(os.path.exists(log_path))
         self.assertTrue(os.path.exists(db_path))
-        os.fdopen(fd_cfg, 'w').write("keyFile={key_file}\nlogPath={log_path}\ndbpath={db_path}".format(**locals()))
+        with os.fdopen(fd_cfg, 'w') as fd:
+            fd.write('keyFile={key_file}\n'
+                     'logPath={log_path}\n'
+                     'dbpath={db_path}'.format(**locals()))
         for fd in (fd_cfg, fd_key, fd_log):
             try:
                 os.close(fd)
@@ -294,7 +301,8 @@ class ProcessTestCase(unittest.TestCase):
         cfg = {'port': 27017, 'objcheck': 'true'}
         config_path = process.write_config(cfg)
         self.assertTrue(os.path.exists(config_path))
-        config_data = open(config_path, 'r').read()
+        with open(config_path, 'r') as fd:
+            config_data = fd.read()
         self.assertTrue('port=27017' in config_data)
         self.assertTrue('objcheck=true' in config_data)
         process.cleanup_mprocess(config_path, cfg)

@@ -387,7 +387,7 @@ class ServerAuthTestCase(unittest.TestCase):
         c.admin.logout()
 
         self.assertTrue(db.authenticate('user', 'userpass'))
-        self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, wtimeout=1000))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, wtimeout=1000))
         self.assertTrue(isinstance(db.foo.find_one(), dict))
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
