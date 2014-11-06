@@ -21,7 +21,11 @@ setup(
     version='0.1',
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
-    install_requires=['pymongo>=2.7.2',
+    dependency_links=[
+        'https://github.com/mongodb/mongo-python-driver/tarball/v2.8'
+        '#egg=pymongo-2.8'
+    ],
+    install_requires=['pymongo>2.7.2',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0'] + extra_deps,
     tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
