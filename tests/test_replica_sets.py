@@ -28,7 +28,7 @@ from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool, HOSTNAME
 from nose.plugins.attrib import attr
-from tests import unittest, SkipTest
+from tests import unittest, assert_eventually
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ class ReplicaSetsTestCase(unittest.TestCase):
         # No Exception.
         primary_server.stepdown()
         self.assertNotEqual(primary['mongodb_uri'],
-                            self.rs.primary(repl_id)['mondob_uri'])
+                            self.rs.primary(repl_id)['mongodb_uri'])
 
     def test_rs_del(self):
         self.rs.create({'members': [{}, {}]})
@@ -313,12 +313,34 @@ class ReplicaSetsTestCase(unittest.TestCase):
         secondary_server = Servers()._storage[secondary_info['server_id']]
         primary_info = self.rs.member_info(repl_id, 0)
         primary_server = Servers()._storage[primary_info['server_id']]
-        self.assertTrue(secondary_server.freeze(10))
-        primary_server.stop()
-        self.assertEqual(self.rs.primary(repl_id)['mongodb_uri'], next_primary)
-        time.sleep(12)
-        self.assertEqual(self.rs.primary(repl_id)['mongodb_uri'],
-                         self.rs.member_info(repl_id, 1)['mongodb_uri'])
+
+        assert_eventually(lambda: primary_server.connection.is_primary)
+
+        def freeze_and_stop():
+            self.assertTrue(secondary_server.freeze(10))
+            try:
+                # Call replSetStepDown before killing the primary's process.
+                # This raises OperationFailure if no secondaries are capable
+                # of taking over.
+                primary_server.connection.admin.command('replSetStepDown', 10)
+            except pymongo.errors.AutoReconnect:
+                # Have to stop the server as well so it doesn't get reelected.
+                primary_server.stop()
+                return True
+            except pymongo.errors.OperationFailure:
+                # No secondaries within 10 seconds of my optime...
+                return False
+
+        assert_eventually(freeze_and_stop, "Primary didn't step down.")
+        assert_eventually(lambda: (
+            self.rs.primary(repl_id)['mongodb_uri'] == next_primary),
+            "Secondary did not freeze.",
+            max_tries=120
+        )
+        assert_eventually(lambda: (
+            self.rs.primary(repl_id)['mongodb_uri'] ==
+            self.rs.member_info(repl_id, 1)['mongodb_uri']),
+            "Higher priority secondary never promoted.")
 
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority": 0, "hidden": True}}, {}]})
@@ -631,7 +653,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         c.admin.logout()
 
         self.assertTrue(db.authenticate('user', 'userpass'))
-        self.assertTrue(db.foo.insert({'foo': 'bar'}, safe=True, w=2, wtimeout=1000))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, w=2, wtimeout=1000))
         self.assertTrue(isinstance(db.foo.find_one(), dict))
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
@@ -648,313 +670,6 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertFalse(rs_info['primary'])
         self.assertFalse(rs_info['secondary'])
         self.assertTrue(rs_info['arbiterOnly'])
-
-
-@attr('quick-rs')
-@attr('rs')
-@attr('test')
-class ReplicaSetsSingleTestCase(unittest.TestCase):
-    def setUp(self):
-        raise SkipTest("quick replicaset test doesn't implemented")
-        PortPool().change_range()
-        self.port1 = PortPool().port(check=True)
-        self.port2 = PortPool().port(check=True)
-
-        self.rs = ReplicaSets()
-        self.rs.set_settings(os.environ.get('MONGOBIN', None))
-
-        self.tags_primary = {"status": "primary"}
-        self.tags_hidden = {"status": "hidden"}
-
-        config = {
-            'id': 'testRs',
-            'auth_key': 'sercret', 'login': 'admin', 'password': 'admin',
-            'members': [{"procParams": {"port": self.port1, 'logpath': '/tmp/mongo1'}},
-                        {"procParams": {"port": self.port2, 'logpath': '/tmp/mongo2'}},
-                        {"rsParams": {"priority": 1.5, "tags": self.tags_primary}, "procParams": {'logpath': '/tmp/mongo3'}},
-                        {"rsParams": {"arbiterOnly": True}, "procParams": {'logpath': '/tmp/mongo4'}},
-                        {"rsParams": {"arbiterOnly": True}, "procParams": {'logpath': '/tmp/mongo5'}},
-                        {"rsParams": {"priority": 0, "hidden": True, "votes": 0, "tags": self.tags_hidden}, "procParams": {'logpath': '/tmp/mongo5'}},
-                        {"rsParams": {"priority": 0, "hidden": True, "tags": self.tags_hidden}, "procParams": {'logpath': '/tmp/mongo6'}},
-                        {"rsParams": {"priority": 0, 'slaveDelay': 5, "votes": 0}, "procParams": {'logpath': '/tmp/mongo7'}},
-                        {"rsParams": {"priority": 0}, "procParams": {'logpath': '/tmp/mongo8'}}
-                        ]
-        }
-        self.repl_id = self.rs.create(config)
-        logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
-
-    def waiting(self, fn, timeout=300, sleep=10):
-        t_start = time.time()
-        while not fn():
-            if time.time() - t_start > timeout:
-                return False
-            time.sleep(sleep)
-        return True
-
-    def check_singleton(self):
-        # test singleton
-        self.assertEqual(id(self.rs), id(ReplicaSets()))
-
-    def check_set_settings(self):
-        # test set_settings
-        self.assertEqual(os.environ.get('MONGOBIN', None), self.rs.bin_path)
-
-    def check_bool(self):
-        # test bool
-        print("test bool")
-        self.assertEqual(True, bool(self.rs))
-
-    def check_rs_preinit(self):
-        # rs_new
-        self.assertEqual(self.repl_id, 'testRs')
-
-    def check_rs_new_with_auth(self):
-        # rs_new_with_auth
-        print("rs_new_with_auth")
-        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
-        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
-        c = pymongo.MongoClient([server1, server2], replicaSet=self.repl_id)
-        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
-        self.assertTrue(c.admin.authenticate('admin', 'admin'))
-        self.assertTrue(isinstance(c.admin.collection_names(), list))
-        c.admin.logout()
-        self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
-        c.close()
-
-    def check_info_with_auth(self):
-        # info_with_auth
-        print("info_with_auth")
-        info = self.rs.info(self.repl_id)
-        self.assertTrue(isinstance(info, dict))
-        self.assertEqual(info['id'], self.repl_id)
-        self.assertEqual(len(info['members']), 9)
-
-    def check_primary(self):
-        # primary
-        print("primary")
-        primary = self.rs.primary(self.repl_id)['mongodb_uri']
-        c = pymongo.MongoClient(primary)
-        self.assertTrue(c.is_primary)
-        c.close()
-
-    def check_members(self):
-        # members
-        print("members")
-        server1 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port1)
-        server2 = "{hostname}:{port}".format(hostname=HOSTNAME, port=self.port2)
-        members = self.rs.members(self.repl_id)
-        self.assertTrue(server1 in [member['host'] for member in members])
-        self.assertTrue(server2 in [member['host'] for member in members])
-
-    def check_secondaries(self):
-        # secondaries
-        print("secondaries")
-        secondaries = self.rs.secondaries(self.repl_id)
-        self.assertEqual(len(secondaries), 6)
-
-    def check_arbiters(self):
-        # arbiters
-        print("arbiters")
-        arbiters = self.rs.arbiters(self.repl_id)
-        self.assertEqual(len(arbiters), 2)
-
-    def check_hidden(self):
-        # hidden
-        print("hidden")
-        hidden = self.rs.hidden(self.repl_id)
-        self.assertEqual(len(hidden), 2)
-
-    def check_passives(self):
-        # passives
-        print("passives")
-        passives = self.rs.passives(self.repl_id)
-        self.assertEqual(len(passives), 1)
-
-    def check_servers(self):
-        # servers
-        print("servers")
-        servers = self.rs.servers(self.repl_id)
-        self.assertEqual(len(servers), 3)
-
-    def check_compare_passives_and_servers(self):
-        # compare_passives_and_servers
-        print("compare_passives_and_servers")
-        passives = [server['host'] for server in self.rs.passives(self.repl_id)]
-        servers = [server['host'] for server in self.rs.servers(self.repl_id)]
-        for item in passives:
-            self.assertTrue(item not in servers)
-
-        for item in servers:
-            self.assertTrue(item not in passives)
-
-    def check_member_info(self):
-        # member_info
-        print("member_info")
-        info = self.rs.member_info(self.repl_id, 0)
-        for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
-            self.assertTrue(key in info)
-        self.assertEqual(info['_id'], 0)
-
-        for arbiter in self.rs.arbiters(self.repl_id):
-            _id = arbiter['_id']
-            info = self.rs.member_info(self.repl_id, _id)
-            for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
-                self.assertTrue(key in info)
-            self.assertEqual(info['_id'], _id)
-            self.assertTrue(info['rsInfo']['arbiterOnly'])
-
-        for hidden in self.rs.hidden(self.repl_id):
-            _id = hidden['_id']
-            info = self.rs.member_info(self.repl_id, _id)
-            for key in ('procInfo', 'mongodb_uri', 'statuses', 'rsInfo'):
-                self.assertTrue(key in info)
-            self.assertEqual(info['_id'], _id)
-            self.assertTrue(info['rsInfo']['hidden'])
-
-    def check_tagging(self):
-        # tagging
-        print("tagging")
-        print(self.rs.primary(self.repl_id))
-        self.assertEqual(self.tags_primary, self.rs.primary(self.repl_id)['rsInfo']['tags'])
-        for hidden in self.rs.hidden(self.repl_id):
-            self.assertEqual(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('tags', None), self.tags_hidden)
-
-    def check_stepdown(self):
-        # stepdown
-        print("stepdown")
-        time.sleep(5)
-        primary = self.rs.primary(self.repl_id)['mongodb_uri']
-        self.rs.primary_stepdown(self.repl_id, timeout=60)
-        primary_changed = lambda: primary != self.rs.primary(
-            self.repl_id)['mongodb_uri']
-        self.assertTrue(self.waiting(timeout=80, sleep=5, fn=primary_changed))
-        self.assertNotEqual(primary,
-                            self.rs.primary(self.repl_id)['mongodb_uri'])
-
-    def check_member_update(self):
-        # member_update
-        print("member_update")
-        h_count = len(self.rs.hidden(self.repl_id))
-        logger.debug("h_count: {h_count}".format(h_count=h_count))
-        hidden = self.rs.hidden(self.repl_id)[0]
-        logger.debug("hidden member: {hidden}".format(hidden=hidden))
-        self.rs.member_update(self.repl_id, hidden['_id'], {"rsParams": {"priority": 1, "hidden": False}})
-        self.assertEqual(len(self.rs.hidden(self.repl_id)), h_count - 1)
-        self.assertFalse(self.rs.member_info(self.repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
-
-    def check_member_del(self):
-        # member_del
-        print("member_del")
-        mb_count = len(self.rs.members(self.repl_id))
-        logger.debug("mb_count = {mb_count}".format(mb_count=mb_count))
-        logger.debug("members: {members}".format(members=self.rs.members(self.repl_id)))
-        logger.debug("secondaries: {secondaries}".format(secondaries=self.rs.secondaries(self.repl_id)))
-        member_del = self.rs.secondaries(self.repl_id)[0]
-        logger.debug("member to remove: {member_del}".format(member_del=member_del))
-        self.assertTrue(pymongo.MongoClient(member_del['host']))
-        self.assertTrue(self.rs.member_del(self.repl_id, member_del['_id']))
-        self.assertEqual(len(self.rs.members(self.repl_id)), mb_count - 1)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member_del['host'])
-
-    def check_member_add(self):
-        # member_add
-        print("member_add")
-        mb_count = len(self.rs.members(self.repl_id))
-        member_id = self.rs.member_add(self.repl_id, {"rsParams": {"priority": 0, "hidden": True, "votes": 0}})
-        self.assertEqual(len(self.rs.members(self.repl_id)), mb_count + 1)
-        info = self.rs.member_info(self.repl_id, member_id)
-        self.assertTrue(info['rsInfo']['hidden'])
-
-    def check_member_command(self):
-        # member_command
-        print("member_command")
-        _id = self.rs.secondaries(self.repl_id)[0]['_id']
-        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
-        self.rs.member_command(self.repl_id, _id, 'stop')
-        self.assertFalse(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
-        self.rs.member_command(self.repl_id, _id, 'start')
-        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
-        self.rs.member_command(self.repl_id, _id, 'restart')
-        self.assertTrue(self.rs.member_info(self.repl_id, _id)['procInfo']['alive'])
-
-    def check_rs_del(self):
-        # rs_del
-        print("rs_del")
-        rs_count = len(self.rs)
-        self.assertTrue(rs_count > 0)
-        members = self.rs.members(self.repl_id)
-        for member in members:
-            self.assertTrue(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
-        self.rs.remove(self.repl_id)
-        self.assertEqual(len(self.rs), rs_count - 1)
-        for member in members:
-            self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, member['host'])
-
-    def check_rs_create(self):
-        # rs_create
-        print("rs_create")
-        rs_count = len(self.rs)
-        self.rs.create({'id': 'test-rs-create-1', 'members': [{}, {}]})
-        self.rs.create({'id': 'test-rs-create-2', 'members': [{}, {}]})
-        self.assertTrue(len(self.rs) == rs_count + 2)
-
-    def check_cleanup(self):
-        # cleanup
-        print("cleanup")
-        self.rs.cleanup()
-        self.assertTrue(len(self.rs) == 0)
-
-    def test_rs(self):
-        self.check_singleton()
-
-        self.check_set_settings()
-
-        self.check_bool()
-
-        # TODO: test_operations
-        # TODO: test_operations2
-
-        self.check_rs_preinit()
-
-        self.check_rs_new_with_auth()
-
-        self.check_info_with_auth()
-
-        self.check_primary()
-
-        self.check_members()
-
-        self.check_secondaries()
-
-        self.check_arbiters()
-
-        self.check_hidden()
-
-        self.check_passives()
-
-        self.check_servers()
-
-        self.check_compare_passives_and_servers()
-
-        self.check_member_info()
-
-        self.check_tagging()
-
-        self.check_stepdown()
-
-        self.check_member_update()
-
-        self.check_member_del()
-
-        self.check_member_add()
-
-        self.check_member_command()
-
-        self.check_rs_del()
-
-        self.check_rs_create()
-
-        self.check_cleanup()
 
 
 if __name__ == '__main__':
