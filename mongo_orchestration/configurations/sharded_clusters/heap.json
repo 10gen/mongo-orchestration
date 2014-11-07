@@ -5,25 +5,25 @@
     ],
     "shards": [
         {
-            "id": "sh01", 
+            "id": "sh01",
             "shardParams": {
                 "procParams": {
-                    "storageEngine": "heap1"
+                    "storageEngine": "heap1",
+                    "setParameter": {"enableTestCommands": 1}
                 }
             }
-        }, 
+        },
         {
-            "id": "sh02", 
+            "id": "sh02",
             "shardParams": {
                 "procParams": {
+                    "setParameter": {"enableTestCommands": 1}
                 }
             }
         }
-    ], 
+    ],
     "routers": [
-        {
-        }, 
-        {
-        }
+        {"setParameter": {"enableTestCommands": 1}},
+        {"setParameter": {"enableTestCommands": 1}}
     ]
 }

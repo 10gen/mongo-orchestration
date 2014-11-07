@@ -7,7 +7,8 @@
                 "journal": true,
                 "noprealloc": true,
                 "nssize": 1,
-                "smallfiles": true
+                "smallfiles": true,
+                "setParameter": {"enableTestCommands": 1}
             },
             "rsParams": {
                 "priority": 99,
@@ -25,7 +26,8 @@
                 "noprealloc": true,
                 "nssize": 1,
                 "smallfiles": true,
-                "storageEngine": "heap1"
+                "storageEngine": "heap1",
+                "setParameter": {"enableTestCommands": 1}
             },
             "rsParams": {
                 "priority": 1.1,
@@ -42,7 +44,8 @@
                 "journal": true,
                 "noprealloc": true,
                 "nssize": 1,
-                "smallfiles": true
+                "smallfiles": true,
+                "setParameter": {"enableTestCommands": 1}
             },
             "rsParams": {
                 "arbiterOnly": true
