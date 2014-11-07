@@ -319,6 +319,9 @@ class ReplicaSetsTestCase(unittest.TestCase):
         def freeze_and_stop():
             self.assertTrue(secondary_server.freeze(10))
             try:
+                # Call replSetStepDown before killing the primary's process.
+                # This raises OperationFailure if no secondaries are capable
+                # of taking over.
                 primary_server.connection.admin.command('replSetStepDown', 10)
             except pymongo.errors.AutoReconnect:
                 # Have to stop the server as well so it doesn't get reelected.
