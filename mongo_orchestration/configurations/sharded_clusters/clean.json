@@ -3,6 +3,7 @@
         {
             "dbpath": "$DBPATH/db27117",
             "logpath": "$LOGPATH/configsvr27117.log",
+            "bind_ip": "127.0.0.1",
             "port": 27117,
             "setParameter": {"enableTestCommands": 1}
         }
@@ -15,6 +16,7 @@
                 "procParams": {
                     "dbpath": "$DBPATH/db27217",
                     "logpath": "$LOGPATH/sh01.log",
+                    "bind_ip": "127.0.0.1",
                     "port": 27217,
                     "setParameter": {"enableTestCommands": 1}
                 }
@@ -26,6 +28,7 @@
                 "procParams": {
                     "dbpath": "$DBPATH/db27218",
                     "logpath": "$LOGPATH/sh02.log",
+                    "bind_ip": "127.0.0.1",
                     "port": 27218,
                     "setParameter": {"enableTestCommands": 1}
                 }
@@ -35,11 +38,13 @@
     "routers": [
         {
             "logpath": "$LOGPATH/router27017.log",
+            "bind_ip": "127.0.0.1",
             "port": 27017,
             "setParameter": {"enableTestCommands": 1}
         }, 
         {
             "logpath": "$LOGPATH/router27018.log",
+            "bind_ip": "127.0.0.1",
             "port": 27018,
             "setParameter": {"enableTestCommands": 1}
         }

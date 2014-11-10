@@ -4,6 +4,7 @@
         "ipv6": true, 
         "logappend": true,
         "journal": true,
+        "bind_ip": "127.0.0.1",
         "setParameter": {"enableTestCommands": 1}
     }
 }
