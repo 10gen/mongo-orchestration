@@ -2,12 +2,14 @@ See the `wiki <https://github.com/mongodb/mongo-orchestration/wiki>`__
 for documentation.
 
 Mongo Orchestration is an HTTP server that provides a REST API for
-creating and managing MongoDB configurations.
+creating and managing MongoDB configurations on a single host.
+
+**THIS PROJECT IS FOR TESTING OF MONGODB DRIVERS.**
 
 Features
 --------
 
--  Start and stop mongod servers, replica sets, and sharded clusters.
+-  Start and stop mongod servers, replica sets, and sharded clusters on the host running mongo-orchestration.
 -  Add and remove replica set members.
 -  Add and remove shards and mongos routers.
 -  Reset replica sets and clusters to restart all members that were
