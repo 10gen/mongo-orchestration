@@ -33,7 +33,7 @@ setup(
     keywords=['mongo-orchestration', 'mongodb', 'mongo', 'rest', 'testing'],
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     platforms=['any'],
-    url='https://github.com/mongodb/mongo-orchestration',
+    url='https://github.com/10gen/mongo-orchestration',
     install_requires=['pymongo>=2.7.2',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0'] + extra_deps,

@@ -1,4 +1,4 @@
-See the `wiki <https://github.com/mongodb/mongo-orchestration/wiki>`__
+See the `wiki <https://github.com/10gen/mongo-orchestration/wiki>`__
 for documentation.
 
 Mongo Orchestration is an HTTP server that provides a REST API for
@@ -40,7 +40,7 @@ manually:
 
 ::
 
-    git clone https://github.com/mongodb/mongo-orchestration.git
+    git clone https://github.com/10gen/mongo-orchestration.git
     cd mongo-orchestration
     python setup.py install
 
@@ -91,7 +91,7 @@ Configuration File
 
 Mongo Orchestration may be given a JSON configuration file with the
 ``--config`` option specifying where to find MongoDB binaries. See
-`mongo-orchestration.config <https://github.com/mongodb/mongo-orchestration/blob/master/mongo-orchestration.config>`__
+`mongo-orchestration.config <https://github.com/10gen/mongo-orchestration/blob/master/mongo-orchestration.config>`__
 for an example. When no configuration file is provided, Mongo
 Orchestration uses whatever binaries are on the user's PATH.
 
@@ -99,7 +99,7 @@ Predefined Configurations
 -------------------------
 
 The Mongo Orchestration repository has a set of predefined
-`configurations <https://github.com/mongodb/mongo-orchestration/tree/master/mongo_orchestration/configurations>`__
+`configurations <https://github.com/10gen/mongo-orchestration/tree/master/mongo_orchestration/configurations>`__
 that can be used to start, restart, or stop MongoDB processes. You can
 use a tool like ``curl`` to send these files directly to the Mongo
 Orchestration server, or use the ``mo`` script in the ``scripts``
