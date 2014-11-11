@@ -7,7 +7,7 @@
             "id": "sh01",
             "shardParams": {
                 "procParams": {
-                    "storageEngine": "heap1",
+                    "storageEngine": "inMemoryExperiment",
                     "setParameter": {"enableTestCommands": 1}
                 }
             }
