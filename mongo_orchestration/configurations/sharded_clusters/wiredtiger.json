@@ -8,6 +8,7 @@
             "shardParams": {
                 "procParams": {
                     "storageEngine": "wiredtiger",
+                    "bind_ip": "127.0.0.1",
                     "setParameter": {"enableTestCommands": 1}
                 }
             }
@@ -16,13 +17,20 @@
             "id": "sh02",
             "shardParams": {
                 "procParams": {
+                    "bind_ip": "127.0.0.1",
                     "setParameter": {"enableTestCommands": 1}
                 }
             }
         }
     ],
     "routers": [
-        {"setParameter": {"enableTestCommands": 1}},
-        {"setParameter": {"enableTestCommands": 1}}
+        {"setParameter":
+            "bind_ip": "127.0.0.1",
+            {"enableTestCommands": 1}
+        },
+        {"setParameter":
+            "bind_ip": "127.0.0.1",
+            {"enableTestCommands": 1}
+        }
     ]
 }

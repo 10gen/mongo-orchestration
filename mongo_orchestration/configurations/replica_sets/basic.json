@@ -8,6 +8,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             }, 
             "rsParams": {
@@ -26,6 +27,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             }, 
             "rsParams": {
@@ -44,6 +46,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             },
             "rsParams": {

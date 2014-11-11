@@ -12,6 +12,7 @@
                 "nssize": 1, 
                 "port": 27017, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             }, 
             "rsParams": {
@@ -33,6 +34,7 @@
                 "nssize": 1, 
                 "port": 27018, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             }, 
             "rsParams": {
@@ -54,6 +56,7 @@
                 "nssize": 1, 
                 "port": 27019, 
                 "smallfiles": true,
+                "bind_ip": "127.0.0.1",
                 "setParameter": {"enableTestCommands": 1}
             },
             "rsParams": {

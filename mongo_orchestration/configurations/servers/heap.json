@@ -5,6 +5,7 @@
         "logappend": true,
         "journal": true,
         "storageEngine": "heap1",
+        "bind_ip": "127.0.0.1",
         "setParameter": {"enableTestCommands": 1}
     }
 }
