@@ -44,7 +44,7 @@ if [ "$1" == "22-release" -o "$1" == "20-release" ]; then
 elif [ "$1" == "24-release" ]; then
     TEST_PARAMS='"setParameter" : {"enableTestCommands" : 1, "textSearchEnabled" : true}, "vv" : true, '
 elif [ "$1" == "27-nightly" ]; then
-    TEST_PARAMS='"setParameter" : {"enableTestCommands" : 1, "authenticationMechanisms": "MONGODB-CR,SCRAM-SHA-1"}, "vv" : true, '
+    TEST_PARAMS='"setParameter" : {"enableTestCommands" : 1}, "vv" : true, '
     STORAGE_PARAMS='"storageEngine": "'${storage}'", '
 else
     TEST_PARAMS='"setParameter": {"enableTestCommands" : 1}, "vv" : true, '
