@@ -20,14 +20,6 @@ import subprocess
 import sys
 import time
 
-have_pywin32 = False
-
-try:
-    from win32process import DETACHED_PROCESS
-    have_pywin32 = True
-except ImportError:
-    pass
-
 from signal import SIGTERM
 
 DEVNULL = open(os.devnull, 'r+b')
@@ -57,11 +49,7 @@ class Daemon(object):
             self.daemonize_posix()
 
     def daemonize_win32(self):
-        if have_pywin32:
-            pid = subprocess.Popen(sys.argv + ["--no-fork"], creationflags=DETACHED_PROCESS, shell=True).pid
-        else:
-            print("No pywin32! Can't daemonize")
-            sys.exit(1)
+        pid = subprocess.Popen(sys.argv + ["--no-fork"], creationflags=0x00000008, shell=True).pid
 
         with open(self.pidfile, 'w+') as fd:
             fd.write("%s\n" % pid)
