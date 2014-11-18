@@ -3,11 +3,7 @@
 import os
 import sys
 
-if os.name == 'nt':
-    extra_deps = ['pywin32']
-else:
-    extra_deps = []
-
+extra_deps = []
 extra_test_deps = []
 if sys.version_info[:2] == (2, 6):
     extra_deps.append('argparse')
