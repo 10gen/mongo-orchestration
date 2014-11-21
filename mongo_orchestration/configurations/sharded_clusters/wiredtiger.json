@@ -1,0 +1,28 @@
+{
+    "configsvrs": [
+        {"setParameter": {"enableTestCommands": 1}}
+    ],
+    "shards": [
+        {
+            "id": "sh01",
+            "shardParams": {
+                "procParams": {
+                    "storageEngine": "wiredtiger",
+                    "setParameter": {"enableTestCommands": 1}
+                }
+            }
+        },
+        {
+            "id": "sh02",
+            "shardParams": {
+                "procParams": {
+                    "setParameter": {"enableTestCommands": 1}
+                }
+            }
+        }
+    ],
+    "routers": [
+        {"setParameter": {"enableTestCommands": 1}},
+        {"setParameter": {"enableTestCommands": 1}}
+    ]
+}

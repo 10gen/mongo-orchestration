@@ -49,7 +49,8 @@ class Server(object):
 
     def __init_auth_key(self, auth_key, folder):
         key_file = os.path.join(os.path.join(folder, 'key'))
-        open(key_file, 'w').write(auth_key)
+        with open(key_file, 'w') as fd:
+            fd.write(auth_key)
         os.chmod(key_file, stat.S_IRUSR)
         return key_file
 
@@ -212,8 +213,11 @@ class Server(object):
                 server_info = {}
                 status_info = {}
 
-        logger.debug("return {d}".format(d={"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info}))
-        return {"uri": self.hostname, "mongodb_uri": mongodb_uri, "statuses": status_info, "serverInfo": server_info, "procInfo": proc_info, "orchestration": 'servers'}
+        result = {"mongodb_uri": mongodb_uri, "statuses": status_info,
+                  "serverInfo": server_info, "procInfo": proc_info,
+                  "orchestration": 'servers'}
+        logger.debug("return {result}".format(result=result))
+        return result
 
     @property
     def _is_locked(self):

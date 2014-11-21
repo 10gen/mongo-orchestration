@@ -4,6 +4,7 @@
         "ipv6": true,
         "logappend": true,
         "journal": true,
-        "storageEngine": "heap1"
+        "storageEngine": "inMemoryExperiment",
+        "setParameter": {"enableTestCommands": 1}
     }
 }
