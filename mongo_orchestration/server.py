@@ -15,7 +15,9 @@ work_dir = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 pid_file = os.path.join(work_dir, 'server.pid')
 log_file = os.path.join(work_dir, 'server.log')
 
+DEFAULT_BIND = 'localhost'
 DEFAULT_PORT = 8889
+DEFAULT_SERVER = 'cherrypy'
 
 import logging
 logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
@@ -32,9 +34,16 @@ def read_env():
                         default='start', choices=('start', 'stop', 'restart'))
     parser.add_argument('--no-fork',
                         action='store_true', dest='no_fork', default=False)
+    parser.add_argument('-b', '--bind',
+                        action='store', dest='bind', type=str,
+                        default=DEFAULT_BIND)
     parser.add_argument('-p', '--port',
                         action='store', dest='port', type=int,
                         default=DEFAULT_PORT)
+    parser.add_argument('-s', '--server',
+                        action='store', dest='server', type=str,
+                        default=DEFAULT_SERVER, choices=('cherrypy','wsgiref'))
+
     cli_args = parser.parse_args()
 
     if cli_args.env and not cli_args.config:
@@ -94,8 +103,8 @@ class MyDaemon(Daemon):
         setup(getattr(self.args, 'releases', {}), self.args.env)
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
-            run(get_app(), host='localhost', port=self.args.port, debug=False,
-                reloader=False, quiet=not self.args.no_fork, server='cherrypy')
+            run(get_app(), host=self.args.bind, port=self.args.port, debug=False,
+                reloader=False, quiet=not self.args.no_fork, server=self.args.server)
 
     def set_args(self, args):
         self.args = args
