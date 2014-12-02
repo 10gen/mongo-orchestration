@@ -46,3 +46,10 @@ work
 # Pid #
 ######################
 *.pid
+
+# Install Garbage #
+###################
+
+build
+dist
+mongo_orchestration.egg-info
