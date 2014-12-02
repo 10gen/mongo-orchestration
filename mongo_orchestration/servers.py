@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 class Server(object):
-    """Class Server represents behaviour of  mongo instances """
+    """Class Server represents behaviour of mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 100}
+    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 10}
 
     def __init_db(self, dbpath):
         if not dbpath:
