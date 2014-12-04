@@ -42,7 +42,7 @@ def read_env():
                         default=DEFAULT_PORT)
     parser.add_argument('-s', '--server',
                         action='store', dest='server', type=str,
-                        default=DEFAULT_SERVER, choices=('cherrypy','wsgiref'))
+                        default=DEFAULT_SERVER, choices=('cherrypy', 'wsgiref'))
 
     cli_args = parser.parse_args()
 
