@@ -121,6 +121,12 @@ class ReplicaSet(BaseModel):
         if not self.waiting_member_state and self.waiting_config_state():
             raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
+        for i in range(10):
+            if self.connection().primary:
+                break
+            time.sleep(1)
+        else:
+            raise ReplicaSetError("No primary was ever elected.")
 
     def __len__(self):
         return len(self.server_map)

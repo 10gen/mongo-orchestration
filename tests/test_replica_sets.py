@@ -808,6 +808,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
     def test_auth_arbiter_member_info(self):
+        self.repl.cleanup()
         self.repl = ReplicaSet({'members': [
             {}, {'rsParams': {'arbiterOnly': True}}]})
         info = self.repl.member_info(1)
