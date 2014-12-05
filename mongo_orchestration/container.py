@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Container(object):
     """ Container is a dict-like collection for objects"""
-    _storage = None
+    _storage = {}
     _name = 'container'
     _obj_type = object
 

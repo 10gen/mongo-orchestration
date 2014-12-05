@@ -25,7 +25,7 @@ import time
 
 sys.path.insert(0, '../')
 
-from mongo_orchestration import set_releases, cleanup_storage
+from mongo_orchestration import set_releases
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.servers import Servers
@@ -49,8 +49,7 @@ class ShardsTestCase(unittest.TestCase):
         PortPool().change_range()
 
     def tearDown(self):
-        # self.sh.cleanup()
-        cleanup_storage()
+        self.sh.cleanup()
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(ShardedClusters()))

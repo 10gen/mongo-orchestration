@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # coding=utf-8
 import argparse
-import atexit
 import json
 import os
+import signal
 import sys
 
 from bson import SON
@@ -77,7 +77,8 @@ def setup(releases, default_release):
     """setup storages"""
     from mongo_orchestration import set_releases, cleanup_storage
     set_releases(releases, default_release)
-    atexit.register(cleanup_storage)
+    signal.signal(signal.SIGTERM, cleanup_storage)
+    signal.signal(signal.SIGINT, cleanup_storage)
 
 
 def get_app():
