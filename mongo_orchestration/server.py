@@ -9,6 +9,7 @@ import sys
 from bson import SON
 
 from mongo_orchestration.daemon import Daemon
+from mongo_orchestration.servers import Server
 
 work_dir = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 
@@ -115,6 +116,8 @@ def main():
     daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     args = read_env()
     daemon.set_args(args)
+    # Set default bind ip for mongo processes using argument from --bind.
+    Server.mongod_default['bind_ip'] = args.bind
     if args.command == 'stop':
         daemon.stop()
     if args.command == 'start' and not args.no_fork:
