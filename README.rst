@@ -52,7 +52,7 @@ Installation will place a ``mongo-orchestration`` script on your path.
 Usage
 -----
 
-``mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-p PORT] {start,stop,restart}``
+``mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT] {start,stop,restart}``
 
 Arguments:
 
@@ -61,6 +61,7 @@ Arguments:
 -  **-e, --env** - default release to use, as specified in the config
    file
 -  **--no-fork** - run server in foreground
+-  **-b, --bind** - host on which Mongo Orchestration and subordinate mongo processes should listen for requests. Defaults to "localhost".
 -  **-p** - port number (8889 by default)
 -  **start/stop/restart**: start, stop, or restart the server,
    respectively
