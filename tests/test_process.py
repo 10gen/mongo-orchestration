@@ -29,7 +29,7 @@ import mongo_orchestration.process as process
 from mongo_orchestration.errors import TimeoutError
 from nose.plugins.attrib import attr
 
-from tests import unittest, SkipTest
+from tests import unittest, SkipTest, HOSTNAME
 
 
 @attr('process')
@@ -38,7 +38,7 @@ from tests import unittest, SkipTest
 class PortPoolTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.hostname = process.HOSTNAME
+        self.hostname = HOSTNAME
         self.pp = process.PortPool()
         self.pp.change_range(min_port=1025, max_port=1080)
         self.sockets = {}
@@ -52,7 +52,7 @@ class PortPoolTestCase(unittest.TestCase):
             self.sockets[port].close()
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((process.HOSTNAME, port))
+        s.bind((HOSTNAME, port))
         s.listen(max_connection)
         self.sockets[port] = s
 
@@ -141,7 +141,7 @@ class PortPoolTestCase(unittest.TestCase):
 @attr('test')
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
-        self.hostname = process.HOSTNAME
+        self.hostname = HOSTNAME
         self.s = None
         self.executable = sys.executable
         self.pp = process.PortPool(min_port=1025, max_port=2000)
@@ -165,7 +165,7 @@ class ProcessTestCase(unittest.TestCase):
             self.sockets[port].close()
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((process.HOSTNAME, port))
+        s.bind((HOSTNAME, port))
         s.listen(max_connection)
         self.sockets[port] = s
 

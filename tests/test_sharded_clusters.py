@@ -29,9 +29,9 @@ from mongo_orchestration import set_releases
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.servers import Servers
-from mongo_orchestration.process import PortPool, HOSTNAME
+from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
-from tests import unittest, SkipTest
+from tests import unittest, SkipTest, HOSTNAME
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
