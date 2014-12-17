@@ -19,6 +19,7 @@ import tempfile
 
 from uuid import uuid4
 
+from mongo_orchestration.common import create_key_file, DEFAULT_AUTH_KEY
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers
@@ -38,6 +39,7 @@ class ShardedCluster(object):
         self.login = params.get('login', '')
         self.password = params.get('password', '')
         self.auth_key = params.get('auth_key', None)
+        self._admin_added = False
         self._version = params.get('version')
         self._configsvrs = []
         self._routers = []
@@ -49,6 +51,10 @@ class ShardedCluster(object):
 
         if not not self.sslParams:
             self.kwargs['ssl'] = True
+
+        # Always use a keyFile if auth is on.
+        if self.login and not self.auth_key:
+            self.auth_key = DEFAULT_AUTH_KEY
 
         self.__init_configsvr(params.get('configsvrs', [{}]))
         for r in params.get('routers', [{}]):
@@ -67,6 +73,7 @@ class ShardedCluster(object):
                     {'_id': sh_id},
                     {'$addToSet': {'$each': self.tags[sh_id]}})
 
+        # The whole cluster is running without auth, so we may add a user.
         if self.login:
             client = MongoClient(self.router['hostname'], **self.kwargs)
             client.admin.add_user(self.login, self.password,
@@ -76,15 +83,39 @@ class ShardedCluster(object):
                                          'readWriteAnyDatabase',
                                          'userAdminAnyDatabase'])
 
+            # Create a keyFile.
+            key_file_path = create_key_file(self.auth_key)
+
+            def add_key_file(config):
+                config['keyFile'] = key_file_path
+                return config
+
+            # Now restart everything.
+            for server_id in self._configsvrs:
+                Servers().restart(server_id, config_callback=add_key_file)
+            for shard_id in self._shards:
+                shard = self._shards[shard_id]
+                if shard.get('isReplicaSet'):
+                    ReplicaSets().restart(
+                        shard['_id'], config_callback=add_key_file)
+                elif shard.get('isServer'):
+                    Servers().restart(
+                        shard['_id'], config_callback=add_key_file)
+            for server_id in self._routers:
+                Servers().restart(server_id, config_callback=add_key_file)
+
+            self._admin_added = True
+
     def __init_configsvr(self, params):
         """create and start config servers"""
         self._configsvrs = []
+        auth_key = self.auth_key if self._admin_added else None
         for cfg in params:
             cfg.update({'configsvr': True})
             self._configsvrs.append(Servers().create(
                 'mongod', cfg,
                 sslParams=self.sslParams, autostart=True,
-                auth_key=self.auth_key, version=self._version))
+                auth_key=auth_key, version=self._version))
 
     def __len__(self):
         return len(self._shards)
@@ -117,9 +148,10 @@ class ShardedCluster(object):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Servers().hostname(item) for item in self._configsvrs])
         params.update({'configdb': cfgs})
+        auth_key = self.auth_key if self._admin_added else None
         self._routers.append(Servers().create(
             'mongos', params, sslParams=self.sslParams, autostart=True,
-            auth_key=self.auth_key, version=self._version))
+            auth_key=auth_key, version=self._version))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
@@ -166,9 +198,10 @@ class ShardedCluster(object):
         if 'members' in params:
             # is replica set
             rs_params = params.copy()
-            rs_params.update({'auth_key': self.auth_key})
+            if self._admin_added:
+                rs_params['auth_key'] = self.auth_key
             rs_params.update({'sslParams': self.sslParams})
-            if self.login and self.password:
+            if self.login and self.password and self._admin_added:
                 rs_params.update({'login': self.login, 'password': self.password})
             if self._version:
                 rs_params['version'] = self._version
@@ -183,7 +216,11 @@ class ShardedCluster(object):
 
         else:
             # is single server
-            params.update({'autostart': True, 'auth_key': self.auth_key, 'sslParams': self.sslParams})
+            params.update({
+                'autostart': True,
+                'auth_key': self.auth_key if self._admin_added else None,
+                'sslParams': self.sslParams
+            })
             params['procParams'] = params.get('procParams', {})
             if self._version:
                 params['version'] = self._version

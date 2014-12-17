@@ -24,7 +24,7 @@ from uuid import uuid4
 
 import pymongo
 
-from mongo_orchestration.compat import reraise
+from mongo_orchestration.common import DEFAULT_AUTH_KEY
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ReplicaSetError
@@ -59,33 +59,60 @@ class ReplicaSet(object):
         if not not self.sslParams:
             self.kwargs['ssl'] = True
 
-        config = {"_id": self.repl_id, "members": [
-                  self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
-                  ]}
+        # Always use a keyFile if auth is on.
+        if self.login and not self.auth_key:
+            self.auth_key = DEFAULT_AUTH_KEY
+
+        # Find a server that is suitable to initiate the set.
+        other_members = []
+        members = rs_params.get('members', [])
+        for index, member in enumerate(rs_params.get('members', [])):
+            if not (member.get('arbiterOnly', False)
+                    or member.get('priority', 1) == 0):
+                first_member = index
+                break
+        else:
+            raise ReplicaSetError(
+                'No member suitable to initialize set in %r' % members)
+
+        # Start first server. This will automatically add a user and keyFile.
+        params = members[first_member].get('procParams', {})
+        first_server_id = Servers().create(
+            name='mongod',
+            procParams=members[first_member].get('procParams', {}),
+            sslParams=self.sslParams,
+            auth_key=self.auth_key,
+            login=self.login,
+            password=self.password,
+            version=self._version
+        )
+
+        # Restart first server as a replica set member.
+        def add_repl_set(config):
+            config['replSet'] = self.repl_id
+            return config
+
+        self._servers.restart(first_server_id, config_callback=add_repl_set)
+        first_member_config = {
+            '_id': first_member,
+            'host': self._servers.hostname(first_server_id)
+        }
+        config = {'_id': self.repl_id, 'members': [first_member_config]}
+
+        # Start the other servers with a keyFile.
+        for index, other_member in enumerate(members):
+            # Already have the config for the first member.
+            if index == first_member:
+                continue
+            config['members'].append(
+                self.member_create(other_member, index))
+
+        # Initialize the replica set from the first member.
         logger.debug("replica config: {config}".format(**locals()))
-        if not self.repl_init(config):
+
+        if not self.repl_init(config, init_server=first_member_config['host']):
             self.cleanup()
             raise ReplicaSetError("Could not create replica set.")
-
-        if self.login:
-            logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
-            try:
-                c = self.connection()
-                c.admin.add_user(self.login, self.password,
-                                 roles=['__system',
-                                        'clusterAdmin',
-                                        'dbAdminAnyDatabase',
-                                        'readWriteAnyDatabase',
-                                        'userAdminAnyDatabase'])
-                # Make sure user propagates to secondaries before proceeding.
-                c.admin.authenticate(self.login, self.password)
-                c.admin.command('getLastError', w=len(self.servers()))
-            except pymongo.errors.OperationFailure:
-                reraise(ReplicaSetError,
-                        "Could not add user %s to the replica set."
-                        % self.login)
-            finally:
-                c.close()
 
         if not self.waiting_config_state():
             raise ReplicaSetError(
@@ -114,15 +141,10 @@ class ReplicaSet(object):
         """update server_map ({member_id:hostname})"""
         self.server_map = dict([(member['_id'], member['host']) for member in config['members']])
 
-    def repl_init(self, config):
+    def repl_init(self, config, init_server):
         """create replica set by config
         return True if replica set created successfuly, else False"""
         self.update_server_map(config)
-        # init_server - server which can init replica set
-        init_server = [member['host'] for member in config['members']
-                       if not (member.get('arbiterOnly', False)
-                               or member.get('priority', 1) == 0)][0]
-
         servers = [member['host'] for member in config['members']]
         if not self.wait_while_reachable(servers):
             logger.error("all servers must be reachable")
@@ -139,6 +161,10 @@ class ReplicaSet(object):
         else:
             self.cleanup()
             return False
+
+    def restart(self, timeout=300, config_callback=None):
+        for member in self.members():
+            self._servers.restart(member['server_id'], timeout, config_callback)
 
     def reset(self):
         """Ensure all members are running and available."""
@@ -348,7 +374,9 @@ class ReplicaSet(object):
                         try:
                             self.login and self.password and c.admin.authenticate(self.login, self.password)
                         except:
-                            pass
+                            logger.exception(
+                                "Could not authenticate connected to %s"
+                                % servers)
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
@@ -358,7 +386,9 @@ class ReplicaSet(object):
                         try:
                             c.admin.authenticate(self.login, self.password)
                         except:
-                            pass
+                            logger.exception(
+                                "Could not authenticate connected to %s"
+                                % hostname)
                     return c
             except (pymongo.errors.PyMongoError):
                 exc_type, exc_value, exc_tb = sys.exc_info()
@@ -540,6 +570,9 @@ class ReplicaSets(Singleton, Container):
         repl = self._storage.pop(repl_id)
         repl.cleanup()
         del(repl)
+
+    def restart(self, repl_id, timeout=300, config_callback=None):
+        self._storage[repl_id].restart(timeout, config_callback)
 
     def members(self, repl_id):
         """return list [{"_id": member_id, "host": hostname}] of replica set members
