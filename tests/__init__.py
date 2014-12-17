@@ -12,8 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import socket
 import sys
 import time
+
+PORT = int(os.environ.get('MO_PORT', '8889'))
+HOSTNAME = socket.getaddrinfo(
+    os.environ.get('MO_HOST', '127.0.0.1'), PORT,
+    socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)[-1][-1][0]
+
 
 if sys.version_info[:2] == (2, 6):
     import unittest2 as unittest

@@ -26,9 +26,9 @@ sys.path.insert(0, '../')
 
 from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.servers import Servers
-from mongo_orchestration.process import PortPool, HOSTNAME
+from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
-from tests import unittest, assert_eventually
+from tests import unittest, assert_eventually, HOSTNAME
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

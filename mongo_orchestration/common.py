@@ -19,6 +19,10 @@ import json
 import os
 import copy
 
+DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
+DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
+DEFAULT_SERVER = 'cherrypy'
+
 
 def update(d, u):
     for k, v in u.items():

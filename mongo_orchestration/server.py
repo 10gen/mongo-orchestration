@@ -8,6 +8,8 @@ import sys
 
 from bson import SON
 
+from mongo_orchestration.common import (
+    DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER)
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
 
@@ -15,10 +17,6 @@ work_dir = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 
 pid_file = os.path.join(work_dir, 'server.pid')
 log_file = os.path.join(work_dir, 'server.log')
-
-DEFAULT_BIND = 'localhost'
-DEFAULT_PORT = 8889
-DEFAULT_SERVER = 'cherrypy'
 
 import logging
 logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
