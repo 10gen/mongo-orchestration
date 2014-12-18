@@ -18,7 +18,6 @@ import errno
 import logging
 import os
 import platform
-import stat
 import tempfile
 import time
 
@@ -27,6 +26,7 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration import process
+from mongo_orchestration.common import create_key_file
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -47,31 +47,23 @@ class Server(object):
             os.makedirs(dbpath)
         return dbpath
 
-    def __init_auth_key(self, auth_key, folder):
-        key_file = os.path.join(os.path.join(folder, 'key'))
-        with open(key_file, 'w') as fd:
-            fd.write(auth_key)
-        os.chmod(key_file, stat.S_IRUSR)
-        return key_file
-
     def __init_logpath(self, log_path):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
 
-    def __init_mongod(self, params, ssl):
+    def __init_mongod(self, params, add_auth=False):
         cfg = self.mongod_default.copy()
         cfg.update(params)
-        cfg.update(ssl)
 
         # create db folder
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
 
         # use keyFile
-        if self.auth_key:
+        if add_auth and self.auth_key:
             cfg['auth'] = True
-            cfg['keyFile'] = self.__init_auth_key(self.auth_key, cfg['dbpath'])
+            cfg['keyFile'] = create_key_file(self.auth_key)
 
-        if self.login:
+        if add_auth and self.login:
             cfg['auth'] = True
 
         # create logpath
@@ -83,15 +75,14 @@ class Server(object):
 
         return process.write_config(cfg), cfg
 
-    def __init_mongos(self, params, ssl):
+    def __init_mongos(self, params):
         cfg = params.copy()
-        cfg.update(ssl)
 
         self.__init_logpath(cfg.get('logpath', None))
 
         # use keyFile
         if self.auth_key:
-            cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
+            cfg['keyFile'] = create_key_file(self.auth_key)
 
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
@@ -123,12 +114,15 @@ class Server(object):
             self.kwargs['ssl'] = True
 
         proc_name = os.path.split(name)[1].lower()
+        procParams.update(sslParams)
+        add_auth = self.auth_key and not self.login
         if proc_name.startswith('mongod'):
-            self.config_path, self.cfg = self.__init_mongod(procParams, sslParams)
+            self.config_path, self.cfg = self.__init_mongod(
+                procParams, add_auth=add_auth)
 
         elif proc_name.startswith('mongos'):
             self.is_mongos = True
-            self.config_path, self.cfg = self.__init_mongos(procParams, sslParams)
+            self.config_path, self.cfg = self.__init_mongos(procParams)
 
         else:
             self.config_path, self.cfg = None, {}
@@ -143,7 +137,7 @@ class Server(object):
             try:
                 c.admin.authenticate(self.login, self.password)
             except:
-                pass
+                logger.exception("Could not authenticate to %s" % self.hostname)
         return c
 
     def freeze(self, timeout=60):
@@ -244,6 +238,7 @@ class Server(object):
                 # repair if needed
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
+            # Server is first started without auth enabled.
             self.proc, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
             self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
@@ -266,18 +261,36 @@ class Server(object):
             raise
         if not self.admin_added and self.login:
             self._add_auth()
-            self.admin_added = True
+
+            if self.is_mongos:
+                self.admin_added = True
+            else:
+                # Restart the server with auth turned on.
+                try:
+                    self.stop()
+                    self.config_path, self.cfg = self.__init_mongod(
+                        self.cfg, add_auth=True)
+                    self.admin_added = True
+                    self.start()
+                except (OSError, TimeoutError):
+                    logger.exception(
+                        "Could not start Server after turning on auth.")
+                    raise
+
         return True
 
     def stop(self):
         """stop server"""
         return process.kill_mprocess(self.proc)
 
-    def restart(self, timeout=300):
+    def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
         return status of start command
         """
         self.stop()
+        if config_callback:
+            self.cfg = config_callback(self.cfg.copy())
+            self.config_path = process.write_config(self.cfg)
         return self.start(timeout)
 
     def reset(self):
@@ -383,6 +396,9 @@ class Servers(Singleton, Container):
                              % (command, server_id))
         self._storage[server_id] = server
         return result
+
+    def restart(self, server_id, timeout=300, config_callback=None):
+        return self._storage[server_id].restart(timeout, config_callback)
 
     def info(self, server_id):
         """return dicionary object with info about server

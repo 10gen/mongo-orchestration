@@ -15,13 +15,24 @@
 # limitations under the License.
 
 import collections
-import json
 import os
 import copy
+import json
+import stat
+import tempfile
 
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
 DEFAULT_SERVER = 'cherrypy'
+DEFAULT_AUTH_KEY = os.environ.get('MO_AUTH_KEY', 'auth key')
+
+
+def create_key_file(auth_key):
+    key_file_path = os.path.join(tempfile.mkdtemp(), 'key')
+    with open(key_file_path, 'w') as fd:
+        fd.write(auth_key)
+    os.chmod(key_file_path, stat.S_IRUSR)
+    return key_file_path
 
 
 def update(d, u):
