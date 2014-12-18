@@ -1,25 +1,8 @@
 {
-    "configsvrs": [
-        {
-            "setParameter": {"enableTestCommands": 1}
-        }
-    ],
+    "configsvrs": [{}],
     "shards": [
-        {
-            "id": "sh01", 
-            "shardParams": {
-                "procParams": {"setParameter": {"enableTestCommands": 1}}
-            }
-        }, 
-        {
-            "id": "sh02", 
-            "shardParams": {
-                "procParams": {"setParameter": {"enableTestCommands": 1}}
-            }
-        }
+        {"id": "sh01"}, 
+        {"id": "sh02"}
     ], 
-    "routers": [
-        {"setParameter": {"enableTestCommands": 1}},
-        {"setParameter": {"enableTestCommands": 1}}
-    ]
+    "routers": [{}, {}]
 }

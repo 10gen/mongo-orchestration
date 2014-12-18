@@ -11,8 +11,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "port": 27017, 
-                "smallfiles": true,
-                "setParameter": {"enableTestCommands": 1}
+                "smallfiles": true
             }, 
             "rsParams": {
                 "priority": 99,
@@ -32,8 +31,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "port": 27018, 
-                "smallfiles": true,
-                "setParameter": {"enableTestCommands": 1}
+                "smallfiles": true
             }, 
             "rsParams": {
                 "priority": 1.1,
@@ -53,8 +51,7 @@
                 "noprealloc": true, 
                 "nssize": 1, 
                 "port": 27019, 
-                "smallfiles": true,
-                "setParameter": {"enableTestCommands": 1}
+                "smallfiles": true
             },
             "rsParams": {
                 "arbiterOnly": true

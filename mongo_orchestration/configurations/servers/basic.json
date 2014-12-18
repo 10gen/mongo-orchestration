@@ -1,9 +1,8 @@
 {
     "name": "mongod",
     "procParams": {
-        "ipv6": true, 
+        "ipv6": true,
         "logappend": true,
-        "journal": true,
-        "setParameter": {"enableTestCommands": 1}
+        "journal": true
     }
 }
