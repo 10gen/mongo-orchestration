@@ -108,13 +108,12 @@ class Server(object):
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
-        self.kwargs = {}
-
-        if not not sslParams:
-            self.kwargs['ssl'] = True
+        self.ssl_params = sslParams
 
         proc_name = os.path.split(name)[1].lower()
-        procParams.update(sslParams)
+        # Only add in ssl params if we don't need to add an initial user later.
+        if not self.login:
+            procParams.update(self.ssl_params)
         add_auth = self.auth_key and not self.login
         if proc_name.startswith('mongod'):
             self.config_path, self.cfg = self.__init_mongod(
@@ -132,7 +131,10 @@ class Server(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.MongoClient(self.hostname, **self.kwargs)
+        use_ssl = bool(self.ssl_params)
+        if self.login:
+            use_ssl = use_ssl and self.admin_added
+        c = pymongo.MongoClient(self.hostname, ssl=use_ssl)
         if not self.is_mongos and self.admin_added and (self.login and self.password):
             try:
                 c.admin.authenticate(self.login, self.password)
@@ -197,7 +199,7 @@ class Server(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.MongoClient(self.hostname.split(':')[0], self.cfg['port'], socketTimeoutMS=120000, **self.kwargs)
+                c = self.connection
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 mongodb_uri = 'mongodb://' + self.hostname
@@ -264,10 +266,15 @@ class Server(object):
 
             if self.is_mongos:
                 self.admin_added = True
+                if self.ssl_params:
+                    self.cfg.update(self.ssl_params)
+                    self.config_path, self.cfg = self.__init_mongos(self.cfg)
+                    self.restart()
             else:
                 # Restart the server with auth turned on.
                 try:
                     self.stop()
+                    self.cfg.update(self.ssl_params)
                     self.config_path, self.cfg = self.__init_mongod(
                         self.cfg, add_auth=True)
                     self.admin_added = True
