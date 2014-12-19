@@ -348,7 +348,10 @@ class ReplicaSet(object):
                         try:
                             self.login and self.password and c.admin.authenticate(self.login, self.password)
                         except:
-                            pass
+                            logger.exception(
+                                "Could not authenticate to %s as %s/%s"
+                                % (servers, self.login, self.password))
+                            raise
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
@@ -358,7 +361,10 @@ class ReplicaSet(object):
                         try:
                             c.admin.authenticate(self.login, self.password)
                         except:
-                            pass
+                            logger.exception(
+                                "Could not authenticate to %s as %s/%s"
+                                % (servers, self.login, self.password))
+                            raise
                     return c
             except (pymongo.errors.PyMongoError):
                 exc_type, exc_value, exc_tb = sys.exc_info()
