@@ -127,7 +127,10 @@ class ShardedCluster(object):
         try:
             self.login and self.password and c.admin.authenticate(self.login, self.password)
         except:
-            pass
+            logger.exception(
+                "Could not authenticate to %s as %s/%s"
+                % (self.router['hostname'], self.login, self.password))
+            raise
         return c
 
     def router_command(self, command, arg=None, is_eval=False):

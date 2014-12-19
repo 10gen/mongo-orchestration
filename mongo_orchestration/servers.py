@@ -143,7 +143,9 @@ class Server(object):
             try:
                 c.admin.authenticate(self.login, self.password)
             except:
-                pass
+                logger.exception("Could not authenticate to %s as %s/%s"
+                                 % (self.hostname, self.login, self.password))
+                raise
         return c
 
     def freeze(self, timeout=60):
