@@ -24,7 +24,8 @@ from uuid import uuid4
 
 import pymongo
 
-from mongo_orchestration.compat import reraise
+from mongo_orchestration.common import (
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ReplicaSetError
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 Servers()
 
 
-class ReplicaSet(object):
+class ReplicaSet(BaseModel):
     """class represents ReplicaSet"""
 
     _servers = Servers()  # singleton to manage servers instances
@@ -49,6 +50,7 @@ class ReplicaSet(object):
         self.server_map = {}
         self.auth_key = rs_params.get('auth_key', None)
         self.login = rs_params.get('login', '')
+        self.auth_source = rs_params.get('authSource', 'admin')
         self.password = rs_params.get('password', '')
         self.admin_added = False
         self.repl_id = rs_params.get('id', None) or str(uuid4())
@@ -56,46 +58,57 @@ class ReplicaSet(object):
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
+        self.restart_required = self.login or self.auth_key
+        self.x509_extra_user = False
 
-        if not not self.sslParams:
+        if self.sslParams:
             self.kwargs['ssl'] = True
+            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
 
-        config = {
-            "_id": self.repl_id,
-            "members": [
-                self.member_create(member, index)
-                for index, member in enumerate(rs_params.get('members', {}))
-            ]
-        }
+        members = rs_params.get('members', {})
+        config = {"_id": self.repl_id, "members": [
+            self.member_create(member, index)
+            for index, member in enumerate(members)
+        ]}
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
             raise ReplicaSetError("Could not create replica set.")
 
+        if not self.waiting_config_state():
+            raise ReplicaSetError(
+                "Could not actualize replica set configuration.")
+
         if self.login:
-            logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
-            try:
-                c = self.connection()
-                c.admin.add_user(self.login, self.password,
-                                 roles=['__system',
-                                        'clusterAdmin',
-                                        'dbAdminAnyDatabase',
-                                        'readWriteAnyDatabase',
-                                        'userAdminAnyDatabase'])
-                # Make sure user propagates to secondaries before proceeding.
-                c.admin.authenticate(self.login, self.password)
-                try:
-                    c.admin.command('getLastError', w=len(self.servers()))
-                except:
-                    # Complaining about replSetGetStatus?
-                    pass
-                self.admin_added = True
-            except pymongo.errors.OperationFailure:
-                reraise(ReplicaSetError,
-                        "Could not add user %s to the replica set."
-                        % self.login)
-            finally:
-                c.close()
+            # Do we need to add an extra x509 user?
+            for member in members:
+                proc_params = member.get('procParams', {})
+                set_params = proc_params.get('setParameter', {})
+                auth_mechs = set_params.get('authenticationMechanisms', '')
+                auth_mechs = auth_mechs.split(',')
+                if len(auth_mechs) == 1 and auth_mechs[0] == 'MONGODB-X509':
+                    self.x509_extra_user = True
+                    break
+
+            self._add_users(self.connection()[self.auth_source])
+        if self.restart_required:
+            # Restart all the servers with auth flags and ssl.
+            for idx, member in enumerate(members):
+                server_id = self._servers.id_by_hostname(self.id2host(idx))
+                server = self._servers._storage[server_id]
+                server.x509_extra_user = self.x509_extra_user
+                server.auth_source = self.auth_source
+                server.login = self.login
+                server.password = self.password
+
+                def add_auth(config):
+                    if self.auth_key:
+                        config['keyFile'] = self.key_file
+                    config.update(member.get('procParams', {}))
+                    return config
+
+                server.restart(config_callback=add_auth)
+            self.restart_required = False
 
         if not self.waiting_config_state():
             raise ReplicaSetError(
@@ -249,10 +262,17 @@ class ReplicaSet(object):
         server_id = params.pop('server_id', None)
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
+        # Make sure that auth isn't set the first time we start the servers.
+        proc_params = self._strip_auth(proc_params)
 
+        # Don't pass in sslParams, auth_key the first time we start the servers.
         server_id = self._servers.create(
-            'mongod', proc_params, self.sslParams, self.auth_key,
-            version=self._version, server_id=server_id)
+            name='mongod',
+            procParams=proc_params,
+            sslParams=self.sslParams,
+            version=self._version,
+            server_id=server_id
+        )
         member_config.update({"_id": member_id,
                               "host": self._servers.hostname(server_id)})
         return member_config
@@ -297,7 +317,7 @@ class ReplicaSet(object):
         if server_info['procInfo']['alive']:
             # Can't call serverStatus on arbiter when running with auth enabled.
             # (SERVER-5479)
-            if self.login and self.password:
+            if self.login or self.auth_key:
                 arbiter_ids = map(lambda member: member['_id'], self.arbiters())
                 if member_id in arbiter_ids:
                     result['rsInfo'] = {
@@ -361,9 +381,17 @@ class ReplicaSet(object):
                 if hostname is None:
                     c = pymongo.MongoReplicaSetClient(servers, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
                     if c.primary:
-                        if self.admin_added:
+                        if self.login and not self.restart_required:
                             try:
-                                c.admin.authenticate(self.login, self.password)
+                                db = c[self.auth_source]
+                                if self.x509_extra_user:
+                                    db.authenticate(
+                                        DEFAULT_SUBJECT,
+                                        mechanism='MONGODB-X509'
+                                    )
+                                else:
+                                    db.authenticate(
+                                        self.login, self.password)
                             except:
                                 logger.exception(
                                     "Could not authenticate to %s as %s/%s"
@@ -374,9 +402,17 @@ class ReplicaSet(object):
                 else:
                     logger.debug("connection to the {servers}".format(**locals()))
                     c = pymongo.MongoClient(servers, socketTimeoutMS=20000, **self.kwargs)
-                    if self.admin_added:
+                    if self.login and not self.restart_required:
                         try:
-                            c.admin.authenticate(self.login, self.password)
+                            db = c[self.auth_source]
+                            if self.x509_extra_user:
+                                db.authenticate(
+                                    DEFAULT_SUBJECT,
+                                    mechanism='MONGODB-X509'
+                                )
+                            else:
+                                db.authenticate(
+                                    self.login, self.password)
                         except:
                             logger.exception(
                                 "Could not authenticate to %s as %s/%s"
@@ -433,7 +469,8 @@ class ReplicaSet(object):
             try:
                 for server in servers:
                     # TODO: use state code to check if server is reachable
-                    server_info = self.connection(hostname=server, timeout=5).server_info()
+                    server_info = self.connection(
+                        hostname=server, timeout=5).admin.command('ismaster')
                     logger.debug("server_info: {server_info}".format(server_info=server_info))
                     if int(server_info['ok']) != 1:
                         raise pymongo.errors.OperationFailure("{server} is not reachable".format(**locals))
@@ -505,6 +542,13 @@ class ReplicaSet(object):
                     logger.debug("{key}: {value1} ! = {value2}".format(key=key, value1=cfg_member_info[key], value2=real_member_info.get(key, None)))
                     return False
         return True
+
+    def restart(self, timeout=300, config_callback=None):
+        """Restart each member of the replica set."""
+        for member_id in self.server_map:
+            host = self.server_map[member_id]
+            server = self._servers._storage[self._servers.id_by_hostname(host)]
+            server.restart(timeout, config_callback)
 
 
 class ReplicaSets(Singleton, Container):
