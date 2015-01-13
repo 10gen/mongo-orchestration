@@ -15,13 +15,83 @@
 # limitations under the License.
 
 import collections
+import copy
 import json
 import os
-import copy
+import stat
+import tempfile
 
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
 DEFAULT_SERVER = 'cherrypy'
+
+# Username for included client x509 certificate.
+DEFAULT_SUBJECT = (
+    'C=US,ST=New York,L=New York City,O=MongoDB,OU=KernelUser,CN=client'
+)
+DEFAULT_CLIENT_CERT = os.path.join(
+    os.environ.get(
+        'MONGO_ORCHESTRATION_HOME', os.path.dirname(__file__)),
+    'lib',
+    'client.pem'
+)
+
+
+class BaseModel(object):
+    """Base object for Server, ReplicaSet, and ShardedCluster."""
+
+    _user_roles = [
+        {'role': 'userAdminAnyDatabase', 'db': 'admin'},
+        {'role': 'clusterAdmin', 'db': 'admin'},
+        {'role': 'dbAdminAnyDatabase', 'db': 'admin'},
+        {'role': 'readWriteAnyDatabase', 'db': 'admin'}
+    ]
+
+    @property
+    def key_file(self):
+        """Get the path to the key file containig our auth key, or None."""
+        if self.auth_key:
+            key_file_path = os.path.join(tempfile.mkdtemp(), 'key')
+            with open(key_file_path, 'w') as fd:
+                fd.write(self.auth_key)
+            os.chmod(key_file_path, stat.S_IRUSR)
+            return key_file_path
+
+    def _strip_auth(self, proc_params):
+        """Remove options from parameters that cause auth to be enabled."""
+        params = proc_params.copy()
+        try:
+            params.pop("auth")
+        except KeyError:
+            pass
+        try:
+            params.pop("clusterAuthMode")
+        except KeyError:
+            pass
+        return params
+
+    def _add_users(self, db):
+        """Add given user, and extra x509 user if necessary."""
+        if self.x509_extra_user:
+            # Build dict of kwargs to pass to add_user.
+            auth_dict = {
+                'name': DEFAULT_SUBJECT,
+                'writeConcern': {'w': 'majority', 'fsync': True},
+                'roles': self._user_roles
+            }
+            db.add_user(**auth_dict)
+            # Fix kwargs to MongoClient.
+            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
+
+        # Add secondary user given from request.
+        secondary_login = {
+            'name': self.login,
+            'writeConcern': {'w': 'majority', 'fsync': True},
+            'roles': self._user_roles
+        }
+        if self.password:
+            secondary_login['password'] = self.password
+        db.add_user(**secondary_login)
 
 
 def update(d, u):

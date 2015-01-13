@@ -41,9 +41,14 @@ class ContainerTestCase(unittest.TestCase):
     def test_set_settings(self):
         default_release = 'old-release'
         releases = {default_release: os.path.join(os.getcwd(), 'bin')}
-        self.container.set_settings(releases, default_release)
-        self.assertEqual(releases, self.container.releases)
-        self.assertEqual(default_release, self.container.default_release)
+        orig_releases = self.container.releases
+        orig_default_release = self.container.default_release
+        try:
+            self.container.set_settings(releases, default_release)
+            self.assertEqual(releases, self.container.releases)
+            self.assertEqual(default_release, self.container.default_release)
+        finally:
+            self.container.set_settings(orig_releases, orig_default_release)
 
     def test_bin_path(self):
         releases = SON([('20-release', '/path/to/20/release'),
