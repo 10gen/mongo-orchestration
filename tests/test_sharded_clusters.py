@@ -18,25 +18,23 @@ import logging
 import os
 import operator
 import pymongo
-import re
-import subprocess
 import sys
 import time
 
 sys.path.insert(0, '../')
 
-from mongo_orchestration import set_releases
+from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
-from tests import unittest, SkipTest, HOSTNAME
+from tests import (
+    certificate, unittest, SkipTest,
+    HOSTNAME, TEST_SUBJECT, SERVER_VERSION, SSLTestCase)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 
 
 @attr('shards')
@@ -44,8 +42,6 @@ MONGODB_VERSION = re.compile("db version v(\d)+\.(\d)+\.(\d)+")
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
         self.sh = ShardedClusters()
-        set_releases({"default-release": os.environ.get('MONGOBIN', '')},
-                     'default-release')
         PortPool().change_range()
 
     def tearDown(self):
@@ -53,13 +49,6 @@ class ShardsTestCase(unittest.TestCase):
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(ShardedClusters()))
-
-    def test_set_settings(self):
-        default_release = 'old-release'
-        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
-        self.sh.set_settings(releases, default_release)
-        self.assertEqual(releases, self.sh.releases)
-        self.assertEqual(default_release, self.sh.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.sh))
@@ -298,19 +287,7 @@ class ShardsTestCase(unittest.TestCase):
 @attr('test')
 class ShardTestCase(unittest.TestCase):
 
-    def mongod_version(self):
-        proc = subprocess.Popen(
-            [os.path.join(self.bin_path, 'mongod'), '--version'],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        version_raw = str(proc.stdout.read())
-        m = MONGODB_VERSION.match(version_raw)
-        if m:
-            return m.groups()
-
     def setUp(self):
-        self.bin_path = os.environ.get('MONGOBIN', '')
-        set_releases({'default-release': self.bin_path},
-                     'default-release')
         PortPool().change_range()
 
     def tearDown(self):
@@ -541,9 +518,9 @@ class ShardTestCase(unittest.TestCase):
         self.sh.cleanup()
 
     def test_tagging(self):
-        version = self.mongod_version()
-        if version and version < ('2', '2', '0'):
-            raise SkipTest("mongodb v{version} doesn't support shard tagging".format(version='.'.join(version)))
+        if SERVER_VERSION < (2, 2, 0):
+            raise SkipTest("mongodb v{version} doesn't support shard tagging"
+                           .format(version='.'.join(map(str, SERVER_VERSION))))
 
         tags = ['tag1', 'tag2']
         tags_repl = ['replTag']
@@ -594,6 +571,109 @@ class ShardTestCase(unittest.TestCase):
         for host in all_hosts:
             # No ConnectionFailure/AutoReconnect.
             pymongo.MongoClient(host)
+
+
+class ShardSSLTestCase(SSLTestCase):
+
+    def test_ssl_auth(self):
+        shard_params = {
+            'shardParams': {
+                'procParams': {
+                    'clusterAuthMode': 'x509',
+                    'setParameter': {'authenticationMechanisms': 'MONGODB-X509'}
+                }
+            }
+        }
+        config = {
+            'login': TEST_SUBJECT,
+            'authSource': '$external',
+            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'routers': [{'clusterAuthMode': 'x509'}],
+            'shards': [shard_params, shard_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.sh = ShardedCluster(config)
+
+        # Should create an extra user. No raise on authenticate.
+        host = self.sh.router['hostname']
+        client = pymongo.MongoClient(host, ssl_certfile=DEFAULT_CLIENT_CERT)
+        client['$external'].authenticate(
+            DEFAULT_SUBJECT, mechanism='MONGODB-X509')
+
+        # Should create the user we requested. No raise on authenticate.
+        client = pymongo.MongoClient(
+            host, ssl_certfile=certificate('client.pem'))
+        client['$external'].authenticate(TEST_SUBJECT, mechanism='MONGODB-X509')
+
+    def test_scram_with_ssl(self):
+        if not SERVER_VERSION >= (2, 8):
+            raise SkipTest("Need SCRAM-SHA-1 to test.")
+
+        proc_params = {
+            'procParams': {
+                'clusterAuthMode': 'x509',
+                'setParameter': {
+                    'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}
+            }
+        }
+        config = {
+            'login': 'luke',
+            'password': 'ekul',
+            'configsvrs': [{'clusterAuthMode': 'x509', 'setParameter': {
+                'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}}],
+            'routers': [{'clusterAuthMode': 'x509', 'setParameter': {
+                'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}}],
+            'shards': [{'shardParams': proc_params},
+                       {'shardParams': {'members': [proc_params]}}],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.sh = ShardedCluster(config)
+
+        # Should create the user we requested. No raise on authenticate.
+        host = self.sh.router['hostname']
+        client = pymongo.MongoClient(
+            host, ssl_certfile=certificate('client.pem'))
+        client.admin.authenticate('luke', 'ekul')
+        # This should be the only user.
+        self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
+        self.assertFalse(client['$external'].command('usersInfo')['users'])
+
+    def test_ssl(self):
+        config = {
+            'configsvrs': [{}],
+            'routers': [{}],
+            'shards': [{}, {'shardParams': {'members': [{}]}}],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.sh = ShardedCluster(config)
+
+        # Server should require SSL.
+        host = self.sh.router['hostname']
+        self.assertRaises(pymongo.errors.ConnectionFailure,
+                          pymongo.MongoClient, host)
+        # This shouldn't raise.
+        pymongo.MongoClient(host, ssl_certfile=certificate('client.pem'))
 
 
 if __name__ == '__main__':
