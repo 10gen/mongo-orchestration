@@ -43,7 +43,8 @@ setup(
     package_data={
         'mongo_orchestration': [
             os.path.join('configurations', config_dir, '*.json')
-            for config_dir in ('servers', 'replica_sets', 'sharded_clusters')]
+            for config_dir in ('servers', 'replica_sets', 'sharded_clusters')
+        ] + [os.path.join('lib', 'client.pem')]
     },
     classifiers=[
         "Development Status :: 4 - Beta",
