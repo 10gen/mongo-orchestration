@@ -18,7 +18,9 @@ import errno
 import logging
 import os
 import platform
+import re
 import stat
+import subprocess
 import tempfile
 import time
 
@@ -40,6 +42,11 @@ class Server(object):
     # default params for all mongo instances
     mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 100}
 
+    # regular expression matching MongoDB versions
+    version_patt = re.compile(
+        '(?:db version v|MongoS version |mongos db version )'
+        '(?P<version>(\d+\.)+\d+)')
+
     def __init_db(self, dbpath):
         if not dbpath:
             dbpath = tempfile.mkdtemp(prefix="mongo-")
@@ -57,6 +64,13 @@ class Server(object):
     def __init_logpath(self, log_path):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
+
+    def __init_test_commands(self, config):
+        """Conditionally enable test commands in the Server's config file."""
+        if self.version >= (2, 4):
+            params = config.get('setParameter', {})
+            params['enableTestCommands'] = 1
+            config['setParameter'] = params
 
     def __init_mongod(self, params, ssl):
         cfg = self.mongod_default.copy()
@@ -81,6 +95,8 @@ class Server(object):
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
+        self.__init_test_commands(cfg)
+
         return process.write_config(cfg), cfg
 
     def __init_mongos(self, params, ssl):
@@ -95,6 +111,8 @@ class Server(object):
 
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
+
+        self.__init_test_commands(cfg)
 
         return process.write_config(cfg), cfg
 
@@ -147,6 +165,17 @@ class Server(object):
                                  % (self.hostname, self.login, self.password))
                 raise
         return c
+
+    @property
+    def version(self):
+        """Get the version of MongoDB that this Server runs as a tuple."""
+        command = (self.name, '--version')
+        stdout, _ = subprocess.Popen(
+            command, stdout=subprocess.PIPE).communicate()
+        first_line = stdout.split('\n')[0]
+        match = re.search(self.version_patt, first_line)
+        version_string = match.group('version')
+        return tuple(map(int, version_string.split('.')))
 
     def freeze(self, timeout=60):
         """Run `replSetFreeze` on this server.
