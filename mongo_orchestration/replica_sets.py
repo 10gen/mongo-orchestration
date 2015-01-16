@@ -316,7 +316,12 @@ class ReplicaSet(object):
         """return list of members information"""
         result = list()
         for member in self.run_command(command="replSetGetStatus", is_eval=False)['members']:
-            result.append({"_id": member['_id'], "host": member["name"], "server_id": self._servers.id_by_hostname(member["name"])})
+            result.append({
+                "_id": member['_id'],
+                "host": member["name"],
+                "server_id": self._servers.id_by_hostname(member["name"]),
+                "state": member['state']
+            })
         return result
 
     def primary(self):
