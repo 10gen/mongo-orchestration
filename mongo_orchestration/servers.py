@@ -40,7 +40,7 @@ class Server(object):
     """Class Server represents behaviour of  mongo instances """
 
     # default params for all mongo instances
-    mongod_default = {"noprealloc": True, "smallfiles": True, "oplogSize": 100}
+    mongod_default = {"oplogSize": 100}
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
