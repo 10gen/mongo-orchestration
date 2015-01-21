@@ -50,6 +50,7 @@ class ReplicaSet(object):
         self.auth_key = rs_params.get('auth_key', None)
         self.login = rs_params.get('login', '')
         self.password = rs_params.get('password', '')
+        self.admin_added = False
         self.repl_id = rs_params.get('id', None) or str(uuid4())
         self._version = rs_params.get('version')
 
@@ -79,7 +80,12 @@ class ReplicaSet(object):
                                         'userAdminAnyDatabase'])
                 # Make sure user propagates to secondaries before proceeding.
                 c.admin.authenticate(self.login, self.password)
-                c.admin.command('getLastError', w=len(self.servers()))
+                try:
+                    c.admin.command('getLastError', w=len(self.servers()))
+                except:
+                    # Complaining about replSetGetStatus?
+                    pass
+                self.admin_added = True
             except pymongo.errors.OperationFailure:
                 reraise(ReplicaSetError,
                         "Could not add user %s to the replica set."
@@ -350,19 +356,20 @@ class ReplicaSet(object):
                 if hostname is None:
                     c = pymongo.MongoReplicaSetClient(servers, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
                     if c.primary:
-                        try:
-                            self.login and self.password and c.admin.authenticate(self.login, self.password)
-                        except:
-                            logger.exception(
-                                "Could not authenticate to %s as %s/%s"
-                                % (servers, self.login, self.password))
-                            raise
+                        if self.admin_added:
+                            try:
+                                c.admin.authenticate(self.login, self.password)
+                            except:
+                                logger.exception(
+                                    "Could not authenticate to %s as %s/%s"
+                                    % (servers, self.login, self.password))
+                                raise
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     logger.debug("connection to the {servers}".format(**locals()))
                     c = pymongo.MongoClient(servers, socketTimeoutMS=20000, **self.kwargs)
-                    if self.login and self.password:
+                    if self.admin_added:
                         try:
                             c.admin.authenticate(self.login, self.password)
                         except:
