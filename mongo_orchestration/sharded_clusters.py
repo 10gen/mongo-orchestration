@@ -35,6 +35,7 @@ class ShardedCluster(object):
     def __init__(self, params):
         """init configuration acording params"""
         self.id = params.get('id', None) or str(uuid4())
+        self.admin_added = False
         self.login = params.get('login', '')
         self.password = params.get('password', '')
         self.auth_key = params.get('auth_key', None)
@@ -75,6 +76,7 @@ class ShardedCluster(object):
                                          'dbAdminAnyDatabase',
                                          'readWriteAnyDatabase',
                                          'userAdminAnyDatabase'])
+            self.admin_added = True
 
     def __init_configsvr(self, params):
         """create and start config servers"""
@@ -124,13 +126,14 @@ class ShardedCluster(object):
 
     def connection(self):
         c = MongoClient(self.router['hostname'], **self.kwargs)
-        try:
-            self.login and self.password and c.admin.authenticate(self.login, self.password)
-        except:
-            logger.exception(
-                "Could not authenticate to %s as %s/%s"
-                % (self.router['hostname'], self.login, self.password))
-            raise
+        if self.admin_added:
+            try:
+                c.admin.authenticate(self.login, self.password)
+            except:
+                logger.exception(
+                    "Could not authenticate to %s as %s/%s"
+                    % (self.router['hostname'], self.login, self.password))
+                raise
         return c
 
     def router_command(self, command, arg=None, is_eval=False):
