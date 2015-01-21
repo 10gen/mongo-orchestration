@@ -82,11 +82,13 @@ class ShardedCluster(object):
         """create and start config servers"""
         self._configsvrs = []
         for cfg in params:
+            server_id = cfg.pop('server_id', None)
             cfg.update({'configsvr': True})
             self._configsvrs.append(Servers().create(
                 'mongod', cfg,
                 sslParams=self.sslParams, autostart=True,
-                auth_key=self.auth_key, version=self._version))
+                auth_key=self.auth_key, version=self._version,
+                server_id=server_id))
 
     def __len__(self):
         return len(self._shards)
@@ -118,10 +120,11 @@ class ShardedCluster(object):
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Servers().hostname(item) for item in self._configsvrs])
+        server_id = params.pop('server_id', None)
         params.update({'configdb': cfgs})
         self._routers.append(Servers().create(
             'mongos', params, sslParams=self.sslParams, autostart=True,
-            auth_key=self.auth_key, version=self._version))
+            auth_key=self.auth_key, version=self._version, server_id=server_id))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
