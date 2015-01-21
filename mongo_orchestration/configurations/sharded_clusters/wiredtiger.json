@@ -5,7 +5,7 @@
             "id": "sh01",
             "shardParams": {
                 "procParams": {
-                    "storageEngine": "wiredtiger"
+                    "storageEngine": "wiredTiger"
                 }
             }
         },

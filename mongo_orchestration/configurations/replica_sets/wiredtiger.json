@@ -22,7 +22,7 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "storageEngine": "wiredtiger"
+                "storageEngine": "wiredTiger"
             },
             "rsParams": {
                 "priority": 1.1,

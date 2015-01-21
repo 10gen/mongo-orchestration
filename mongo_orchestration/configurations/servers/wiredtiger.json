@@ -4,6 +4,6 @@
         "ipv6": true,
         "logappend": true,
         "journal": true,
-        "storageEngine": "wiredtiger"
+        "storageEngine": "wiredTiger"
     }
 }
