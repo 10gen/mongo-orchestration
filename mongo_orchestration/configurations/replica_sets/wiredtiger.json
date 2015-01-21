@@ -22,9 +22,6 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "noprealloc": true,
-                "nssize": 1,
-                "smallfiles": true,
                 "storageEngine": "wiredtiger"
             },
             "rsParams": {
