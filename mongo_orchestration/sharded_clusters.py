@@ -175,6 +175,8 @@ class ShardedCluster(object):
         if 'members' in params:
             # is replica set
             rs_params = params.copy()
+            # Turn 'rs_id' -> 'id', to be consistent with 'server_id' below.
+            rs_params['id'] = rs_params.pop('rs_id', None)
             rs_params.update({'auth_key': self.auth_key})
             rs_params.update({'sslParams': self.sslParams})
             if self.login and self.password:
