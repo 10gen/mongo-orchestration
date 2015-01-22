@@ -48,10 +48,6 @@ def read_env():
 
     cli_args = parser.parse_args()
 
-    if cli_args.version:
-        print("Mongo Orchestration v" + __version__)
-        sys.exit(0)
-
     if cli_args.env and not cli_args.config:
         print("Specified release '%s' without a config file" % cli_args.env)
         sys.exit(1)
