@@ -20,6 +20,8 @@ from mongo_orchestration.servers import Servers
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.sharded_clusters import ShardedClusters
 
+__version__ = '0.1'
+
 
 def set_releases(releases=None, default_release=None):
     Servers().set_settings(releases, default_release)
