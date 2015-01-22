@@ -8,6 +8,7 @@ import sys
 
 from bson import SON
 
+from mongo_orchestration import __version__
 from mongo_orchestration.common import (
     DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER)
 from mongo_orchestration.daemon import Daemon
@@ -42,8 +43,14 @@ def read_env():
     parser.add_argument('-s', '--server',
                         action='store', dest='server', type=str,
                         default=DEFAULT_SERVER, choices=('cherrypy', 'wsgiref'))
+    parser.add_argument('--version', action='version',
+                        version='Mongo Orchestration v' + __version__)
 
     cli_args = parser.parse_args()
+
+    if cli_args.version:
+        print("Mongo Orchestration v" + __version__)
+        sys.exit(0)
 
     if cli_args.env and not cli_args.config:
         print("Specified release '%s' without a config file" % cli_args.env)
