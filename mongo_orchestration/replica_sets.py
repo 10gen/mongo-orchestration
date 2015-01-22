@@ -60,9 +60,13 @@ class ReplicaSet(object):
         if not not self.sslParams:
             self.kwargs['ssl'] = True
 
-        config = {"_id": self.repl_id, "members": [
-                  self.member_create(member, index) for index, member in enumerate(rs_params.get('members', {}))
-                  ]}
+        config = {
+            "_id": self.repl_id,
+            "members": [
+                self.member_create(member, index)
+                for index, member in enumerate(rs_params.get('members', {}))
+            ]
+        }
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
@@ -242,12 +246,13 @@ class ReplicaSet(object):
         return member config
         """
         member_config = params.get('rsParams', {})
+        server_id = params.pop('server_id')
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
 
         server_id = self._servers.create(
             'mongod', proc_params, self.sslParams, self.auth_key,
-            version=self._version)
+            version=self._version, server_id=server_id)
         member_config.update({"_id": member_id,
                               "host": self._servers.hostname(server_id)})
         return member_config
