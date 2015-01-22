@@ -246,7 +246,7 @@ class ReplicaSet(object):
         return member config
         """
         member_config = params.get('rsParams', {})
-        server_id = params.pop('server_id')
+        server_id = params.pop('server_id', None)
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
 
