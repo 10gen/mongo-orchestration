@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import logging
-import os
 import operator
 import pymongo
 import sys
@@ -576,6 +575,10 @@ class ShardTestCase(unittest.TestCase):
 class ShardSSLTestCase(SSLTestCase):
 
     def test_ssl_auth(self):
+        if SERVER_VERSION < (2, 8):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
         shard_params = {
             'shardParams': {
                 'procParams': {
@@ -613,23 +616,12 @@ class ShardSSLTestCase(SSLTestCase):
         client['$external'].authenticate(TEST_SUBJECT, mechanism='MONGODB-X509')
 
     def test_scram_with_ssl(self):
-        if not SERVER_VERSION >= (2, 8):
-            raise SkipTest("Need SCRAM-SHA-1 to test.")
-
-        proc_params = {
-            'procParams': {
-                'clusterAuthMode': 'x509',
-                'setParameter': {
-                    'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}
-            }
-        }
+        proc_params = {'procParams': {'clusterAuthMode': 'x509'}}
         config = {
             'login': 'luke',
             'password': 'ekul',
-            'configsvrs': [{'clusterAuthMode': 'x509', 'setParameter': {
-                'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}}],
-            'routers': [{'clusterAuthMode': 'x509', 'setParameter': {
-                'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}}],
+            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [{'shardParams': proc_params},
                        {'shardParams': {'members': [proc_params]}}],
             'sslParams': {

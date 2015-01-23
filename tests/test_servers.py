@@ -324,6 +324,10 @@ class ServerTestCase(unittest.TestCase):
 class ServerSSLTestCase(SSLTestCase):
 
     def test_ssl_auth(self):
+        if SERVER_VERSION < (2, 8):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
         proc_params = {
             'setParameter': {
                 'authenticationMechanisms': 'MONGODB-X509'
@@ -352,14 +356,6 @@ class ServerSSLTestCase(SSLTestCase):
             TEST_SUBJECT, mechanism='MONGODB-X509')
 
     def test_scram_with_ssl(self):
-        if not SERVER_VERSION >= (2, 8):
-            raise SkipTest("Need SCRAM-SHA-1 to test.")
-
-        proc_params = {
-            'setParameter': {
-                'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'
-            }
-        }
         ssl_params = {
             'sslPEMKeyFile': certificate('server.pem'),
             'sslCAFile': certificate('ca.pem'),
@@ -368,7 +364,7 @@ class ServerSSLTestCase(SSLTestCase):
         }
         # Should not raise an Exception.
         self.server = Server(
-            'mongod', proc_params, ssl_params, login='luke', password='ekul')
+            'mongod', {}, ssl_params, login='luke', password='ekul')
         self.server.start()
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(

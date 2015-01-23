@@ -615,6 +615,10 @@ class ReplicaSetTestCase(unittest.TestCase):
 class ReplicaSetSSLTestCase(SSLTestCase):
 
     def test_ssl_auth(self):
+        if SERVER_VERSION < (2, 8):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
         member_params = {
             'procParams': {
                 'clusterAuthMode': 'x509',
@@ -649,16 +653,7 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             TEST_SUBJECT, mechanism='MONGODB-X509')
 
     def test_scram_with_ssl(self):
-        if not SERVER_VERSION >= (2, 8):
-            raise SkipTest("Need SCRAM-SHA-1 to test.")
-
-        member_params = {
-            'procParams': {
-                'clusterAuthMode': 'x509',
-                'setParameter': {
-                    'authenticationMechanisms': 'MONGODB-X509,SCRAM-SHA-1'}
-            }
-        }
+        member_params = {'procParams': {'clusterAuthMode': 'x509'}}
         self.repl_cfg = {
             'login': 'luke',
             'password': 'ekul',

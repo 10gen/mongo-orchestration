@@ -105,7 +105,6 @@ class ShardedCluster(BaseModel):
             # Secondary user given from request.
             secondary_login = {
                 'name': self.login,
-                'writeConcern': {'w': 'majority'},
                 'roles': self._user_roles
             }
             if self.password:
@@ -119,12 +118,12 @@ class ShardedCluster(BaseModel):
                     client = Servers()._storage[instance_id].connection
                 elif shard.get('isReplicaSet'):
                     client = ReplicaSets()._storage[instance_id].connection()
+                db = client[self.auth_source]
+                db.write_concern = {'w': 'majority', 'fsync': True}
                 if self.x509_extra_user:
-                    client[self.auth_source].add_user(
-                        DEFAULT_SUBJECT, writeConcern={'w': 'majority'},
-                        roles=self._user_roles)
+                    db.add_user(DEFAULT_SUBJECT, roles=self._user_roles)
                 if self.login:
-                    client[self.auth_source].add_user(**secondary_login)
+                    db.add_user(**secondary_login)
 
         if self.restart_required:
             # Do we need to add clusterAuthMode back?
@@ -224,7 +223,8 @@ class ShardedCluster(BaseModel):
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
-        c = MongoClient(self.router['hostname'], **self.kwargs)
+        c = MongoClient(self.router['hostname'],
+                        w='majority', fsync=True, **self.kwargs)
         if self.login and not self.restart_required:
             try:
                 c.admin.authenticate(self.login, self.password)

@@ -73,13 +73,10 @@ class Server(BaseModel):
         # create db folder
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
 
-        # use keyFile
-        if add_auth and self.auth_key:
+        if add_auth:
             cfg['auth'] = True
-            cfg['keyFile'] = self.key_file
-
-        if add_auth and self.login:
-            cfg['auth'] = True
+            if self.auth_key:
+                cfg['keyFile'] = self.key_file
 
         # create logpath
         self.__init_logpath(cfg.get('logpath', None))
@@ -153,9 +150,9 @@ class Server(BaseModel):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.MongoClient(self.hostname, **self.kwargs)
-        db = c[self.auth_source]
+        c = pymongo.MongoClient(self.hostname, fsync=True, **self.kwargs)
         if not self.is_mongos and self.login and not self.restart_required:
+            db = c[self.auth_source]
             if self.x509_extra_user:
                 auth_dict = {
                     'name': DEFAULT_SUBJECT, 'mechanism': 'MONGODB-X509'}
@@ -300,13 +297,15 @@ class Server(BaseModel):
             raise
         if self.restart_required:
             if self.login:
-                self._add_auth()
+                # Add users to the appropriate database.
+                self._add_users()
             self.stop()
 
             # Restart with keyfile and auth.
             if self.is_mongos:
                 self.config_path, self.cfg = self.__init_mongos(self.cfg)
             else:
+                # Add auth options to this Server's config file.
                 self.config_path, self.cfg = self.__init_mongod(
                     self.cfg, add_auth=True)
             self.restart_required = False
@@ -333,7 +332,7 @@ class Server(BaseModel):
         self.start()
         return self.info()
 
-    def _add_auth(self):
+    def _add_users(self):
         try:
             # Determine authentication mechanisms.
             set_params = self.cfg.get('setParameter', {})
@@ -346,7 +345,7 @@ class Server(BaseModel):
             if len(auth_mechs) == 1 and auth_mechs[0] == 'MONGODB-X509':
                 self.x509_extra_user = True
 
-            self._add_users(self.connection[self.auth_source])
+            super(Server, self)._add_users(self.connection[self.auth_source])
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))
             # user added successfuly but OperationFailure exception raises

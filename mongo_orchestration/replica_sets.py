@@ -80,7 +80,11 @@ class ReplicaSet(BaseModel):
                 "Could not actualize replica set configuration.")
 
         if self.login:
-            # Do we need to add an extra x509 user?
+            # If the only authentication mechanism enabled is MONGODB-X509,
+            # we'll need to add our own user using SSL certificates we already
+            # have. Otherwise, the user of MO would have to copy their own
+            # certificates to wherever MO happens to be running so that MO
+            # might authenticate.
             for member in members:
                 proc_params = member.get('procParams', {})
                 set_params = proc_params.get('setParameter', {})
@@ -265,7 +269,7 @@ class ReplicaSet(BaseModel):
         # Make sure that auth isn't set the first time we start the servers.
         proc_params = self._strip_auth(proc_params)
 
-        # Don't pass in sslParams, auth_key the first time we start the servers.
+        # Don't pass in auth_key the first time we start the servers.
         server_id = self._servers.create(
             name='mongod',
             procParams=proc_params,
@@ -365,6 +369,25 @@ class ReplicaSet(BaseModel):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
+    def _authenticate_client(self, client):
+        """Authenticate the client if necessary."""
+        if self.login and not self.restart_required:
+            try:
+                db = client[self.auth_source]
+                if self.x509_extra_user:
+                    db.authenticate(
+                        DEFAULT_SUBJECT,
+                        mechanism='MONGODB-X509'
+                    )
+                else:
+                    db.authenticate(
+                        self.login, self.password)
+            except:
+                logger.exception(
+                    "Could not authenticate to %s:%d as %s/%s"
+                    % (client.host, client.port, self.login, self.password))
+                raise
+
     def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
         """return MongoReplicaSetClient object if hostname specified
         return MongoClient object if hostname doesn't specified
@@ -379,45 +402,20 @@ class ReplicaSet(BaseModel):
         while True:
             try:
                 if hostname is None:
-                    c = pymongo.MongoReplicaSetClient(servers, replicaSet=self.repl_id, read_preference=read_preference, socketTimeoutMS=20000, **self.kwargs)
+                    c = pymongo.MongoReplicaSetClient(
+                        servers, replicaSet=self.repl_id,
+                        read_preference=read_preference, socketTimeoutMS=20000,
+                        w='majority', fsync=True, **self.kwargs)
                     if c.primary:
-                        if self.login and not self.restart_required:
-                            try:
-                                db = c[self.auth_source]
-                                if self.x509_extra_user:
-                                    db.authenticate(
-                                        DEFAULT_SUBJECT,
-                                        mechanism='MONGODB-X509'
-                                    )
-                                else:
-                                    db.authenticate(
-                                        self.login, self.password)
-                            except:
-                                logger.exception(
-                                    "Could not authenticate to %s as %s/%s"
-                                    % (servers, self.login, self.password))
-                                raise
+                        self._authenticate_client(c)
                         return c
                     raise pymongo.errors.AutoReconnect("No replica set primary available")
                 else:
                     logger.debug("connection to the {servers}".format(**locals()))
-                    c = pymongo.MongoClient(servers, socketTimeoutMS=20000, **self.kwargs)
-                    if self.login and not self.restart_required:
-                        try:
-                            db = c[self.auth_source]
-                            if self.x509_extra_user:
-                                db.authenticate(
-                                    DEFAULT_SUBJECT,
-                                    mechanism='MONGODB-X509'
-                                )
-                            else:
-                                db.authenticate(
-                                    self.login, self.password)
-                        except:
-                            logger.exception(
-                                "Could not authenticate to %s as %s/%s"
-                                % (servers, self.login, self.password))
-                            raise
+                    c = pymongo.MongoClient(
+                        servers, socketTimeoutMS=20000,
+                        w='majority', fsync=True, **self.kwargs)
+                    self._authenticate_client(c)
                     return c
             except (pymongo.errors.PyMongoError):
                 exc_type, exc_value, exc_tb = sys.exc_info()

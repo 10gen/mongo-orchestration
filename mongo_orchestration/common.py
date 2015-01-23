@@ -20,6 +20,7 @@ import json
 import os
 import stat
 import tempfile
+import time
 
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
@@ -60,14 +61,8 @@ class BaseModel(object):
     def _strip_auth(self, proc_params):
         """Remove options from parameters that cause auth to be enabled."""
         params = proc_params.copy()
-        try:
-            params.pop("auth")
-        except KeyError:
-            pass
-        try:
-            params.pop("clusterAuthMode")
-        except KeyError:
-            pass
+        params.pop("auth", None)
+        params.pop("clusterAuthMode", None)
         return params
 
     def _add_users(self, db):
@@ -76,7 +71,6 @@ class BaseModel(object):
             # Build dict of kwargs to pass to add_user.
             auth_dict = {
                 'name': DEFAULT_SUBJECT,
-                'writeConcern': {'w': 'majority', 'fsync': True},
                 'roles': self._user_roles
             }
             db.add_user(**auth_dict)
@@ -86,7 +80,6 @@ class BaseModel(object):
         # Add secondary user given from request.
         secondary_login = {
             'name': self.login,
-            'writeConcern': {'w': 'majority', 'fsync': True},
             'roles': self._user_roles
         }
         if self.password:
