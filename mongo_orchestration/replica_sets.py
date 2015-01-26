@@ -98,7 +98,8 @@ class ReplicaSet(BaseModel):
         if self.restart_required:
             # Restart all the servers with auth flags and ssl.
             for idx, member in enumerate(members):
-                server_id = self._servers.id_by_hostname(self.id2host(idx))
+                server_id = self._servers.host_to_server_id(
+                    self.member_id_to_host(idx))
                 server = self._servers._storage[server_id]
                 server.x509_extra_user = self.x509_extra_user
                 server.auth_source = self.auth_source
@@ -127,7 +128,7 @@ class ReplicaSet(BaseModel):
             self.member_del(item, reconfig=False)
         self.server_map.clear()
 
-    def id2host(self, member_id):
+    def member_id_to_host(self, member_id):
         """return hostname by member id"""
         return self.server_map[member_id]
 
@@ -171,8 +172,8 @@ class ReplicaSet(BaseModel):
         """Ensure all members are running and available."""
         # Need to use self.server_map, in case no Servers are left running.
         for member_id in self.server_map:
-            host = self.id2host(member_id)
-            server_id = self._servers.id_by_hostname(host)
+            host = self.member_id_to_host(member_id)
+            server_id = self._servers.host_to_server_id(host)
             # Reset each member.
             self._servers.command(server_id, 'reset')
         # Wait for all members to have a state of 1, 2, or 7.
@@ -238,7 +239,7 @@ class ReplicaSet(BaseModel):
         mode = is_eval and 'eval' or 'command'
         hostname = None
         if isinstance(member_id, int):
-            hostname = self.id2host(member_id)
+            hostname = self.member_id_to_host(member_id)
         result = getattr(self.connection(hostname=hostname).admin, mode)(command, arg)
         logger.debug("command result: {result}".format(result=result))
         return result
@@ -289,7 +290,8 @@ class ReplicaSet(BaseModel):
 
         return True if operation success otherwise False
         """
-        server_id = self._servers.id_by_hostname(self.id2host(member_id))
+        server_id = self._servers.host_to_server_id(
+            self.member_id_to_host(member_id))
         if reconfig and member_id in [member['_id'] for member in self.members()]:
             config = self.config
             config['members'].pop(member_id)
@@ -311,7 +313,8 @@ class ReplicaSet(BaseModel):
 
     def member_info(self, member_id):
         """return information about member"""
-        server_id = self._servers.id_by_hostname(self.id2host(member_id))
+        server_id = self._servers.host_to_server_id(
+            self.member_id_to_host(member_id))
         server_info = self._servers.info(server_id)
         result = {'_id': member_id, 'server_id': server_id,
                   'mongodb_uri': server_info['mongodb_uri'],
@@ -344,7 +347,8 @@ class ReplicaSet(BaseModel):
 
         return True if operation success otherwise False
         """
-        server_id = self._servers.id_by_hostname(self.id2host(member_id))
+        server_id = self._servers.host_to_server_id(
+            self.member_id_to_host(member_id))
         return self._servers.command(server_id, command)
 
     def members(self):
@@ -354,7 +358,7 @@ class ReplicaSet(BaseModel):
             result.append({
                 "_id": member['_id'],
                 "host": member["name"],
-                "server_id": self._servers.id_by_hostname(member["name"]),
+                "server_id": self._servers.host_to_server_id(member["name"]),
                 "state": member['state']
             })
         return result
@@ -428,11 +432,25 @@ class ReplicaSet(BaseModel):
 
     def secondaries(self):
         """return list of secondaries members"""
-        return [{"_id": self.host2id(member), "host": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(2)]
+        return [
+            {
+                "_id": self.host2id(member),
+                "host": member,
+                "server_id": self._servers.host_to_server_id(member)
+            }
+            for member in self.get_members_in_state(2)
+        ]
 
     def arbiters(self):
         """return list of arbiters"""
-        return [{"_id": self.host2id(member), "host": member, "server_id": self._servers.id_by_hostname(member)} for member in self.get_members_in_state(7)]
+        return [
+            {
+                "_id": self.host2id(member),
+                "host": member,
+                "server_id": self._servers.host_to_server_id(member)
+            }
+            for member in self.get_members_in_state(7)
+        ]
 
     def hidden(self):
         """return list of hidden members"""
@@ -545,7 +563,8 @@ class ReplicaSet(BaseModel):
         """Restart each member of the replica set."""
         for member_id in self.server_map:
             host = self.server_map[member_id]
-            server = self._servers._storage[self._servers.id_by_hostname(host)]
+            server_id = self._servers.host_to_server_id(host)
+            server = self._servers._storage[server_id]
             server.restart(timeout, config_callback)
 
 

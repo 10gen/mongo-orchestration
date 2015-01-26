@@ -386,12 +386,13 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl.cleanup()
         self.assertTrue(len(self.repl) == 0)
 
-    def test_id2host(self):
+    def test_member_id_to_host(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
-            self.assertTrue(member['host'] == self.repl.id2host(member['_id']))
+            host = self.repl.member_id_to_host(member['_id'])
+            self.assertEqual(member['host'], host)
 
     def test_host2id(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -461,7 +462,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         result = self.repl.member_create({}, 13)
         self.assertTrue('host' in result)
         self.assertTrue('_id' in result)
-        h_id = Servers().id_by_hostname(result['host'])
+        h_id = Servers().host_to_server_id(result['host'])
         h_info = Servers().info(h_id)
         self.assertIn(result['host'], h_info['mongodb_uri'])
         self.assertTrue(h_info['procInfo']['alive'])
@@ -525,7 +526,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
-        self.assertTrue(Servers().info(Servers().id_by_hostname(primary))['statuses']['primary'])
+        server_id = Servers().host_to_server_id(primary)
+        self.assertTrue(Servers().info(server_id)['statuses']['primary'])
 
     def test_get_members_in_state(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -538,7 +540,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         _id = 1
-        hostname = self.repl.id2host(_id)
+        hostname = self.repl.member_id_to_host(_id)
         self.assertTrue(self.repl.connection(timeout=5))
         self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
         self.repl.member_command(_id, 'stop')

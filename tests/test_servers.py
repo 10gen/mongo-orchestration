@@ -141,13 +141,13 @@ class ServersTestCase(unittest.TestCase):
         self.assertEqual(info['statuses'], {})
         self.assertEqual(info['serverInfo'], {})
 
-    def test_id_by_hostname(self):
+    def test_host_to_server_id(self):
         h_id = self.servers.create('mongod', {}, autostart=True)
         h_uri = self.servers.hostname(h_id)
         h2_id = self.servers.create('mongod', {}, autostart=True)
         h2_uri = self.servers.hostname(h2_id)
-        self.assertTrue(self.servers.id_by_hostname(h_uri) == h_id)
-        self.assertTrue(self.servers.id_by_hostname(h2_uri) == h2_id)
+        self.assertEqual(self.servers.host_to_server_id(h_uri), h_id)
+        self.assertEqual(self.servers.host_to_server_id(h2_uri), h2_id)
 
     def test_hostname(self):
         h_id = self.servers.create('mongod', {}, autostart=True)

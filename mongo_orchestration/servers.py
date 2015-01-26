@@ -449,7 +449,7 @@ class Servers(Singleton, Container):
     def hostname(self, server_id):
         return self._storage[server_id].hostname
 
-    def id_by_hostname(self, hostname):
+    def host_to_server_id(self, hostname):
         for server_id in self._storage:
             if self._storage[server_id].hostname == hostname:
                 return server_id
