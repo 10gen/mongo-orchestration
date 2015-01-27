@@ -101,10 +101,13 @@ class ReplicaSet(BaseModel):
                 server_id = self._servers.host_to_server_id(
                     self.member_id_to_host(idx))
                 server = self._servers._storage[server_id]
-                server.x509_extra_user = self.x509_extra_user
-                server.auth_source = self.auth_source
-                server.login = self.login
-                server.password = self.password
+                # If this is an arbiter, we can't authenticate as the user,
+                # so don't set the login/password.
+                if not member.get('rsParams', {}).get('arbiterOnly'):
+                    server.x509_extra_user = self.x509_extra_user
+                    server.auth_source = self.auth_source
+                    server.login = self.login
+                    server.password = self.password
 
                 def add_auth(config):
                     if self.auth_key:
