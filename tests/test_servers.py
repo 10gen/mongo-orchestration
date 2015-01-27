@@ -324,7 +324,7 @@ class ServerTestCase(unittest.TestCase):
 class ServerSSLTestCase(SSLTestCase):
 
     def test_ssl_auth(self):
-        if SERVER_VERSION < (2, 8):
+        if SERVER_VERSION < (2, 4):
             raise SkipTest("Need to be able to set 'authenticationMechanisms' "
                            "parameter to test.")
 
