@@ -26,10 +26,12 @@ import pymongo
 
 sys.path.insert(0, '../')
 
+from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.servers import Server, Servers
 from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
-from tests import unittest
+from tests import (
+    SkipTest, certificate, unittest, TEST_SUBJECT, SSLTestCase, SERVER_VERSION)
 
 
 @attr('servers')
@@ -56,13 +58,6 @@ class ServersTestCase(unittest.TestCase):
 
     def test_singleton(self):
         self.assertEqual(id(self.servers), id(Servers()))
-
-    def test_set_settings(self):
-        default_release = 'old-release'
-        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
-        self.servers.set_settings(releases, default_release)
-        self.assertEqual(releases, self.servers.releases)
-        self.assertEqual(default_release, self.servers.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.servers))
@@ -146,13 +141,13 @@ class ServersTestCase(unittest.TestCase):
         self.assertEqual(info['statuses'], {})
         self.assertEqual(info['serverInfo'], {})
 
-    def test_id_by_hostname(self):
+    def test_host_to_server_id(self):
         h_id = self.servers.create('mongod', {}, autostart=True)
         h_uri = self.servers.hostname(h_id)
         h2_id = self.servers.create('mongod', {}, autostart=True)
         h2_uri = self.servers.hostname(h2_id)
-        self.assertTrue(self.servers.id_by_hostname(h_uri) == h_id)
-        self.assertTrue(self.servers.id_by_hostname(h2_uri) == h2_id)
+        self.assertEqual(self.servers.host_to_server_id(h_uri), h_id)
+        self.assertEqual(self.servers.host_to_server_id(h2_uri), h2_id)
 
     def test_hostname(self):
         h_id = self.servers.create('mongod', {}, autostart=True)
@@ -324,6 +319,77 @@ class ServerTestCase(unittest.TestCase):
         self.server.reset()
         # No ConnectionFailure.
         pymongo.MongoClient(self.server.hostname)
+
+
+class ServerSSLTestCase(SSLTestCase):
+
+    def test_ssl_auth(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
+        proc_params = {
+            'setParameter': {
+                'authenticationMechanisms': 'MONGODB-X509'
+            }
+        }
+        ssl_params = {
+            'sslPEMKeyFile': certificate('server.pem'),
+            'sslCAFile': certificate('ca.pem'),
+            'sslMode': 'requireSSL',
+            'sslAllowInvalidCertificates': True
+        }
+        # Should not raise an Exception.
+        self.server = Server(
+            'mongod', proc_params, ssl_params,
+            login=TEST_SUBJECT, auth_source='$external')
+        self.server.start()
+        # Should create an extra user. Doesn't raise.
+        client = pymongo.MongoClient(
+            self.server.hostname, ssl_certfile=DEFAULT_CLIENT_CERT)
+        client['$external'].authenticate(
+            DEFAULT_SUBJECT, mechanism='MONGODB-X509')
+        # Should also create the user we requested. Doesn't raise.
+        client = pymongo.MongoClient(
+            self.server.hostname, ssl_certfile=certificate('client.pem'))
+        client['$external'].authenticate(
+            TEST_SUBJECT, mechanism='MONGODB-X509')
+
+    def test_scram_with_ssl(self):
+        ssl_params = {
+            'sslPEMKeyFile': certificate('server.pem'),
+            'sslCAFile': certificate('ca.pem'),
+            'sslMode': 'requireSSL',
+            'sslAllowInvalidCertificates': True
+        }
+        # Should not raise an Exception.
+        self.server = Server(
+            'mongod', {}, ssl_params, login='luke', password='ekul')
+        self.server.start()
+        # Should create the user we requested. No raise on authenticate.
+        client = pymongo.MongoClient(
+            self.server.hostname, ssl_certfile=certificate('client.pem'))
+        client.admin.authenticate('luke', 'ekul')
+        # This should be the only user.
+        self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
+        self.assertFalse(client['$external'].command('usersInfo')['users'])
+
+    def test_ssl(self):
+        ssl_params = {
+            'sslPEMKeyFile': certificate('server.pem'),
+            'sslCAFile': certificate('ca.pem'),
+            'sslMode': 'requireSSL',
+            'sslAllowInvalidCertificates': True
+        }
+        # Should not raise an Exception.
+        self.server = Server('mongod', {}, ssl_params)
+        self.server.start()
+        # Server should require SSL.
+        self.assertRaises(pymongo.errors.ConnectionFailure,
+                          pymongo.MongoClient, self.server.hostname)
+        # Doesn't raise with certificate provided.
+        pymongo.MongoClient(
+            self.server.hostname, ssl_certfile=certificate('client.pem'))
 
 
 @attr('servers')

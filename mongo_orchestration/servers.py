@@ -19,7 +19,6 @@ import logging
 import os
 import platform
 import re
-import stat
 import subprocess
 import tempfile
 import time
@@ -29,6 +28,8 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration import process
+from mongo_orchestration.common import (
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -36,7 +37,7 @@ from mongo_orchestration.container import Container
 logger = logging.getLogger(__name__)
 
 
-class Server(object):
+class Server(BaseModel):
     """Class Server represents behaviour of  mongo instances """
 
     # default params for all mongo instances
@@ -54,13 +55,6 @@ class Server(object):
             os.makedirs(dbpath)
         return dbpath
 
-    def __init_auth_key(self, auth_key, folder):
-        key_file = os.path.join(os.path.join(folder, 'key'))
-        with open(key_file, 'w') as fd:
-            fd.write(auth_key)
-        os.chmod(key_file, stat.S_IRUSR)
-        return key_file
-
     def __init_logpath(self, log_path):
         if log_path and not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(log_path)
@@ -72,21 +66,17 @@ class Server(object):
             params['enableTestCommands'] = 1
             config['setParameter'] = params
 
-    def __init_mongod(self, params, ssl):
+    def __init_mongod(self, params, add_auth=False):
         cfg = self.mongod_default.copy()
         cfg.update(params)
-        cfg.update(ssl)
 
         # create db folder
         cfg['dbpath'] = self.__init_db(cfg.get('dbpath', None))
 
-        # use keyFile
-        if self.auth_key:
+        if add_auth:
             cfg['auth'] = True
-            cfg['keyFile'] = self.__init_auth_key(self.auth_key, cfg['dbpath'])
-
-        if self.login:
-            cfg['auth'] = True
+            if self.auth_key:
+                cfg['keyFile'] = self.key_file
 
         # create logpath
         self.__init_logpath(cfg.get('logpath', None))
@@ -99,15 +89,14 @@ class Server(object):
 
         return process.write_config(cfg), cfg
 
-    def __init_mongos(self, params, ssl):
+    def __init_mongos(self, params):
         cfg = params.copy()
-        cfg.update(ssl)
 
         self.__init_logpath(cfg.get('logpath', None))
 
         # use keyFile
         if self.auth_key:
-            cfg['keyFile'] = self.__init_auth_key(self.auth_key, tempfile.mkdtemp())
+            cfg['keyFile'] = self.key_file
 
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
@@ -116,7 +105,8 @@ class Server(object):
 
         return process.write_config(cfg), cfg
 
-    def __init__(self, name, procParams, sslParams={}, auth_key=None, login='', password=''):
+    def __init__(self, name, procParams, sslParams={}, auth_key=None,
+                 login='', password='', auth_source='admin'):
         """Args:
             name - name of process (mongod or mongos)
             procParams - dictionary with params for mongo process
@@ -127,26 +117,30 @@ class Server(object):
         logger.debug("Server.__init__({name}, {procParams}, {sslParams}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
         self.login = login
+        self.auth_source = auth_source
         self.password = password
         self.auth_key = auth_key
-        self.admin_added = False
         self.pid = None  # process pid
         self.proc = None # Popen object
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
         self.is_mongos = False
         self.kwargs = {}
+        self.ssl_params = sslParams
+        self.restart_required = self.login or self.auth_key
 
-        if not not sslParams:
+        if self.ssl_params:
             self.kwargs['ssl'] = True
+            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
 
         proc_name = os.path.split(name)[1].lower()
+        procParams.update(sslParams)
         if proc_name.startswith('mongod'):
-            self.config_path, self.cfg = self.__init_mongod(procParams, sslParams)
+            self.config_path, self.cfg = self.__init_mongod(procParams)
 
         elif proc_name.startswith('mongos'):
             self.is_mongos = True
-            self.config_path, self.cfg = self.__init_mongos(procParams, sslParams)
+            self.config_path, self.cfg = self.__init_mongos(procParams)
 
         else:
             self.config_path, self.cfg = None, {}
@@ -156,13 +150,19 @@ class Server(object):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.MongoClient(self.hostname, **self.kwargs)
-        if not self.is_mongos and self.admin_added and (self.login and self.password):
+        c = pymongo.MongoClient(self.hostname, fsync=True, **self.kwargs)
+        if not self.is_mongos and self.login and not self.restart_required:
+            db = c[self.auth_source]
+            if self.x509_extra_user:
+                auth_dict = {
+                    'name': DEFAULT_SUBJECT, 'mechanism': 'MONGODB-X509'}
+            else:
+                auth_dict = {'name': self.login, 'password': self.password}
             try:
-                c.admin.authenticate(self.login, self.password)
+                db.authenticate(**auth_dict)
             except:
-                logger.exception("Could not authenticate to %s as %s/%s"
-                                 % (self.hostname, self.login, self.password))
+                logger.exception("Could not authenticate to %s with %r"
+                                 % (self.hostname, auth_dict))
                 raise
         return c
 
@@ -234,7 +234,7 @@ class Server(object):
         status_info = {}
         if self.hostname and self.cfg.get('port', None):
             try:
-                c = pymongo.MongoClient(self.hostname.split(':')[0], self.cfg['port'], socketTimeoutMS=120000, **self.kwargs)
+                c = self.connection
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 mongodb_uri = 'mongodb://' + self.hostname
@@ -295,20 +295,36 @@ class Server(object):
         except (OSError, TimeoutError):
             logger.exception("Could not start Server.")
             raise
-        if not self.admin_added and self.login:
-            self._add_auth()
-            self.admin_added = True
+        if self.restart_required:
+            if self.login:
+                # Add users to the appropriate database.
+                self._add_users()
+            self.stop()
+
+            # Restart with keyfile and auth.
+            if self.is_mongos:
+                self.config_path, self.cfg = self.__init_mongos(self.cfg)
+            else:
+                # Add auth options to this Server's config file.
+                self.config_path, self.cfg = self.__init_mongod(
+                    self.cfg, add_auth=True)
+            self.restart_required = False
+            self.start()
+
         return True
 
     def stop(self):
         """stop server"""
         return process.kill_mprocess(self.proc)
 
-    def restart(self, timeout=300):
+    def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
         return status of start command
         """
         self.stop()
+        if config_callback:
+            self.cfg = config_callback(self.cfg.copy())
+        self.config_path = process.write_config(self.cfg)
         return self.start(timeout)
 
     def reset(self):
@@ -316,18 +332,20 @@ class Server(object):
         self.start()
         return self.info()
 
-    def _add_auth(self):
+    def _add_users(self):
         try:
-            db = self.connection.admin
-            logger.debug("add admin user {login}/{password}".format(login=self.login, password=self.password))
-            db.add_user(self.login, self.password,
-                        roles=['__system',
-                               'clusterAdmin',
-                               'dbAdminAnyDatabase',
-                               'readWriteAnyDatabase',
-                               'userAdminAnyDatabase'],
-                        writeConcern={'fsync': True})
-            db.logout()
+            # Determine authentication mechanisms.
+            set_params = self.cfg.get('setParameter', {})
+            auth_mechs = set_params.get(
+                'authenticationMechanisms', '').split(',')
+
+            # We need to add an additional user if MONGODB-X509 is the only auth
+            # mechanism.
+            self.x509_extra_user = False
+            if len(auth_mechs) == 1 and auth_mechs[0] == 'MONGODB-X509':
+                self.x509_extra_user = True
+
+            super(Server, self)._add_users(self.connection[self.auth_source])
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))
             # user added successfuly but OperationFailure exception raises
@@ -355,7 +373,8 @@ class Servers(Singleton, Container):
 
     def create(self, name, procParams, sslParams={},
                auth_key=None, login=None, password=None,
-               timeout=300, autostart=True, server_id=None, version=None):
+               auth_source='admin', timeout=300, autostart=True,
+               server_id=None, version=None):
         """create new server
         Args:
            name - process name or path
@@ -376,11 +395,14 @@ class Servers(Singleton, Container):
 
         bin_path = self.bin_path(version)
         server = Server(os.path.join(bin_path, name), procParams, sslParams,
-                        auth_key, login, password)
+                        auth_key, login, password, auth_source)
         if autostart:
             server.start(timeout)
         self[server_id] = server
         return server_id
+
+    def restart(self, server_id, timeout=300, config_callback=None):
+        self._storage[server_id].restart(timeout, config_callback)
 
     def remove(self, server_id):
         """remove server and data stuff
@@ -427,7 +449,7 @@ class Servers(Singleton, Container):
     def hostname(self, server_id):
         return self._storage[server_id].hostname
 
-    def id_by_hostname(self, hostname):
+    def host_to_server_id(self, hostname):
         for server_id in self._storage:
             if self._storage[server_id].hostname == hostname:
                 return server_id

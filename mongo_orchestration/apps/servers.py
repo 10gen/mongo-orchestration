@@ -45,6 +45,7 @@ def _host_create(params):
                                params.get('auth_key', ''),
                                params.get('login', ''),
                                params.get('password', ''),
+                               params.get('authSource', 'admin'),
                                params.get('timeout', 300),
                                params.get('autostart', True),
                                host_id,

@@ -24,11 +24,14 @@ import pymongo
 
 sys.path.insert(0, '../')
 
+from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
 from nose.plugins.attrib import attr
-from tests import unittest, assert_eventually, HOSTNAME
+from tests import (
+    SkipTest, certificate, TEST_SUBJECT, unittest, assert_eventually,
+    HOSTNAME, SERVER_VERSION, SSLTestCase)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -40,7 +43,6 @@ class ReplicaSetsTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         self.rs = ReplicaSets()
-        self.rs.set_settings(os.environ.get('MONGOBIN', None))
 
     def tearDown(self):
         self.rs.cleanup()
@@ -55,13 +57,6 @@ class ReplicaSetsTestCase(unittest.TestCase):
 
     def test_singleton(self):
         self.assertEqual(id(self.rs), id(ReplicaSets()))
-
-    def test_set_settings(self):
-        default_release = 'old-release'
-        releases = {default_release: os.path.join(os.getcwd(), 'bin')}
-        self.rs.set_settings(releases, default_release)
-        self.assertEqual(releases, self.rs.releases)
-        self.assertEqual(default_release, self.rs.default_release)
 
     def test_bool(self):
         self.assertEqual(False, bool(self.rs))
@@ -391,12 +386,13 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl.cleanup()
         self.assertTrue(len(self.repl) == 0)
 
-    def test_id2host(self):
+    def test_member_id_to_host(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         members = self.repl.config['members']
         for member in members:
-            self.assertTrue(member['host'] == self.repl.id2host(member['_id']))
+            host = self.repl.member_id_to_host(member['_id'])
+            self.assertEqual(member['host'], host)
 
     def test_host2id(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -466,7 +462,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         result = self.repl.member_create({}, 13)
         self.assertTrue('host' in result)
         self.assertTrue('_id' in result)
-        h_id = Servers().id_by_hostname(result['host'])
+        h_id = Servers().host_to_server_id(result['host'])
         h_info = Servers().info(h_id)
         self.assertIn(result['host'], h_info['mongodb_uri'])
         self.assertTrue(h_info['procInfo']['alive'])
@@ -530,7 +526,8 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         primary = self.repl.primary()
-        self.assertTrue(Servers().info(Servers().id_by_hostname(primary))['statuses']['primary'])
+        server_id = Servers().host_to_server_id(primary)
+        self.assertTrue(Servers().info(server_id)['statuses']['primary'])
 
     def test_get_members_in_state(self):
         self.repl_cfg = {'members': [{}, {}]}
@@ -543,7 +540,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
         _id = 1
-        hostname = self.repl.id2host(_id)
+        hostname = self.repl.member_id_to_host(_id)
         self.assertTrue(self.repl.connection(timeout=5))
         self.assertTrue(self.repl.connection(hostname=hostname, timeout=5))
         self.repl.member_command(_id, 'stop')
@@ -615,6 +612,94 @@ class ReplicaSetTestCase(unittest.TestCase):
         for host in all_hosts:
             # No ConnectionFailure/AutoReconnect.
             pymongo.MongoClient(host)
+
+
+class ReplicaSetSSLTestCase(SSLTestCase):
+
+    def test_ssl_auth(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
+        member_params = {
+            'procParams': {
+                'clusterAuthMode': 'x509',
+                'setParameter': {'authenticationMechanisms': 'MONGODB-X509'}
+            }
+        }
+        self.repl_cfg = {
+            'login': TEST_SUBJECT,
+            'authSource': '$external',
+            'members': [member_params, member_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        # Should create an extra user. No raise on authenticate.
+        client = pymongo.MongoClient(
+            self.repl.primary(), ssl_certfile=DEFAULT_CLIENT_CERT)
+        client['$external'].authenticate(
+            DEFAULT_SUBJECT, mechanism='MONGODB-X509')
+
+        # Should create the user we requested. No raise on authenticate.
+        client = pymongo.MongoClient(
+            self.repl.primary(), ssl_certfile=certificate('client.pem'))
+        client['$external'].authenticate(
+            TEST_SUBJECT, mechanism='MONGODB-X509')
+
+    def test_scram_with_ssl(self):
+        member_params = {'procParams': {'clusterAuthMode': 'x509'}}
+        self.repl_cfg = {
+            'login': 'luke',
+            'password': 'ekul',
+            'members': [member_params, member_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        # Should create the user we requested. No raise on authenticate.
+        client = pymongo.MongoClient(
+            self.repl.primary(), ssl_certfile=certificate('client.pem'))
+        client.admin.authenticate('luke', 'ekul')
+        # This should be the only user.
+        self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
+        self.assertFalse(client['$external'].command('usersInfo')['users'])
+
+    def test_ssl(self):
+        member_params = {}
+        self.repl_cfg = {
+            'members': [member_params, member_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        # Should not raise an Exception.
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        # Server should require SSL.
+        self.assertRaises(pymongo.errors.ConnectionFailure,
+                          pymongo.MongoClient, self.repl.primary())
+        # This shouldn't raise.
+        pymongo.MongoClient(
+            self.repl.primary(), ssl_certfile=certificate('client.pem'))
 
 
 @attr('rs')
