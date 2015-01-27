@@ -119,7 +119,6 @@ class ShardedCluster(BaseModel):
                 elif shard.get('isReplicaSet'):
                     client = ReplicaSets()._storage[instance_id].connection()
                 db = client[self.auth_source]
-                db.write_concern = {'w': 'majority', 'fsync': True}
                 if self.x509_extra_user:
                     db.add_user(DEFAULT_SUBJECT, roles=self._user_roles)
                 if self.login:
