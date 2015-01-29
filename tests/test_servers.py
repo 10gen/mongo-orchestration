@@ -391,6 +391,34 @@ class ServerSSLTestCase(SSLTestCase):
         pymongo.MongoClient(
             self.server.hostname, ssl_certfile=certificate('client.pem'))
 
+    def test_mongodb_auth_uri(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
+        proc_params = {
+            'setParameter': {
+                'authenticationMechanisms': 'MONGODB-X509'
+            }
+        }
+        ssl_params = {
+            'sslPEMKeyFile': certificate('server.pem'),
+            'sslCAFile': certificate('ca.pem'),
+            'sslMode': 'requireSSL',
+            'sslAllowInvalidCertificates': True
+        }
+        self.server = Server(
+            'mongod', proc_params, ssl_params,
+            login=TEST_SUBJECT, auth_source='$external')
+        self.server.start()
+
+        self.assertIn('mongodb_auth_uri', self.server.info())
+        auth_uri = self.server.info()['mongodb_auth_uri']
+        self.assertIn(self.server.hostname, auth_uri)
+        self.assertIn(TEST_SUBJECT, auth_uri)
+        self.assertIn('authSource=$external', auth_uri)
+        self.assertIn('authMechanism=MONGODB-X509', auth_uri)
+
 
 @attr('servers')
 @attr('auth')
@@ -406,6 +434,13 @@ class ServerAuthTestCase(unittest.TestCase):
         if hasattr(self, 'server'):
             self.server.stop()
             self.server.cleanup()
+
+    def test_mongodb_auth_uri(self):
+        self.assertIn('mongodb_auth_uri', self.server.info())
+        auth_uri = self.server.info()['mongodb_auth_uri']
+        self.assertIn(self.server.hostname, auth_uri)
+        self.assertIn('admin:admin', auth_uri)
+        self.assertIn('authSource=admin', auth_uri)
 
     def test_mongos(self):
         self.server.stop()

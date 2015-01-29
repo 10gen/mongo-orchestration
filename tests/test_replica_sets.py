@@ -701,6 +701,70 @@ class ReplicaSetSSLTestCase(SSLTestCase):
         pymongo.MongoClient(
             self.repl.primary(), ssl_certfile=certificate('client.pem'))
 
+    def test_mongodb_auth_uri(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
+        member_params = {
+            'procParams': {
+                'clusterAuthMode': 'x509',
+                'setParameter': {'authenticationMechanisms': 'MONGODB-X509'}
+            }
+        }
+        self.repl_cfg = {
+            'login': TEST_SUBJECT,
+            'authSource': '$external',
+            'members': [member_params, member_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        self.assertIn('mongodb_auth_uri', self.repl.info())
+        repl_auth_uri = self.repl.info()['mongodb_auth_uri']
+        hosts = ','.join(m['host'] for m in self.repl.members())
+        self.assertIn(hosts, repl_auth_uri)
+        self.assertIn(TEST_SUBJECT, repl_auth_uri)
+        self.assertIn('authSource=$external', repl_auth_uri)
+        self.assertIn('authMechanism=MONGODB-X509', repl_auth_uri)
+
+    def test_member_info_auth_uri(self):
+        member_params = {
+            'procParams': {
+                'clusterAuthMode': 'x509',
+                'setParameter': {'authenticationMechanisms': 'MONGODB-X509'}
+            }
+        }
+        self.repl_cfg = {
+            'login': TEST_SUBJECT,
+            'authSource': '$external',
+            'members': [member_params, member_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        self.repl = ReplicaSet(self.repl_cfg)
+        for i in range(len(self.repl)):
+            member = self.repl.member_info(i)
+            self.assertIn('mongodb_auth_uri', member)
+            uri = member['mongodb_auth_uri']
+            host = Servers().hostname(member['server_id'])
+            self.assertIn(host, uri)
+            self.assertIn(TEST_SUBJECT, uri)
+            self.assertIn('authSource=$external', uri)
+            self.assertIn('authMechanism=MONGODB-X509', uri)
+
+
 
 @attr('rs')
 @attr('test')
@@ -755,6 +819,24 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertFalse(rs_info['primary'])
         self.assertFalse(rs_info['secondary'])
         self.assertTrue(rs_info['arbiterOnly'])
+
+    def test_mongodb_auth_uri(self):
+        self.assertIn('mongodb_auth_uri', self.repl.info())
+        rs_auth_uri = self.repl.info()['mongodb_auth_uri']
+        hosts = ','.join(m['host'] for m in self.repl.members())
+        self.assertIn(hosts, rs_auth_uri)
+        self.assertIn('admin:admin', rs_auth_uri)
+        self.assertIn('authSource=admin', rs_auth_uri)
+
+    def test_member_info_auth_uri(self):
+        for i in range(len(self.repl)):
+            member = self.repl.member_info(i)
+            self.assertIn('mongodb_auth_uri', member)
+            uri = member['mongodb_auth_uri']
+            host = Servers().hostname(member['server_id'])
+            self.assertIn(host, uri)
+            self.assertIn('admin:admin', uri)
+            self.assertIn('authSource=admin', uri)
 
 
 if __name__ == '__main__':

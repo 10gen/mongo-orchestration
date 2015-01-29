@@ -204,11 +204,14 @@ class ReplicaSet(BaseModel):
         """return information about replica set"""
         hosts = ','.join(x['host'] for x in self.members())
         mongodb_uri = 'mongodb://' + hosts + '/?replicaSet=' + self.repl_id
-        return {"id": self.repl_id,
-                "auth_key": self.auth_key,
-                "members": self.members(),
-                "mongodb_uri": mongodb_uri,
-                "orchestration": 'replica_sets'}
+        result = {"id": self.repl_id,
+                  "auth_key": self.auth_key,
+                  "members": self.members(),
+                  "mongodb_uri": mongodb_uri,
+                  "orchestration": 'replica_sets'}
+        if self.login:
+            result['mongodb_auth_uri'] = self.mongodb_auth_uri(hosts)
+        return result
 
     def repl_member_add(self, params):
         """create new mongod instances and add it to the replica set.
@@ -323,6 +326,9 @@ class ReplicaSet(BaseModel):
                   'mongodb_uri': server_info['mongodb_uri'],
                   'procInfo': server_info['procInfo'],
                   'statuses': server_info['statuses']}
+        if self.login:
+            result['mongodb_auth_uri'] = self.mongodb_auth_uri(
+                self._servers.hostname(server_id))
         result['rsInfo'] = {}
         if server_info['procInfo']['alive']:
             # Can't call serverStatus on arbiter when running with auth enabled.

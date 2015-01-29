@@ -247,6 +247,8 @@ class Server(BaseModel):
         result = {"mongodb_uri": mongodb_uri, "statuses": status_info,
                   "serverInfo": server_info, "procInfo": proc_info,
                   "orchestration": 'servers'}
+        if self.login:
+            result['mongodb_auth_uri'] = self.mongodb_auth_uri(self.hostname)
         logger.debug("return {result}".format(result=result))
         return result
 

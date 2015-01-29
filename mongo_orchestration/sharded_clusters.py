@@ -344,12 +344,15 @@ class ShardedCluster(BaseModel):
         """return info about configuration"""
         uri = ','.join(x['hostname'] for x in self.routers)
         mongodb_uri = 'mongodb://' + uri
-        return {'id': self.id,
-                'shards': self.members,
-                'configsvrs': self.configsvrs,
-                'routers': self.routers,
-                'mongodb_uri': mongodb_uri,
-                'orchestration': 'sharded_clusters'}
+        result = {'id': self.id,
+                  'shards': self.members,
+                  'configsvrs': self.configsvrs,
+                  'routers': self.routers,
+                  'mongodb_uri': mongodb_uri,
+                  'orchestration': 'sharded_clusters'}
+        if self.login:
+            result['mongodb_auth_uri'] = self.mongodb_auth_uri(uri)
+        return result
 
     def cleanup(self):
         """cleanup configuration: stop and remove all servers"""
