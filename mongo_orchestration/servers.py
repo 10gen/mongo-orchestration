@@ -172,7 +172,7 @@ class Server(BaseModel):
         command = (self.name, '--version')
         stdout, _ = subprocess.Popen(
             command, stdout=subprocess.PIPE).communicate()
-        first_line = stdout.split('\n')[0]
+        first_line = str(stdout).split('\n')[0]
         match = re.search(self.version_patt, first_line)
         version_string = match.group('version')
         return tuple(map(int, version_string.split('.')))
