@@ -28,7 +28,8 @@ DEFAULT_SERVER = 'cherrypy'
 
 # Username for included client x509 certificate.
 DEFAULT_SUBJECT = (
-    'C=US,ST=New York,L=New York City,O=MongoDB,OU=KernelUser,CN=client'
+    'C=US,ST=New York,L=New York City,O=MongoDB,OU=KernelUser,'
+    'CN=mongo_orchestration'
 )
 DEFAULT_CLIENT_CERT = os.path.join(
     os.environ.get(
