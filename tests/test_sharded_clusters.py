@@ -571,6 +571,19 @@ class ShardTestCase(unittest.TestCase):
             # No ConnectionFailure/AutoReconnect.
             pymongo.MongoClient(host)
 
+    def test_mongodb_auth_uri(self):
+        self.sh = ShardedCluster({
+            'login': 'luke', 'password': 'ekul',
+            'routers': [{}, {}],
+            'shards': [{}]
+        })
+        self.assertIn('mongodb_auth_uri', self.sh.info())
+        auth_uri = self.sh.info()['mongodb_auth_uri']
+        hosts = ','.join(r['hostname'] for r in self.sh.routers)
+        self.assertIn(hosts, auth_uri)
+        self.assertIn('luke:ekul', auth_uri)
+        self.assertIn('authSource=admin', auth_uri)
+
 
 class ShardSSLTestCase(SSLTestCase):
 
@@ -666,6 +679,42 @@ class ShardSSLTestCase(SSLTestCase):
                           pymongo.MongoClient, host)
         # This shouldn't raise.
         pymongo.MongoClient(host, ssl_certfile=certificate('client.pem'))
+
+    def test_mongodb_auth_uri(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
+                           "parameter to test.")
+
+        shard_params = {
+            'shardParams': {
+                'procParams': {
+                    'clusterAuthMode': 'x509',
+                    'setParameter': {'authenticationMechanisms': 'MONGODB-X509'}
+                }
+            }
+        }
+        config = {
+            'login': TEST_SUBJECT,
+            'authSource': '$external',
+            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'routers': [{'clusterAuthMode': 'x509'}],
+            'shards': [shard_params, shard_params],
+            'sslParams': {
+                'sslCAFile': certificate('ca.pem'),
+                'sslPEMKeyFile': certificate('server.pem'),
+                'sslMode': 'requireSSL',
+                'sslClusterFile': certificate('cluster_cert.pem'),
+                'sslAllowInvalidCertificates': True
+            }
+        }
+        self.sh = ShardedCluster(config)
+        self.assertIn('mongodb_auth_uri', self.sh.info())
+        auth_uri = self.sh.info()['mongodb_auth_uri']
+        hosts = ','.join(r['hostname'] for r in self.sh.routers)
+        self.assertIn(hosts, auth_uri)
+        self.assertIn(TEST_SUBJECT, auth_uri)
+        self.assertIn('authSource=$external', auth_uri)
+        self.assertIn('authMechanism=MONGODB-X509', auth_uri)
 
 
 if __name__ == '__main__':

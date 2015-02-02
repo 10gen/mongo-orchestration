@@ -65,6 +65,21 @@ class BaseModel(object):
         params.pop("clusterAuthMode", None)
         return params
 
+    def mongodb_auth_uri(self, hosts):
+        """Get a connection string with all info necessary to authenticate."""
+        parts = ['mongodb://']
+        if self.login:
+            parts.append(self.login)
+            if self.password:
+                parts.append(':' + self.password)
+            parts.append('@')
+        parts.append(hosts + '/')
+        if self.login:
+            parts.append('?authSource=' + self.auth_source)
+            if self.x509_extra_user:
+                parts.append('&authMechanism=MONGODB-X509')
+        return ''.join(parts)
+
     def _add_users(self, db):
         """Add given user, and extra x509 user if necessary."""
         if self.x509_extra_user:
