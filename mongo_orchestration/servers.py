@@ -56,8 +56,9 @@ class Server(BaseModel):
         return dbpath
 
     def __init_logpath(self, log_path):
-        if log_path and not os.path.exists(os.path.dirname(log_path)):
-            os.makedirs(log_path)
+        log_dir = os.path.dirname(log_path)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
     def __init_test_commands(self, config):
         """Conditionally enable test commands in the Server's config file."""
@@ -78,8 +79,10 @@ class Server(BaseModel):
             if self.auth_key:
                 cfg['keyFile'] = self.key_file
 
-        # create logpath
-        self.__init_logpath(cfg.get('logpath', None))
+        # create logpath: goes in dbpath by default under process name + ".log"
+        logpath = cfg.setdefault(
+            'logpath', os.path.join(cfg['dbpath'], 'mongod.log'))
+        self.__init_logpath(logpath)
 
         # find open port
         if 'port' not in cfg:
@@ -92,7 +95,10 @@ class Server(BaseModel):
     def __init_mongos(self, params):
         cfg = params.copy()
 
-        self.__init_logpath(cfg.get('logpath', None))
+        log_path = cfg.setdefault(
+            'logpath',
+            os.path.join(tempfile.mkdtemp(prefix='mongo-'), 'mongos.log'))
+        self.__init_logpath(log_path)
 
         # use keyFile
         if self.auth_key:
