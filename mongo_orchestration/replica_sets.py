@@ -118,7 +118,7 @@ class ReplicaSet(BaseModel):
                 server.restart(config_callback=add_auth)
             self.restart_required = False
 
-        if not self.waiting_config_state():
+        if not self.waiting_member_state and self.waiting_config_state():
             raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
 
