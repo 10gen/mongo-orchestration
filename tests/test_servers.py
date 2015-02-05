@@ -256,7 +256,7 @@ class ServerTestCase(unittest.TestCase):
 
     def test_start_with_repair(self):
         self.server.cleanup()
-        self.server = Server(self.mongod, {"journal": False})
+        self.server = Server(self.mongod, {"nojournal": True})
         self.server.start(30)
         os.kill(self.server.pid, 9)
         self.assertTrue(self.server._is_locked)
@@ -292,11 +292,12 @@ class ServerTestCase(unittest.TestCase):
         self.assertTrue(self.server.is_alive)
 
     def test_set_parameter(self):
+        self.server.cleanup()
         cfg = {"setParameter": {"textSearchEnabled": True,
                                 "enableTestCommands": 1}}
-        server = Server(self.mongod, cfg)
-        server.start()
-        c = pymongo.MongoClient(server.hostname)
+        self.server = Server(self.mongod, cfg)
+        self.server.start()
+        c = pymongo.MongoClient(self.server.hostname)
         c.foo.bar.insert({"data": "text stuff"})
         # No Exception.
         c.foo.bar.ensure_index([("data", pymongo.TEXT)])

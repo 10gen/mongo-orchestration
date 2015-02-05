@@ -585,7 +585,7 @@ class ShardTestCase(unittest.TestCase):
         self.assertIn('authSource=admin', auth_uri)
 
 
-class ShardSSLTestCase(SSLTestCase):
+class ShardSSLTestCase(SSLTestCase, ShardTestCase):
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
