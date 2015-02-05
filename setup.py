@@ -27,7 +27,7 @@ except IOError:
 
 setup(
     name='mongo-orchestration',
-    version='0.1',
+    version='0.2',
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
     description='Restful service for managing MongoDB servers',
