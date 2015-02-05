@@ -29,13 +29,10 @@ sys.path.insert(0, '../')
 from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.servers import Server, Servers
 from mongo_orchestration.process import PortPool
-from nose.plugins.attrib import attr
 from tests import (
     SkipTest, certificate, unittest, TEST_SUBJECT, SSLTestCase, SERVER_VERSION)
 
 
-@attr('servers')
-@attr('test')
 class ServersTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -172,8 +169,6 @@ class ServersTestCase(unittest.TestCase):
         h_id = self.servers.create('mongod', {}, autostart=False, server_id=id)
         self.assertEqual(id, h_id)
 
-@attr('servers')
-@attr('test')
 class ServerTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -421,9 +416,6 @@ class ServerSSLTestCase(SSLTestCase):
         self.assertIn('authMechanism=MONGODB-X509', auth_uri)
 
 
-@attr('servers')
-@attr('auth')
-@attr('test')
 class ServerAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()

@@ -174,27 +174,31 @@ piping the response into ``python -m json.tool``, e.g.:
 Tests
 -----
 
-Running the tests has the following additional dependencies:
+Running the tests has the following additional dependency:
 
--  `nose >= 1.3.4 <https://pypi.python.org/pypi/nose>`__
 -  `unittest2 >= 0.6 <https://pypi.python.org/pypi/unittest2>`__ (Python 2.6 only)
 
 Run all tests
 ~~~~~~~~~~~~~
 
-``nosetests tests``
+``python setup.py test``
 
-Run a test file example
-~~~~~~~~~~~~~~~~~~~~~~~
+Run a test module
+~~~~~~~~~~~~~~~~~
 
-``nosetests tests/test_hosts.py``
+``python -m unittest tests.test_servers``
 
-Run a single test example
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Run a single test case
+~~~~~~~~~~~~~~~~~~~~~~
 
-``nosetests tests/test_hosts.py:HostTestCase.test_info``
+``python -m unittest tests.test_servers.ServerSSLTestCase``
+
+Run a single test method
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``python -m unittest tests.test_servers.ServerSSLTestCase.test_ssl_auth``
 
 Run a single test example for debugging with verbose and immediate stdout output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``nosetests -vs tests/test_hosts.py:HostTestCase.test_info``
+``python -m unittest -v tests.test_servers.ServerSSLTestCase``

@@ -24,12 +24,9 @@ sys.path.insert(0, '../')
 
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import MongoOrchestrationError
-from nose.plugins.attrib import attr
 from tests import unittest
 
 
-@attr('container')
-@attr('test')
 class ContainerTestCase(unittest.TestCase):
     def setUp(self):
         self.container = Container()

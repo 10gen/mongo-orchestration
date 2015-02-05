@@ -19,12 +19,9 @@ import sys
 sys.path.insert(0, '../')
 
 from mongo_orchestration.singleton import Singleton
-from nose.plugins.attrib import attr
 from tests import unittest
 
 
-@attr('singleton')
-@attr('test')
 class SingletonTestCase(unittest.TestCase):
 
     def test_singleton(self):

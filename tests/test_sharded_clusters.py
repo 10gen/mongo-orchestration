@@ -27,7 +27,6 @@ from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
-from nose.plugins.attrib import attr
 from tests import (
     certificate, unittest, SkipTest,
     HOSTNAME, TEST_SUBJECT, SERVER_VERSION, SSLTestCase)
@@ -36,8 +35,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@attr('shards')
-@attr('test')
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
         self.sh = ShardedClusters()
@@ -108,7 +105,6 @@ class ShardsTestCase(unittest.TestCase):
             shard['_id'] in ('sh01', 'sh02', 'sh-rs-01')
         c.close()
 
-    @attr('auth')
     def test_sh_new_with_auth(self):
         port = PortPool().port(check=True)
         config = {
@@ -214,7 +210,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue(info['isReplicaSet'])
         self.assertTrue('_id' in info)
 
-    @attr('auth')
     def test_member_info_with_auth(self):
         config = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'shards': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
@@ -282,8 +277,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
 
 
-@attr('shards')
-@attr('test')
 class ShardTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -318,7 +311,6 @@ class ShardTestCase(unittest.TestCase):
         for item in c.admin.command("listShards")['shards']:
             self.assertTrue(item['_id'] in ('sh01', 'sh02'))
 
-    @attr('auth')
     def test_sh_new_with_auth(self):
         port = PortPool().port(check=True)
         config = {
@@ -453,7 +445,6 @@ class ShardTestCase(unittest.TestCase):
 
         self.sh.cleanup()
 
-    @attr('auth')
     def test_member_info_with_auth(self):
         config = {'auth_key': 'secret', 'login': 'admin', 'password': 'adminpass', 'shards': [{'id': 'member1'}, {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         self.sh = ShardedCluster(config)

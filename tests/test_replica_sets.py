@@ -28,7 +28,6 @@ from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
-from nose.plugins.attrib import attr
 from tests import (
     SkipTest, certificate, TEST_SUBJECT, unittest, assert_eventually,
     HOSTNAME, SERVER_VERSION, SSLTestCase)
@@ -37,8 +36,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@attr('rs')
-@attr('test')
 class ReplicaSetsTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -357,8 +354,6 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
 
-@attr('rs')
-@attr('test')
 class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
@@ -766,9 +761,6 @@ class ReplicaSetSSLTestCase(SSLTestCase):
 
 
 
-@attr('rs')
-@attr('test')
-@attr('auth')
 class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()

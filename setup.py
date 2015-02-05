@@ -3,11 +3,13 @@
 import os
 import sys
 
+extra_opts = {'test_suite': 'tests'}
 extra_deps = []
 extra_test_deps = []
 if sys.version_info[:2] == (2, 6):
     extra_deps.append('argparse')
     extra_test_deps.append('unittest2')
+    extra_opts['test_suite'] = 'unittest2.collector'
 
 try:
     from setuptools import setup, find_packages
@@ -16,7 +18,6 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-extra_opts = {}
 try:
     with open('README.rst', 'r') as fd:
         extra_opts['long_description'] = fd.read()
@@ -37,8 +38,7 @@ setup(
     install_requires=['pymongo>=2.8',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0'] + extra_deps,
-    tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
-    test_suite='nose.collector',
+    tests_require=['coverage>=3.5'] + extra_test_deps,
     packages=find_packages(exclude=('tests',)),
     package_data={
         'mongo_orchestration': [

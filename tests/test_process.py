@@ -27,14 +27,10 @@ sys.path.insert(0, '../')
 import mongo_orchestration.process as process
 
 from mongo_orchestration.errors import TimeoutError
-from nose.plugins.attrib import attr
 
 from tests import unittest, SkipTest, HOSTNAME
 
 
-@attr('process')
-@attr('portpool')
-@attr('test')
 class PortPoolTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -137,8 +133,6 @@ class PortPoolTestCase(unittest.TestCase):
         self.assertTrue(ports == random_ports)
 
 
-@attr('process')
-@attr('test')
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
         self.hostname = HOSTNAME
