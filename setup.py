@@ -34,12 +34,12 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     platforms=['any'],
     url='https://github.com/10gen/mongo-orchestration',
-    install_requires=['pymongo>=2.7.2',
+    install_requires=['pymongo>=2.8',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0'] + extra_deps,
     tests_require=['nose>=1.2', 'coverage>=3.5'] + extra_test_deps,
     test_suite='nose.collector',
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),
     package_data={
         'mongo_orchestration': [
             os.path.join('configurations', config_dir, '*.json')
