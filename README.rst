@@ -44,7 +44,7 @@ manually:
     cd mongo-orchestration
     python setup.py install
 
-Cloning the repository this way will also give you access to `predefined configurations`_ for Mongo Orchestration as well as the "mo" script. Note that you may
+Cloning the `repository <https://github.com/10gen/mongo-orchestration>`__ this way will also give you access to the tests for Mongo Orchestration as well as the ``mo`` script. Note that you may
 have to run the above commands with ``sudo``, depending on where you're
 installing Mongo Orchestration and what privileges you have.
 Installation will place a ``mongo-orchestration`` script on your path.
@@ -99,12 +99,12 @@ Orchestration uses whatever binaries are on the user's PATH.
 Predefined Configurations
 -------------------------
 
-The Mongo Orchestration repository has a set of predefined
+Mongo Orchestration has a set of predefined
 `configurations <https://github.com/10gen/mongo-orchestration/tree/master/mongo_orchestration/configurations>`__
 that can be used to start, restart, or stop MongoDB processes. You can
 use a tool like ``curl`` to send these files directly to the Mongo
 Orchestration server, or use the ``mo`` script in the ``scripts``
-directory. Some examples:
+directory (in the `repository <https://github.com/10gen/mongo-orchestration>`__ only). Some examples:
 
 -  Start a single node without SSL or auth:
 
@@ -174,7 +174,7 @@ piping the response into ``python -m json.tool``, e.g.:
 Tests
 -----
 
-Running the tests has the following additional dependency:
+In order to run the tests, you should first clone the `repository <https://github.com/10gen/mongo-orchestration>`__. Running the tests has the following additional dependency:
 
 -  `unittest2 >= 0.6 <https://pypi.python.org/pypi/unittest2>`__ (Python 2.6 only)
 
