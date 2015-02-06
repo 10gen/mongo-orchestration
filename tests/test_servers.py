@@ -487,4 +487,4 @@ class ServerAuthTestCase(unittest.TestCase):
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)
 
 if __name__ == '__main__':
-    unittest.main(verbosity=3)
+    unittest.main()

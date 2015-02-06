@@ -709,9 +709,4 @@ class ShardSSLTestCase(SSLTestCase, ShardTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=3)
-    # suite = unittest.TestSuite()
-    # suite.addTest(ShardTestCase('test_sh_new'))
-    # suite.addTest(ShardTestCase('test_sh_new_with_auth'))
-    # suite.addTest(ShardsTestCase('test_operations'))
-    # unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()

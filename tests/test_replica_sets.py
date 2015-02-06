@@ -833,8 +833,4 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # unittest.main(verbosity=3)
-    suite = unittest.TestSuite()
-    suite.addTest(ReplicaSetTestCase('test_member_freeze'))
-    suite.addTest(ReplicaSetsTestCase('test_member_freeze'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()

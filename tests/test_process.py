@@ -325,7 +325,4 @@ class ProcessTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=3)
-    # suite = unittest.TestSuite()
-    # suite.addTest(ProcessTestCase('test_repair'))
-    # unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()
