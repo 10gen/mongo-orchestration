@@ -146,7 +146,7 @@ def wait_for(port_num, timeout):
     """
     logger.debug("wait for {port_num}".format(**locals()))
     t_start = time.time()
-    sleeps = 1
+    sleeps = 0.1
     while time.time() - t_start < timeout:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

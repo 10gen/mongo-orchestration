@@ -121,10 +121,10 @@ class ReplicaSet(BaseModel):
         if not self.waiting_member_state and self.waiting_config_state():
             raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
-        for i in range(10):
+        for i in range(100):
             if self.connection().primary:
                 break
-            time.sleep(1)
+            time.sleep(0.1)
         else:
             raise ReplicaSetError("No primary was ever elected.")
 
@@ -432,7 +432,7 @@ class ReplicaSet(BaseModel):
                 else:
                     logger.debug("connection to the {servers}".format(**locals()))
                     c = pymongo.MongoClient(
-                        servers, socketTimeoutMS=20000,
+                        servers, socketTimeoutMS=2000,
                         w='majority', fsync=True, **self.kwargs)
                     self._authenticate_client(c)
                     return c
@@ -443,7 +443,7 @@ class ReplicaSet(BaseModel):
                 logger.error(err_message)
                 if time.time() - t_start > timeout:
                     raise pymongo.errors.AutoReconnect("Couldn't connect while timeout {timeout} second".format(**locals()))
-                time.sleep(10)
+                time.sleep(1)
 
     def secondaries(self):
         """return list of secondaries members"""
@@ -509,7 +509,7 @@ class ReplicaSet(BaseModel):
             except (KeyError, AttributeError, pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure):
                 if time.time() - t_start > timeout:
                     return False
-                time.sleep(2)
+                time.sleep(0.1)
 
     def waiting_member_state(self, timeout=300):
         """Wait for all RS members to be in an acceptable state."""
@@ -517,7 +517,7 @@ class ReplicaSet(BaseModel):
         while not self.check_member_state():
             if time.time() - t_start > timeout:
                 return False
-            time.sleep(1)
+            time.sleep(0.1)
         return True
 
     def waiting_config_state(self, timeout=300):
@@ -531,7 +531,7 @@ class ReplicaSet(BaseModel):
         while not self.check_config_state():
             if time.time() - t_start > timeout:
                 return False
-            time.sleep(8)
+            time.sleep(0.1)
         return True
 
     def check_member_state(self):
