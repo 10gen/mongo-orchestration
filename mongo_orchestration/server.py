@@ -2,6 +2,7 @@
 # coding=utf-8
 import argparse
 import json
+import logging
 import os
 import signal
 import sys
@@ -18,9 +19,6 @@ work_dir = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 
 pid_file = os.path.join(work_dir, 'server.pid')
 log_file = os.path.join(work_dir, 'server.log')
-
-import logging
-logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
 
 
 def read_env():
@@ -114,6 +112,7 @@ class MyDaemon(Daemon):
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
     daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     args = read_env()
     daemon.set_args(args)
