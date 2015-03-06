@@ -295,7 +295,7 @@ class Server(BaseModel):
                     self.run_command('isMaster')
                     break
                 except pymongo.errors.ConnectionFailure:
-                    time.sleep(1)
+                    time.sleep(0.1)
             else:
                 raise TimeoutError(
                     "Server did not respond to 'isMaster' after %d attempts."
