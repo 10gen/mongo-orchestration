@@ -28,11 +28,12 @@ HOSTNAME = socket.getaddrinfo(
 TEST_SUBJECT = (
     'C=US,ST=New York,L=New York City,O=MongoDB,OU=KernelUser,CN=client_revoked'
 )
-
+TEST_RELEASES = (
+    {'default-release': os.environ.get('MONGOBIN', '')},
+    'default-release')
 
 # Set up the default mongo binaries to use from MONGOBIN.
-set_releases({"default-release": os.environ.get('MONGOBIN', '')},
-             'default-release')
+set_releases(*TEST_RELEASES)
 
 
 SSL_ENABLED = False
