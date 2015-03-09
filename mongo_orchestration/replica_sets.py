@@ -436,7 +436,6 @@ class ReplicaSet(BaseModel):
                         servers, socketTimeoutMS=20000,
                         w='majority', fsync=True, **self.kwargs)
                     connected(c)
-                    c.admin.command('ismaster')
                     self._authenticate_client(c)
                     return c
             except (pymongo.errors.PyMongoError):
