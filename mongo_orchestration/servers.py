@@ -29,7 +29,7 @@ import pymongo
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -157,6 +157,7 @@ class Server(BaseModel):
     def connection(self):
         """return authenticated connection"""
         c = pymongo.MongoClient(self.hostname, fsync=True, **self.kwargs)
+        connected(c)
         if not self.is_mongos and self.login and not self.restart_required:
             db = c[self.auth_source]
             if self.x509_extra_user:

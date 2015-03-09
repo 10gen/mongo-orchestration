@@ -103,6 +103,12 @@ class BaseModel(object):
         db.add_user(**secondary_login)
 
 
+def connected(client):
+    # Await connection in PyMongo 3.0.
+    client.admin.command('ismaster')
+    return client
+
+
 def update(d, u):
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
