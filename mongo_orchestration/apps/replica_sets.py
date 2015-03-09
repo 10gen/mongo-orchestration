@@ -27,6 +27,7 @@ from mongo_orchestration.apps.links import (
     replica_set_link, server_link, all_replica_set_links,
     sharded_cluster_link, base_link)
 from mongo_orchestration.common import *
+from mongo_orchestration.errors import RequestError
 from mongo_orchestration.replica_sets import ReplicaSets
 
 logger = logging.getLogger(__name__)

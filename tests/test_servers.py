@@ -30,7 +30,8 @@ from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
 from mongo_orchestration.servers import Server, Servers
 from mongo_orchestration.process import PortPool
 from tests import (
-    SkipTest, certificate, unittest, TEST_SUBJECT, SSLTestCase, SERVER_VERSION)
+    SkipTest, certificate, unittest, TEST_SUBJECT, SSLTestCase, SERVER_VERSION,
+    TEST_RELEASES)
 
 
 class ServersTestCase(unittest.TestCase):
@@ -38,7 +39,7 @@ class ServersTestCase(unittest.TestCase):
         PortPool().change_range()
         self.path = tempfile.mktemp(prefix="test-storage")
         self.servers = Servers()
-        self.servers.set_settings(os.environ.get('MONGOBIN', ""))
+        self.servers.set_settings(*TEST_RELEASES)
 
     def remove_path(self, path):
         onerror = lambda func, filepath, exc_info: (os.chmod(filepath, stat.S_IWUSR), func(filepath))

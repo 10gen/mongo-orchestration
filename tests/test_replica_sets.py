@@ -30,7 +30,7 @@ from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
 from tests import (
     SkipTest, certificate, TEST_SUBJECT, unittest, assert_eventually,
-    HOSTNAME, SERVER_VERSION, SSLTestCase)
+    HOSTNAME, SERVER_VERSION, SSLTestCase, TEST_RELEASES)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -358,7 +358,7 @@ class ReplicaSetTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         self.servers = Servers()
-        self.servers.set_settings(os.environ.get('MONGOBIN', None))
+        self.servers.set_settings(*TEST_RELEASES)
         self.repl_cfg = {'members': [{}, {}, {'rsParams': {'priority': 0, 'hidden': True}}, {'rsParams': {'arbiterOnly': True}}]}
         # self.repl = ReplicaSet(self.repl_cfg)
 
@@ -765,7 +765,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
         self.servers = Servers()
-        self.servers.set_settings(os.environ.get('MONGOBIN', None))
+        self.servers.set_settings(*TEST_RELEASES)
         self.repl_cfg = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
 

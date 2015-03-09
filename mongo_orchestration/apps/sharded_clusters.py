@@ -27,6 +27,7 @@ from mongo_orchestration.apps.links import (
     sharded_cluster_link, all_sharded_cluster_links, base_link,
     server_link, replica_set_link)
 from mongo_orchestration.common import *
+from mongo_orchestration.errors import RequestError
 from mongo_orchestration.sharded_clusters import ShardedClusters
 
 logger = logging.getLogger(__name__)
