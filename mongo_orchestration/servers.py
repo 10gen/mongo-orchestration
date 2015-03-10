@@ -40,6 +40,9 @@ logger = logging.getLogger(__name__)
 class Server(BaseModel):
     """Class Server represents behaviour of  mongo instances """
 
+    # redirect stdout to /dev/null?
+    silence_stdout = True
+
     # default params for all mongo instances
     mongod_default = {"oplogSize": 100}
 
@@ -283,7 +286,9 @@ class Server(BaseModel):
                 # repair if needed
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
-            self.proc, self.hostname = process.mprocess(self.name, self.config_path, self.cfg.get('port', None), timeout)
+            self.proc, self.hostname = process.mprocess(
+                self.name, self.config_path, self.cfg.get('port', None),
+                timeout, self.silence_stdout)
             self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]

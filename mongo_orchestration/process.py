@@ -176,7 +176,7 @@ def repair_mongo(name, dbpath):
     return
 
 
-def mprocess(name, config_path, port=None, timeout=180):
+def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
     """start 'name' process with params from config_path.
     Args:
         name - process name or path
@@ -184,6 +184,7 @@ def mprocess(name, config_path, port=None, timeout=180):
         port - process's port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
+        silence_stdout - if True (default), redirect stdout to /dev/null
     return tuple (Popen object, host) if process started, return (None, None) if not
     """
 
@@ -200,9 +201,10 @@ def mprocess(name, config_path, port=None, timeout=180):
     host = "{ip}:{port}".format(ip=_ip(), port=port)
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
-        proc = subprocess.Popen(cmd,
-                                stdout=DEVNULL,
-                                stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=DEVNULL if silence_stdout else None,
+            stderr=subprocess.STDOUT)
 
         if proc.poll() is not None:
             logger.debug("process is not alive")
