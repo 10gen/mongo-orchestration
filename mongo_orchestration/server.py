@@ -1,11 +1,17 @@
 #!/usr/bin/python
 # coding=utf-8
 import argparse
-import json
 import logging
 import os
 import signal
 import sys
+
+try:
+    # Need simplejson for the object_pairs_hook option in Python 2.6.
+    import simplejson as json
+except ImportError:
+    # Python 2.7+.
+    import json
 
 from bson import SON
 
