@@ -54,7 +54,7 @@ def read_env():
     try:
         # read config
         with open(cli_args.config, 'r') as fd:
-            config = json.loads(fd.read(), object_hook=SON)
+            config = json.loads(fd.read(), object_pairs_hook=SON)
         if not 'releases' in config:
             print("No releases defined in %s" % cli_args.config)
             sys.exit(1)
