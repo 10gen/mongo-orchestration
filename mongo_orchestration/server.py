@@ -112,9 +112,16 @@ class MyDaemon(Daemon):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode='w')
-    daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     args = read_env()
+    if args.no_fork:
+        logging.basicConfig(level=logging.DEBUG)
+        Server.silence_stdout = False
+    else:
+        logging.basicConfig(level=logging.DEBUG, filename=log_file,
+                            filemode='w')
+        Server.silence_stdout = True
+
+    daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
     daemon.set_args(args)
     # Set default bind ip for mongo processes using argument from --bind.
     Server.mongod_default['bind_ip'] = args.bind
