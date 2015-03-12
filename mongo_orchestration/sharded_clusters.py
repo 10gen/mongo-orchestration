@@ -175,10 +175,11 @@ class ShardedCluster(BaseModel):
             # Remove flags that turn on auth.
             cfg = self._strip_auth(cfg)
             server_id = cfg.pop('server_id', None)
+            version = cfg.pop('version', self._version)
             cfg.update({'configsvr': True})
             self._configsvrs.append(Servers().create(
                 'mongod', cfg, sslParams=self.sslParams, autostart=True,
-                version=self._version, server_id=server_id))
+                version=version, server_id=server_id))
 
     def __len__(self):
         return len(self._shards)
@@ -211,6 +212,7 @@ class ShardedCluster(BaseModel):
         """add new router (mongos) into existing configuration"""
         cfgs = ','.join([Servers().hostname(item) for item in self._configsvrs])
         server_id = params.pop('server_id', None)
+        version = params.pop('version', self._version)
         params.update({'configdb': cfgs})
 
         # Remove flags that turn auth on.
@@ -218,7 +220,7 @@ class ShardedCluster(BaseModel):
 
         self._routers.append(Servers().create(
             'mongos', params, sslParams=self.sslParams, autostart=True,
-            version=self._version, server_id=server_id))
+            version=version, server_id=server_id))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
@@ -274,8 +276,7 @@ class ShardedCluster(BaseModel):
             rs_params['id'] = rs_params.pop('rs_id', None)
             rs_params.update({'sslParams': self.sslParams})
 
-            if self._version:
-                rs_params['version'] = self._version
+            rs_params['version'] = params.pop('version', self._version)
             rs_params['members'] = map(self._strip_auth, rs_params['members'])
             rs_id = ReplicaSets().create(rs_params)
             members = ReplicaSets().members(rs_id)
@@ -292,8 +293,7 @@ class ShardedCluster(BaseModel):
             params = params.copy()
             params['procParams'] = self._strip_auth(
                 params.get('procParams', {}))
-            if self._version:
-                params['version'] = self._version
+            params.setdefault('version', self._version)
             logger.debug("servers create params: {params}".format(**locals()))
             server_id = Servers().create('mongod', **params)
             result = self._add(Servers().hostname(server_id), member_id)

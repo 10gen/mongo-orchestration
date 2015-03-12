@@ -277,6 +277,7 @@ class ReplicaSet(BaseModel):
         """
         member_config = params.get('rsParams', {})
         server_id = params.pop('server_id', None)
+        version = params.pop('version', self._version)
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
         # Make sure that auth isn't set the first time we start the servers.
@@ -287,7 +288,7 @@ class ReplicaSet(BaseModel):
             name='mongod',
             procParams=proc_params,
             sslParams=self.sslParams,
-            version=self._version,
+            version=version,
             server_id=server_id
         )
         member_config.update({"_id": member_id,
