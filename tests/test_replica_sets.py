@@ -24,7 +24,8 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
+from mongo_orchestration.common import (
+    connected, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
 from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
@@ -146,7 +147,7 @@ class ReplicaSetsTestCase(unittest.TestCase):
     def test_primary(self):
         repl_id = self.rs.create({'id': 'test-rs-1', 'members': [{}, {}]})
         primary = self.rs.primary(repl_id)['mongodb_uri']
-        c = pymongo.MongoClient(primary)
+        c = connected(pymongo.MongoClient(primary))
         self.assertTrue(c.is_primary)
         c.close()
 
@@ -167,10 +168,11 @@ class ReplicaSetsTestCase(unittest.TestCase):
         repl_id = self.rs.create({'members': [{}, {}]})
         self.assertEqual(len(self.rs), 2)
         primary = self.rs.primary(repl_id)['mongodb_uri']
-        self.assertTrue(pymongo.MongoClient(primary))
+        connected(pymongo.MongoClient(primary))  # No error.
         self.rs.remove(repl_id)
         self.assertEqual(len(self.rs), 1)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, primary)
+        with self.assertRaises(pymongo.errors.PyMongoError):
+            connected(pymongo.MongoClient(primary))
 
     def test_members(self):
         port1, port2 = PortPool().port(check=True), PortPool().port(check=True)
@@ -270,10 +272,11 @@ class ReplicaSetsTestCase(unittest.TestCase):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
         self.assertEqual(len(self.rs.members(repl_id)), 3)
         secondary = self.rs.secondaries(repl_id)[0]
-        self.assertTrue(pymongo.MongoClient(secondary['host']))
+        connected(pymongo.MongoClient(secondary['host']))  # No error.
         self.assertTrue(self.rs.member_del(repl_id, secondary['_id']))
         self.assertEqual(len(self.rs.members(repl_id)), 2)
-        self.assertRaises(pymongo.errors.PyMongoError, pymongo.MongoClient, secondary['host'])
+        with self.assertRaises(pymongo.errors.PyMongoError):
+            connected(pymongo.MongoClient(secondary['host']))
 
     def test_member_add(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}]})
@@ -606,7 +609,7 @@ class ReplicaSetTestCase(unittest.TestCase):
 
         for host in all_hosts:
             # No ConnectionFailure/AutoReconnect.
-            pymongo.MongoClient(host)
+            connected(pymongo.MongoClient(host))
 
 
 class ReplicaSetSSLTestCase(SSLTestCase):
@@ -690,11 +693,12 @@ class ReplicaSetSSLTestCase(SSLTestCase):
         self.repl = ReplicaSet(self.repl_cfg)
 
         # Server should require SSL.
-        self.assertRaises(pymongo.errors.ConnectionFailure,
-                          pymongo.MongoClient, self.repl.primary())
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            connected(pymongo.MongoClient, self.repl.primary())
+
         # This shouldn't raise.
-        pymongo.MongoClient(
-            self.repl.primary(), ssl_certfile=certificate('client.pem'))
+        connected(pymongo.MongoClient(
+            self.repl.primary(), ssl_certfile=certificate('client.pem')))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):

@@ -26,7 +26,8 @@ import pymongo
 
 sys.path.insert(0, '../')
 
-from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
+from mongo_orchestration.common import (
+    connected, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
 from mongo_orchestration.servers import Server, Servers
 from mongo_orchestration.process import PortPool
 from tests import (
@@ -311,11 +312,11 @@ class ServerTestCase(unittest.TestCase):
 
     def test_reset(self):
         self.server.stop()
-        self.assertRaises(pymongo.errors.ConnectionFailure,
-                          pymongo.MongoClient, self.server.hostname)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            connected(pymongo.MongoClient(self.server.hostname))
         self.server.reset()
         # No ConnectionFailure.
-        pymongo.MongoClient(self.server.hostname)
+        connected(pymongo.MongoClient(self.server.hostname))
 
 
 class ServerSSLTestCase(SSLTestCase):
@@ -382,11 +383,11 @@ class ServerSSLTestCase(SSLTestCase):
         self.server = Server('mongod', {}, ssl_params)
         self.server.start()
         # Server should require SSL.
-        self.assertRaises(pymongo.errors.ConnectionFailure,
-                          pymongo.MongoClient, self.server.hostname)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            connected(pymongo.MongoClient, self.server.hostname)
         # Doesn't raise with certificate provided.
-        pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'))
+        connected(pymongo.MongoClient(
+            self.server.hostname, ssl_certfile=certificate('client.pem')))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):

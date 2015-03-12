@@ -25,7 +25,7 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
+    BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ReplicaSetError
@@ -426,6 +426,7 @@ class ReplicaSet(BaseModel):
                         servers, replicaSet=self.repl_id,
                         read_preference=read_preference, socketTimeoutMS=20000,
                         w='majority', fsync=True, **self.kwargs)
+                    connected(c)
                     if c.primary:
                         self._authenticate_client(c)
                         return c
@@ -435,6 +436,7 @@ class ReplicaSet(BaseModel):
                     c = pymongo.MongoClient(
                         servers, socketTimeoutMS=2000,
                         w='majority', fsync=True, **self.kwargs)
+                    connected(c)
                     self._authenticate_client(c)
                     return c
             except (pymongo.errors.PyMongoError):
