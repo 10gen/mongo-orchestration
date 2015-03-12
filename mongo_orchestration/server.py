@@ -1,11 +1,17 @@
 #!/usr/bin/python
 # coding=utf-8
 import argparse
-import json
 import logging
 import os
 import signal
 import sys
+
+try:
+    # Need simplejson for the object_pairs_hook option in Python 2.6.
+    import simplejson as json
+except ImportError:
+    # Python 2.7+.
+    import json
 
 from bson import SON
 
@@ -54,7 +60,7 @@ def read_env():
     try:
         # read config
         with open(cli_args.config, 'r') as fd:
-            config = json.loads(fd.read(), object_hook=SON)
+            config = json.loads(fd.read(), object_pairs_hook=SON)
         if not 'releases' in config:
             print("No releases defined in %s" % cli_args.config)
             sys.exit(1)

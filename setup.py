@@ -8,6 +8,7 @@ extra_deps = []
 extra_test_deps = []
 if sys.version_info[:2] == (2, 6):
     extra_deps.append('argparse')
+    extra_deps.append('simplejson')
     extra_test_deps.append('unittest2')
     extra_opts['test_suite'] = 'unittest2.collector'
 
