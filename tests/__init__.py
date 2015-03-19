@@ -14,7 +14,6 @@
 
 import os
 import re
-import socket
 import sys
 import time
 
@@ -22,9 +21,7 @@ from mongo_orchestration import set_releases
 from mongo_orchestration.servers import Servers
 
 PORT = int(os.environ.get('MO_PORT', '8889'))
-HOSTNAME = socket.getaddrinfo(
-    os.environ.get('MO_HOST', '127.0.0.1'), PORT,
-    socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)[-1][-1][0]
+HOSTNAME = os.environ.get('MO_HOST', 'localhost')
 TEST_SUBJECT = (
     'C=US,ST=New York,L=New York City,O=MongoDB,OU=KernelUser,CN=client_revoked'
 )

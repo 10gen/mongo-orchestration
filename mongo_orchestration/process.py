@@ -33,7 +33,7 @@ except ImportError:
 
 from bottle import request
 
-from mongo_orchestration.common import DEFAULT_PORT
+from mongo_orchestration.common import DEFAULT_BIND
 from mongo_orchestration.compat import reraise
 from mongo_orchestration.errors import TimeoutError, RequestError
 from mongo_orchestration.singleton import Singleton
@@ -41,18 +41,15 @@ from mongo_orchestration.singleton import Singleton
 logger = logging.getLogger(__name__)
 
 
-def _ip():
-    """Get the ip of the Host from the most recent HTTP request."""
+def _host():
+    """Get the Host from the most recent HTTP request."""
     host_and_port = request.urlparts[1]
     try:
-        host, port = host_and_port.split(':')
+        host, _ = host_and_port.split(':')
     except ValueError:
-        # Port may not be included if no request has yet been made.
-        host, port = host_and_port, DEFAULT_PORT
-    ip = socket.getaddrinfo(
-        host, int(port),
-        socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)[-1][-1][0]
-    return ip
+        # No port yet. Host defaults to '127.0.0.1' in bottle.request.
+        return DEFAULT_BIND
+    return host or DEFAULT_BIND
 
 
 class PortPool(Singleton):
@@ -86,7 +83,7 @@ class PortPool(Singleton):
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s.bind((_ip(), port))
+            s.bind((_host(), port))
             return True
         except socket.error:
             return False
@@ -151,7 +148,7 @@ def wait_for(port_num, timeout):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                s.connect((_ip(), port_num))
+                s.connect((_host(), port_num))
                 return True
             except (IOError, socket.error):
                 time.sleep(sleeps)
@@ -198,7 +195,7 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
     if cfg.get('port', None) is None or port:
         port = port or PortPool().port(check=True)
         cmd.extend(['--port', str(port)])
-    host = "{ip}:{port}".format(ip=_ip(), port=port)
+    host = "{host}:{port}".format(host=_host(), port=port)
     try:
         logger.debug("execute process: {cmd}".format(**locals()))
         proc = subprocess.Popen(
