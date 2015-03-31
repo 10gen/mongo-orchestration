@@ -25,6 +25,7 @@ import time
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
 DEFAULT_SERVER = 'cherrypy'
+DEFAULT_SOCKET_TIMEOUT = 20000  # 20 seconds.
 
 # Username for included client x509 certificate.
 DEFAULT_SUBJECT = (
@@ -48,6 +49,7 @@ class BaseModel(object):
         {'role': 'dbAdminAnyDatabase', 'db': 'admin'},
         {'role': 'readWriteAnyDatabase', 'db': 'admin'}
     ]
+    socket_timeout = DEFAULT_SOCKET_TIMEOUT
 
     @property
     def key_file(self):

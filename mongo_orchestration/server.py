@@ -17,7 +17,8 @@ from bson import SON
 
 from mongo_orchestration import __version__
 from mongo_orchestration.common import (
-    DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER)
+    BaseModel,
+    DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER, DEFAULT_SOCKET_TIMEOUT)
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
 
@@ -49,6 +50,9 @@ def read_env():
                         default=DEFAULT_SERVER, choices=('cherrypy', 'wsgiref'))
     parser.add_argument('--version', action='version',
                         version='Mongo Orchestration v' + __version__)
+    parser.add_argument('--socket-timeout-ms', action='store',
+                        dest='socket_timeout',
+                        type=int, default=DEFAULT_SOCKET_TIMEOUT)
 
     cli_args = parser.parse_args()
 
@@ -108,6 +112,7 @@ class MyDaemon(Daemon):
     def run(self):
         from bottle import run
         setup(getattr(self.args, 'releases', {}), self.args.env)
+        BaseModel.socket_timeout = self.args.socket_timeout
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
             run(get_app(), host=self.args.bind, port=self.args.port, debug=False,

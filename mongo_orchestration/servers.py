@@ -159,7 +159,9 @@ class Server(BaseModel):
     @property
     def connection(self):
         """return authenticated connection"""
-        c = pymongo.MongoClient(self.hostname, fsync=True, **self.kwargs)
+        c = pymongo.MongoClient(
+            self.hostname, fsync=True,
+            socketTimeoutMS=self.socket_timeout, **self.kwargs)
         connected(c)
         if not self.is_mongos and self.login and not self.restart_required:
             db = c[self.auth_source]

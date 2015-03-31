@@ -224,8 +224,9 @@ class ShardedCluster(BaseModel):
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def connection(self):
-        c = MongoClient(self.router['hostname'],
-                        w='majority', fsync=True, **self.kwargs)
+        c = MongoClient(
+            self.router['hostname'], w='majority', fsync=True,
+            socketTimeoutMS=self.socket_timeout, **self.kwargs)
         if self.login and not self.restart_required:
             try:
                 c.admin.authenticate(self.login, self.password)
