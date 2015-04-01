@@ -694,7 +694,7 @@ class ReplicaSetSSLTestCase(SSLTestCase):
 
         # Server should require SSL.
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            connected(pymongo.MongoClient, self.repl.primary())
+            connected(pymongo.MongoClient(self.repl.primary()))
 
         # This shouldn't raise.
         connected(pymongo.MongoClient(
