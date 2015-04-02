@@ -70,6 +70,9 @@ class ReplicaSet(BaseModel):
             self.member_create(member, index)
             for index, member in enumerate(members)
         ]}
+        if 'rsSettings' in rs_params:
+            config['settings'] = rs_params['rsSettings']
+
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
             self.cleanup()
