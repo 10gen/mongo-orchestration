@@ -576,7 +576,15 @@ class ShardTestCase(unittest.TestCase):
         self.assertIn('authSource=admin', auth_uri)
 
 
-class ShardSSLTestCase(SSLTestCase, ShardTestCase):
+class ShardSSLTestCase(SSLTestCase):
+
+    def setUp(self):
+        self.sh = None
+        PortPool().change_range()
+
+    def tearDown(self):
+        if self.sh is not None:
+            self.sh.cleanup()
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
@@ -636,8 +644,11 @@ class ShardSSLTestCase(SSLTestCase, ShardTestCase):
                 'sslAllowInvalidCertificates': True
             }
         }
+
         # Should not raise an Exception.
         self.sh = ShardedCluster(config)
+
+        time.sleep(1)
 
         # Should create the user we requested. No raise on authenticate.
         host = self.sh.router['hostname']
