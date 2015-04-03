@@ -152,12 +152,14 @@ class ReplicaSetsTestCase(unittest.TestCase):
         c.close()
 
     def test_primary_stepdown(self):
-        # This tests Server, but only makes sense in the context of a replica set.
+        # This tests Server,
+        # but only makes sense in the context of a replica set.
         repl_id = self.rs.create(
-            {'id': 'test-rs-stepdown',
-             'members': [{}, {}, {"rsParams": {"priority": 1.4}}]})
+            {'id': 'test-rs-stepdown', 'members': [{}, {}, {}]})
         primary = self.rs.primary(repl_id)
         primary_server = Servers()._storage[primary['server_id']]
+        time.sleep(20)
+
         # No Exception.
         primary_server.stepdown()
         self.assertNotEqual(primary['mongodb_uri'],
@@ -613,15 +615,16 @@ class ReplicaSetTestCase(unittest.TestCase):
 
     def test_rs_settings(self):
         self.repl_cfg = {
-            'rsSettings': {'chainingAllowed': True},
+            'rsSettings': {'heartbeatTimeoutSecs': 20},
             'members': [{}]
         }
         self.repl = ReplicaSet(self.repl_cfg)
+        conn = self.repl.connection()
         if SERVER_VERSION >= (2, 8):
-            config = self.repl.connection().admin.command('replSetGetConfig')
+            config = conn.admin.command('replSetGetConfig')['config']
         else:
-            config = self.repl.connection().local.system.replset.find_one()
-        self.assertTrue(config['config']['settings'].get('chainingAllowed'))
+            config = conn.local.system.replset.find_one()
+        self.assertEqual(config['settings']['heartbeatTimeoutSecs'], 20)
 
 
 class ReplicaSetSSLTestCase(SSLTestCase):
@@ -810,7 +813,7 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         c.admin.logout()
 
         self.assertTrue(db.authenticate('user', 'userpass'))
-        self.assertTrue(db.foo.insert({'foo': 'bar'}, w=2, wtimeout=1000))
+        self.assertTrue(db.foo.insert({'foo': 'bar'}, w=2, wtimeout=10000))
         self.assertTrue(isinstance(db.foo.find_one(), dict))
         db.logout()
         self.assertRaises(pymongo.errors.OperationFailure, db.foo.find_one)

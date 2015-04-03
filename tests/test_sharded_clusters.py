@@ -22,7 +22,8 @@ import time
 
 sys.path.insert(0, '../')
 
-from mongo_orchestration.common import DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT
+from mongo_orchestration.common import (
+    DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.servers import Servers
@@ -647,7 +648,6 @@ class ShardSSLTestCase(SSLTestCase):
 
         # Should not raise an Exception.
         self.sh = ShardedCluster(config)
-
         time.sleep(1)
 
         # Should create the user we requested. No raise on authenticate.
@@ -677,10 +677,11 @@ class ShardSSLTestCase(SSLTestCase):
 
         # Server should require SSL.
         host = self.sh.router['hostname']
-        self.assertRaises(pymongo.errors.ConnectionFailure,
-                          pymongo.MongoClient, host)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            connected(pymongo.MongoClient(host))
         # This shouldn't raise.
-        pymongo.MongoClient(host, ssl_certfile=certificate('client.pem'))
+        connected(
+            pymongo.MongoClient(host, ssl_certfile=certificate('client.pem')))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):

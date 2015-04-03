@@ -384,7 +384,7 @@ class ServerSSLTestCase(SSLTestCase):
         self.server.start()
         # Server should require SSL.
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            connected(pymongo.MongoClient, self.server.hostname)
+            connected(pymongo.MongoClient(self.server.hostname))
         # Doesn't raise with certificate provided.
         connected(pymongo.MongoClient(
             self.server.hostname, ssl_certfile=certificate('client.pem')))
