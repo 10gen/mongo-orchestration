@@ -75,6 +75,8 @@ class ShardedCluster(BaseModel):
                     {'_id': sh_id},
                     {'$addToSet': {'$each': self.tags[sh_id]}})
 
+        shard_configs = [s.get('shardParams', {}).get('procParams', {})
+                         for s in params.get('shards', [])]
         if self.login:
             # Do we need to add an extra x509 user?
             def only_x509(config):
@@ -86,8 +88,6 @@ class ShardedCluster(BaseModel):
                 return False
 
             any_only_x509 = lambda l: any(map(only_x509, l))
-            shard_configs = [s.get('shardParams', {}).get('procParams', {})
-                             for s in params.get('shards', [])]
             rs_shard_configs = [
                 m.get('procParams', {})
                 for s in params.get('shards', [])

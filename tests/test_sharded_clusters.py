@@ -576,6 +576,14 @@ class ShardTestCase(unittest.TestCase):
         self.assertIn('luke:ekul', auth_uri)
         self.assertIn('authSource=admin', auth_uri)
 
+    def test_auth_key_without_login(self):
+        self.sh = ShardedCluster({
+            'auth_key': 'secret',
+            'routers': [{}],
+            'shards': [{}]
+        })
+        self.assertIsNotNone(self.sh.key_file)
+
 
 class ShardSSLTestCase(SSLTestCase):
 
