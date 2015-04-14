@@ -29,7 +29,7 @@ import pymongo
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS, connected)
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -139,8 +139,7 @@ class Server(BaseModel):
         self.restart_required = self.login or self.auth_key
 
         if self.ssl_params:
-            self.kwargs['ssl'] = True
-            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
+            self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         proc_name = os.path.split(name)[1].lower()
         procParams.update(sslParams)

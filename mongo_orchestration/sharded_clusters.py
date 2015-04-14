@@ -20,7 +20,7 @@ import tempfile
 from uuid import uuid4
 
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers
@@ -54,8 +54,7 @@ class ShardedCluster(BaseModel):
         self.x509_extra_user = False
 
         if self.sslParams:
-            self.kwargs['ssl'] = True
-            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
+            self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         configsvr_configs = params.get('configsvrs', [{}])
         self.__init_configsvr(configsvr_configs)

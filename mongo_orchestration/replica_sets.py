@@ -25,7 +25,7 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration.common import (
-    BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT)
+    BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ReplicaSetError
@@ -62,8 +62,7 @@ class ReplicaSet(BaseModel):
         self.x509_extra_user = False
 
         if self.sslParams:
-            self.kwargs['ssl'] = True
-            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
+            self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         members = rs_params.get('members', {})
         config = {"_id": self.repl_id, "members": [

@@ -17,6 +17,7 @@
 import operator
 import os
 import socket
+import ssl
 import stat
 import sys
 import tempfile
@@ -321,6 +322,10 @@ class ServerTestCase(unittest.TestCase):
 
 class ServerSSLTestCase(SSLTestCase):
 
+    def tearDown(self):
+        self.server.stop()
+        self.server.cleanup()
+
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
             raise SkipTest("Need to be able to set 'authenticationMechanisms' "
@@ -344,12 +349,14 @@ class ServerSSLTestCase(SSLTestCase):
         self.server.start()
         # Should create an extra user. Doesn't raise.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=DEFAULT_CLIENT_CERT)
+            self.server.hostname, ssl_certfile=DEFAULT_CLIENT_CERT,
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(
             DEFAULT_SUBJECT, mechanism='MONGODB-X509')
         # Should also create the user we requested. Doesn't raise.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'))
+            self.server.hostname, ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(
             TEST_SUBJECT, mechanism='MONGODB-X509')
 
@@ -366,7 +373,8 @@ class ServerSSLTestCase(SSLTestCase):
         self.server.start()
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'))
+            self.server.hostname, ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client.admin.authenticate('luke', 'ekul')
         # This should be the only user.
         self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
@@ -387,7 +395,8 @@ class ServerSSLTestCase(SSLTestCase):
             connected(pymongo.MongoClient(self.server.hostname))
         # Doesn't raise with certificate provided.
         connected(pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem')))
+            self.server.hostname, ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):

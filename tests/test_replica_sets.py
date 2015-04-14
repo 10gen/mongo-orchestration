@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import logging
-import os
+import ssl
 import sys
 import operator
 import time
@@ -629,6 +629,9 @@ class ReplicaSetTestCase(unittest.TestCase):
 
 class ReplicaSetSSLTestCase(SSLTestCase):
 
+    def tearDown(self):
+        self.repl.cleanup()
+
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
             raise SkipTest("Need to be able to set 'authenticationMechanisms' "
@@ -657,13 +660,15 @@ class ReplicaSetSSLTestCase(SSLTestCase):
 
         # Should create an extra user. No raise on authenticate.
         client = pymongo.MongoClient(
-            self.repl.primary(), ssl_certfile=DEFAULT_CLIENT_CERT)
+            self.repl.primary(), ssl_certfile=DEFAULT_CLIENT_CERT,
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(
             DEFAULT_SUBJECT, mechanism='MONGODB-X509')
 
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            self.repl.primary(), ssl_certfile=certificate('client.pem'))
+            self.repl.primary(), ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(
             TEST_SUBJECT, mechanism='MONGODB-X509')
 
@@ -686,7 +691,8 @@ class ReplicaSetSSLTestCase(SSLTestCase):
 
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            self.repl.primary(), ssl_certfile=certificate('client.pem'))
+            self.repl.primary(), ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client.admin.authenticate('luke', 'ekul')
         # This should be the only user.
         self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
@@ -713,7 +719,8 @@ class ReplicaSetSSLTestCase(SSLTestCase):
 
         # This shouldn't raise.
         connected(pymongo.MongoClient(
-            self.repl.primary(), ssl_certfile=certificate('client.pem')))
+            self.repl.primary(), ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):
