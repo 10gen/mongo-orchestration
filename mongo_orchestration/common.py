@@ -18,6 +18,7 @@ import collections
 import copy
 import json
 import os
+import ssl
 import stat
 import tempfile
 import time
@@ -38,6 +39,11 @@ DEFAULT_CLIENT_CERT = os.path.join(
     'lib',
     'client.pem'
 )
+DEFAULT_SSL_OPTIONS = {
+    'ssl': True,
+    'ssl_certfile': DEFAULT_CLIENT_CERT,
+    'ssl_cert_reqs': ssl.CERT_NONE
+}
 
 
 class BaseModel(object):

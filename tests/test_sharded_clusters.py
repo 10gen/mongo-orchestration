@@ -17,6 +17,7 @@
 import logging
 import operator
 import pymongo
+import ssl
 import sys
 import time
 
@@ -627,13 +628,16 @@ class ShardSSLTestCase(SSLTestCase):
 
         # Should create an extra user. No raise on authenticate.
         host = self.sh.router['hostname']
-        client = pymongo.MongoClient(host, ssl_certfile=DEFAULT_CLIENT_CERT)
+        client = pymongo.MongoClient(
+            host, ssl_certfile=DEFAULT_CLIENT_CERT,
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(
             DEFAULT_SUBJECT, mechanism='MONGODB-X509')
 
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            host, ssl_certfile=certificate('client.pem'))
+            host, ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client['$external'].authenticate(TEST_SUBJECT, mechanism='MONGODB-X509')
 
     def test_scram_with_ssl(self):
@@ -661,7 +665,8 @@ class ShardSSLTestCase(SSLTestCase):
         # Should create the user we requested. No raise on authenticate.
         host = self.sh.router['hostname']
         client = pymongo.MongoClient(
-            host, ssl_certfile=certificate('client.pem'))
+            host, ssl_certfile=certificate('client.pem'),
+            ssl_cert_reqs=ssl.CERT_NONE)
         client.admin.authenticate('luke', 'ekul')
         # This should be the only user.
         self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
@@ -689,7 +694,8 @@ class ShardSSLTestCase(SSLTestCase):
             connected(pymongo.MongoClient(host))
         # This shouldn't raise.
         connected(
-            pymongo.MongoClient(host, ssl_certfile=certificate('client.pem')))
+            pymongo.MongoClient(host, ssl_certfile=certificate('client.pem'),
+                                ssl_cert_reqs=ssl.CERT_NONE))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):
