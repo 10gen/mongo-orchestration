@@ -89,6 +89,9 @@ class BaseModel(object):
                 parts.append('&authMechanism=MONGODB-X509')
         return ''.join(parts)
 
+    def _get_server_version(self, client):
+        return tuple(client.admin.command('buildinfo')['versionArray'])
+
     def _add_users(self, db):
         """Add given user, and extra x509 user if necessary."""
         if self.x509_extra_user:
@@ -102,9 +105,16 @@ class BaseModel(object):
             self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
 
         # Add secondary user given from request.
+        server_version_tuple = self._get_server_version(db.client)
+        if server_version_tuple < (2, 6):
+            # MongoDB 2.4 roles are an array of strs like ['clusterAdmin', ...].
+            user_roles = [role['role'] for role in self._user_roles]
+        else:
+            user_roles = self._user_roles
+
         secondary_login = {
             'name': self.login,
-            'roles': self._user_roles
+            'roles': user_roles
         }
         if self.password:
             secondary_login['password'] = self.password
