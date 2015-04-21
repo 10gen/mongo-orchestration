@@ -36,7 +36,7 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     platforms=['any'],
     url='https://github.com/10gen/mongo-orchestration',
-    install_requires=['pymongo>=2.8',
+    install_requires=['pymongo>=3.0',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0'] + extra_deps,
     tests_require=['coverage>=3.5'] + extra_test_deps,
