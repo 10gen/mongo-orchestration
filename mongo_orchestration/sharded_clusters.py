@@ -23,7 +23,7 @@ from mongo_orchestration.common import (
     BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
-from mongo_orchestration.servers import Servers
+from mongo_orchestration.servers import Servers, Server
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.singleton import Singleton
 from pymongo import MongoClient
@@ -56,8 +56,24 @@ class ShardedCluster(BaseModel):
         if self.sslParams:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
+        # Determine what to do with config servers via mongos version.
+        mongos = Server(name='mongos', procParams={})
+        mongos_version = mongos.version
+        mongos.cleanup()
         configsvr_configs = params.get('configsvrs', [{}])
-        self.__init_configsvr(configsvr_configs)
+        self.uses_rs_configdb = (mongos_version >= (3, 1, 2) and
+                                 len(configsvr_configs) == 1)
+        self.configdb_singleton = (
+            ReplicaSets() if self.uses_rs_configdb else Servers())
+        if self.uses_rs_configdb:
+            self.__init_configrs(configsvr_configs[0])
+        elif mongos_version >= (3, 1, 2) and len(configsvr_configs) != 3:
+            raise ShardedClusterError(
+                "mongos >= 3.1.2 needs a config replica set or 3 old-style "
+                "config servers.")
+        else:
+            self.__init_configsvrs(configsvr_configs)
+
         for r in params.get('routers', [{}]):
             self.router_add(r)
         for cfg in params.get('shards', []):
@@ -150,9 +166,8 @@ class ShardedCluster(BaseModel):
 
                 server_or_rs.restart(config_callback=add_auth)
 
-            for server_id in self._configsvrs:
-                server = Servers()._storage[server_id]
-                restart_with_auth(server)
+            for config_id in self._configsvrs:
+                restart_with_auth(self.configdb_singleton._storage[config_id])
 
             for server_id in self._routers:
                 server = Servers()._storage[server_id]
@@ -167,7 +182,19 @@ class ShardedCluster(BaseModel):
 
             self.restart_required = False
 
-    def __init_configsvr(self, params):
+    def __init_configrs(self, rs_cfg):
+        """Create and start a config replica set."""
+        # Use 'rs_id' to set the id for consistency, but need to rename
+        # to 'id' to use with ReplicaSets.create()
+        rs_cfg['id'] = rs_cfg.pop('rs_id', None)
+        for member in rs_cfg.setdefault('members', [{}]):
+            member['procParams'] = self._strip_auth(
+                member.get('procParams', {}))
+            member['procParams']['configsvr'] = True
+        rs_cfg['sslParams'] = self.sslParams
+        self._configsvrs.append(ReplicaSets().create(rs_cfg))
+
+    def __init_configsvrs(self, params):
         """create and start config servers"""
         self._configsvrs = []
         for cfg in params:
@@ -186,7 +213,12 @@ class ShardedCluster(BaseModel):
     @property
     def configsvrs(self):
         """return list of config servers"""
-        return [{'id': h_id, 'hostname': Servers().hostname(h_id)} for h_id in self._configsvrs]
+        if self.uses_rs_configdb:
+            rs_id = self._configsvrs[0]
+            mongodb_uri = ReplicaSets().info(rs_id)['mongodb_uri']
+            return [{'id': rs_id, 'mongodb_uri': mongodb_uri}]
+        return [{'id': h_id, 'hostname': Servers().hostname(h_id)}
+                for h_id in self._configsvrs]
 
     @property
     def routers(self):
@@ -209,10 +241,18 @@ class ShardedCluster(BaseModel):
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
-        cfgs = ','.join([Servers().hostname(item) for item in self._configsvrs])
+        if self.uses_rs_configdb:
+            # Replica set configdb.
+            rs_id = self._configsvrs[0]
+            config_members = ReplicaSets().members(rs_id)
+            configdb = '%s/%s' % (
+                rs_id, ','.join(m['host'] for m in config_members))
+        else:
+            configdb = ','.join(Servers().hostname(item)
+                                for item in self._configsvrs)
         server_id = params.pop('server_id', None)
         version = params.pop('version', self._version)
-        params.update({'configdb': cfgs})
+        params.update({'configdb': configdb})
 
         # Remove flags that turn auth on.
         params = self._strip_auth(params)
@@ -334,7 +374,7 @@ class ShardedCluster(BaseModel):
             singleton.command(self._shards[shard_id]['_id'], 'reset')
         # Ensure all config servers by calling "reset" on each.
         for config_id in self._configsvrs:
-            Servers().command(config_id, 'reset')
+            self.configdb_singleton.command(config_id, 'reset')
         # Ensure all routers by calling "reset" on each.
         for router_id in self._routers:
             Servers().command(router_id, 'reset')
@@ -365,8 +405,8 @@ class ShardedCluster(BaseModel):
         for mongos in self._routers:
             Servers().remove(mongos)
 
-        for configsvr in self._configsvrs:
-            Servers().remove(configsvr)
+        for config_id in self._configsvrs:
+            self.configdb_singleton.remove(config_id)
 
         self._configsvrs = []
         self._routers = []
