@@ -71,6 +71,13 @@ class ReplicaSet(BaseModel):
         ]}
         if 'rsSettings' in rs_params:
             config['settings'] = rs_params['rsSettings']
+        # Explicitly set write concern to number of data-bearing members.
+        # If we add a user later, we need to guarantee that every node
+        # has the user before we authenticate ('majority' is insufficient).
+        self._write_concern = len(
+            [m for m in members
+             if not m.get('rsParams', {}).get('arbiterOnly')]
+        )
 
         logger.debug("replica config: {config}".format(**locals()))
         if not self.repl_init(config):
@@ -428,7 +435,7 @@ class ReplicaSet(BaseModel):
                         servers, replicaSet=self.repl_id,
                         read_preference=read_preference,
                         socketTimeoutMS=self.socket_timeout,
-                        w='majority', fsync=True, **self.kwargs)
+                        w=self._write_concern, fsync=True, **self.kwargs)
                     connected(c)
                     if c.primary:
                         self._authenticate_client(c)
@@ -438,7 +445,7 @@ class ReplicaSet(BaseModel):
                     logger.debug("connection to the {servers}".format(**locals()))
                     c = pymongo.MongoClient(
                         servers, socketTimeoutMS=self.socket_timeout,
-                        w='majority', fsync=True, **self.kwargs)
+                        w=self._write_concern, fsync=True, **self.kwargs)
                     connected(c)
                     self._authenticate_client(c)
                     return c
