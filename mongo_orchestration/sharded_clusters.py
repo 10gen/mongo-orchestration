@@ -26,7 +26,7 @@ from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.singleton import Singleton
-from pymongo import MongoClient
+from pymongo import MongoClient, write_concern
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +99,15 @@ class ShardedCluster(BaseModel):
                                     any_only_x509(rs_shard_configs) or
                                     any_only_x509(router_configs))
 
-            self._add_users(self.connection()[self.auth_source])
+            self._add_users(
+                self.connection().get_database(
+                    'admin', write_concern=write_concern.WriteConcern(
+                        fsync=True)))
 
             # Secondary user given from request.
             secondary_login = {
                 'name': self.login,
-                'roles': self._user_roles
+                'roles': self._user_roles(self.connection())
             }
             if self.password:
                 secondary_login['password'] = self.password
@@ -119,7 +122,7 @@ class ShardedCluster(BaseModel):
                     client = ReplicaSets()._storage[instance_id].connection()
                 db = client[self.auth_source]
                 if self.x509_extra_user:
-                    db.add_user(DEFAULT_SUBJECT, roles=self._user_roles)
+                    db.add_user(DEFAULT_SUBJECT, roles=self._user_roles(client))
                 if self.login:
                     db.add_user(**secondary_login)
 
