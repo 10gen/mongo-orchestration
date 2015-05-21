@@ -49,7 +49,7 @@ DEFAULT_SSL_OPTIONS = {
 class BaseModel(object):
     """Base object for Server, ReplicaSet, and ShardedCluster."""
 
-    _user_roles = [
+    _user_role_documents = [
         {'role': 'userAdminAnyDatabase', 'db': 'admin'},
         {'role': 'clusterAdmin', 'db': 'admin'},
         {'role': 'dbAdminAnyDatabase', 'db': 'admin'},
@@ -92,6 +92,13 @@ class BaseModel(object):
     def _get_server_version(self, client):
         return tuple(client.admin.command('buildinfo')['versionArray'])
 
+    def _user_roles(self, client):
+        server_version_tuple = self._get_server_version(client)
+        if server_version_tuple < (2, 6):
+            # MongoDB 2.4 roles are an array of strs like ['clusterAdmin', ...].
+            return [role['role'] for role in self._user_role_documents]
+        return self._user_role_documents
+
     def _add_users(self, db):
         """Add given user, and extra x509 user if necessary."""
         if self.x509_extra_user:
@@ -105,16 +112,10 @@ class BaseModel(object):
             self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
 
         # Add secondary user given from request.
-        server_version_tuple = self._get_server_version(db.client)
-        if server_version_tuple < (2, 6):
-            # MongoDB 2.4 roles are an array of strs like ['clusterAdmin', ...].
-            user_roles = [role['role'] for role in self._user_roles]
-        else:
-            user_roles = self._user_roles
 
         secondary_login = {
             'name': self.login,
-            'roles': user_roles
+            'roles': self._user_roles(db.client)
         }
         if self.password:
             secondary_login['password'] = self.password
