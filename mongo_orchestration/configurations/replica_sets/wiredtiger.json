@@ -5,9 +5,7 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "noprealloc": true,
-                "nssize": 1,
-                "smallfiles": true
+                "storageEngine": "wiredTiger"
             },
             "rsParams": {
                 "priority": 99,
@@ -37,9 +35,7 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "noprealloc": true,
-                "nssize": 1,
-                "smallfiles": true
+                "storageEngine": "wiredTiger"
             },
             "rsParams": {
                 "arbiterOnly": true
