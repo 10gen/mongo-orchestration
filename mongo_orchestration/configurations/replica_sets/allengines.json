@@ -1,0 +1,50 @@
+{
+    "members": [
+        {
+            "procParams": {
+                "ipv6": true,
+                "nohttpinterface": true,
+                "journal": true,
+                "storageEngine": "mmapv1",
+                "noprealloc": true,
+                "nssize": 1,
+                "smallfiles": true
+            },
+            "rsParams": {
+                "priority": 99,
+                "tags": {
+                    "ordinal": "one",
+                    "dc": "ny",
+                    "engine": "mmapv1"
+                }
+            }
+        },
+        {
+            "procParams": {
+                "ipv6": true,
+                "nohttpinterface": true,
+                "journal": true,
+                "storageEngine": "wiredTiger"
+            },
+            "rsParams": {
+                "priority": 1.1,
+                "tags": {
+                    "ordinal": "two",
+                    "dc": "pa",
+                    "engine": "wiredTiger"
+                }
+            }
+        },
+        {
+            "procParams": {
+                "ipv6": true,
+                "nohttpinterface": true,
+                "journal": true,
+                "storageEngine": "wiredTiger"
+            },
+            "rsParams": {
+                "arbiterOnly": true
+            }
+        }
+    ]
+}
