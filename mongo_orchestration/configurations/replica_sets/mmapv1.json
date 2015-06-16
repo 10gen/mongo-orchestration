@@ -5,7 +5,10 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "storageEngine": "wiredTiger"
+                "storageEngine": "mmapv1",
+                "noprealloc": true,
+                "nssize": 1,
+                "smallfiles": true
             },
             "rsParams": {
                 "priority": 99,
@@ -20,7 +23,10 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "storageEngine": "wiredTiger"
+                "storageEngine": "mmapv1",
+                "noprealloc": true,
+                "nssize": 1,
+                "smallfiles": true
             },
             "rsParams": {
                 "priority": 1.1,
@@ -35,7 +41,10 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "storageEngine": "wiredTiger"
+                "storageEngine": "mmapv1",
+                "noprealloc": true,
+                "nssize": 1,
+                "smallfiles": true
             },
             "rsParams": {
                 "arbiterOnly": true

@@ -5,13 +5,17 @@
                 "ipv6": true,
                 "nohttpinterface": true,
                 "journal": true,
-                "storageEngine": "wiredTiger"
+                "storageEngine": "mmapv1",
+                "noprealloc": true,
+                "nssize": 1,
+                "smallfiles": true
             },
             "rsParams": {
                 "priority": 99,
                 "tags": {
                     "ordinal": "one",
-                    "dc": "ny"
+                    "dc": "ny",
+                    "engine": "mmapv1"
                 }
             }
         },
@@ -26,7 +30,8 @@
                 "priority": 1.1,
                 "tags": {
                     "ordinal": "two",
-                    "dc": "pa"
+                    "dc": "pa",
+                    "engine": "wiredTiger"
                 }
             }
         },
