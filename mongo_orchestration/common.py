@@ -105,7 +105,7 @@ class BaseModel(object):
             # Build dict of kwargs to pass to add_user.
             auth_dict = {
                 'name': DEFAULT_SUBJECT,
-                'roles': self._user_roles
+                'roles': self._user_roles(db.client)
             }
             db.add_user(**auth_dict)
             # Fix kwargs to MongoClient.
