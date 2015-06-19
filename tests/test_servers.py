@@ -325,12 +325,14 @@ class ServerTestCase(unittest.TestCase):
 
 class ServerSSLTestCase(SSLTestCase):
 
+    def setUp(self):
+        self.mongod_name = os.path.join(
+            os.environ.get('MONGOBIN', ''), 'mongod')
+
     def tearDown(self):
         if hasattr(self, 'server'):
             self.server.stop()
             self.server.cleanup()
-        self.mongod_name = os.path.join(
-            os.environ.get('MONGOBIN', ''), 'mongod')
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
