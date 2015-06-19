@@ -633,7 +633,8 @@ class ReplicaSetTestCase(unittest.TestCase):
 class ReplicaSetSSLTestCase(SSLTestCase):
 
     def tearDown(self):
-        self.repl.cleanup()
+        if hasattr(self, 'repl'):
+            self.repl.cleanup()
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
