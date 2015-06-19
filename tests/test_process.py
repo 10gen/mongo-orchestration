@@ -201,13 +201,14 @@ class ProcessTestCase(unittest.TestCase):
                           'fake-process_', config_path, None, 30)
         process.write_config({"fake": True}, config_path)
         self.assertRaises(TimeoutError, process.mprocess,
-                          'mongod', config_path, None, 30)
+                          self.bin_path, config_path, None, 30)
 
     def test_mprocess(self):
         port = self.pp.port(check=True)
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        result = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
+        result = process.mprocess(
+            self.bin_path, config_path, port=port, timeout=60)
         self.assertTrue(isinstance(result, tuple))
         proc, host = result
         self.assertTrue(isinstance(proc, subprocess.Popen))
