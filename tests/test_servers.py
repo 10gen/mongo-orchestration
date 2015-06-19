@@ -326,8 +326,11 @@ class ServerTestCase(unittest.TestCase):
 class ServerSSLTestCase(SSLTestCase):
 
     def tearDown(self):
-        self.server.stop()
-        self.server.cleanup()
+        if hasattr(self, 'server'):
+            self.server.stop()
+            self.server.cleanup()
+        self.mongod_name = os.path.join(
+            os.environ.get('MONGOBIN', ''), 'mongod')
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
@@ -347,7 +350,7 @@ class ServerSSLTestCase(SSLTestCase):
         }
         # Should not raise an Exception.
         self.server = Server(
-            'mongod', proc_params, ssl_params,
+            self.mongod_name, proc_params, ssl_params,
             login=TEST_SUBJECT, auth_source='$external')
         self.server.start()
         # Should create an extra user. Doesn't raise.
@@ -372,7 +375,7 @@ class ServerSSLTestCase(SSLTestCase):
         }
         # Should not raise an Exception.
         self.server = Server(
-            'mongod', {}, ssl_params, login='luke', password='ekul')
+            self.mongod_name, {}, ssl_params, login='luke', password='ekul')
         self.server.start()
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
@@ -391,7 +394,7 @@ class ServerSSLTestCase(SSLTestCase):
             'sslAllowInvalidCertificates': True
         }
         # Should not raise an Exception.
-        self.server = Server('mongod', {}, ssl_params)
+        self.server = Server(self.mongod_name, {}, ssl_params)
         self.server.start()
         # Server should require SSL.
         with self.assertRaises(pymongo.errors.ConnectionFailure):
@@ -418,7 +421,7 @@ class ServerSSLTestCase(SSLTestCase):
             'sslAllowInvalidCertificates': True
         }
         self.server = Server(
-            'mongod', proc_params, ssl_params,
+            self.mongod_name, proc_params, ssl_params,
             login=TEST_SUBJECT, auth_source='$external')
         self.server.start()
 
