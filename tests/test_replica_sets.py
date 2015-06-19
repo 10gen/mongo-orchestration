@@ -614,6 +614,9 @@ class ReplicaSetTestCase(unittest.TestCase):
             connected(pymongo.MongoClient(host))
 
     def test_rs_settings(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest(
+                "Need at least MongoDB >= 2.4 to test replica set settings.")
         self.repl_cfg = {
             'rsSettings': {'heartbeatTimeoutSecs': 20},
             'members': [{}]
