@@ -46,7 +46,7 @@ class test(Command):
 
     def finalize_options(self):
         if self.test_suite is None and self.test_module is None:
-            self.test_module = 'test'
+            self.test_module = 'tests'
         elif self.test_module is not None and self.test_suite is not None:
             raise DistutilsOptionError(
                 "You may specify a module or suite, but not both"
