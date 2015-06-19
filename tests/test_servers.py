@@ -290,6 +290,9 @@ class ServerTestCase(unittest.TestCase):
         self.assertTrue(self.server.is_alive)
 
     def test_set_parameter(self):
+        if SERVER_VERSION < (2, 4):
+            raise SkipTest(
+                "Need at least MongoDB >= 2.4 to test setParameter.")
         self.server.cleanup()
         cfg = {"setParameter": {"textSearchEnabled": True,
                                 "enableTestCommands": 1}}
