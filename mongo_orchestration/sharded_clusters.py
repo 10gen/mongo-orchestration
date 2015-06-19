@@ -70,9 +70,12 @@ class ShardedCluster(BaseModel):
         if self.tags:
             for sh_id in self.tags:
                 logger.debug('Add tags %r to %s' % (self.tags[sh_id], sh_id))
-                self.connection().config.shards.update(
+                db = self.connection().get_database(
+                    'config',
+                    write_concern=write_concern.WriteConcern(fsync=True))
+                db.shards.update(
                     {'_id': sh_id},
-                    {'$addToSet': {'$each': self.tags[sh_id]}})
+                    {'$addToSet': {'tags': {'$each': self.tags[sh_id]}}})
 
         shard_configs = [s.get('shardParams', {}).get('procParams', {})
                          for s in params.get('shards', [])]
