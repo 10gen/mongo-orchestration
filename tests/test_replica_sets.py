@@ -316,7 +316,7 @@ class ReplicaSetsTestCase(unittest.TestCase):
         assert_eventually(lambda: primary_server.connection.is_primary)
 
         def freeze_and_stop():
-            self.assertTrue(secondary_server.freeze(10))
+            self.assertTrue(secondary_server.freeze(100))
             try:
                 # Call replSetStepDown before killing the primary's process.
                 # This raises OperationFailure if no secondaries are capable
@@ -339,7 +339,9 @@ class ReplicaSetsTestCase(unittest.TestCase):
         assert_eventually(lambda: (
             self.rs.primary(repl_id)['mongodb_uri'] ==
             self.rs.member_info(repl_id, 1)['mongodb_uri']),
-            "Higher priority secondary never promoted.")
+            "Higher priority secondary never promoted.",
+            max_tries=120
+        )
 
     def test_member_update(self):
         repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {"rsParams": {"priority": 0, "hidden": True}}, {}]})
