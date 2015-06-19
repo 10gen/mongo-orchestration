@@ -104,7 +104,7 @@ class ShardedCluster(BaseModel):
 
             self._add_users(
                 self.connection().get_database(
-                    'admin', write_concern=write_concern.WriteConcern(
+                    self.auth_source, write_concern=write_concern.WriteConcern(
                         fsync=True)))
 
             # Secondary user given from request.
