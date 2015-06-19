@@ -271,8 +271,10 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertTrue('tags' in self.rs.member_info(repl_id, member_hidden)['rsInfo'])
 
     def test_member_del(self):
-        repl_id = self.rs.create({'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
+        repl_id = self.rs.create(
+            {'members': [{"rsParams": {"priority": 1.5}}, {}, {}]})
         self.assertEqual(len(self.rs.members(repl_id)), 3)
+        assert_eventually(lambda: len(self.rs.secondaries(repl_id)) > 0)
         secondary = self.rs.secondaries(repl_id)[0]
         connected(pymongo.MongoClient(secondary['host']))  # No error.
         self.assertTrue(self.rs.member_del(repl_id, secondary['_id']))
