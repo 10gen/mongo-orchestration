@@ -208,8 +208,7 @@ class ProcessTestCase(unittest.TestCase):
         port = self.pp.port(check=True)
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        result = process.mprocess(
-            self.bin_path, config_path, port=port, timeout=60)
+        result = process.mprocess(self.bin_path, config_path, port=port)
         self.assertTrue(isinstance(result, tuple))
         proc, host = result
         self.assertTrue(isinstance(proc, subprocess.Popen))
