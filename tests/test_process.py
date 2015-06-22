@@ -187,6 +187,7 @@ class ProcessTestCase(unittest.TestCase):
             with open(lock_file, 'r') as fd:
                 self.assertGreater(len(fd.read()), 0)
         proc.terminate()
+        proc.communicate()
         process.repair_mongo(self.bin_path, self.cfg['dbpath'])
         with open(lock_file, 'r') as fd:
             contents = fd.read()
