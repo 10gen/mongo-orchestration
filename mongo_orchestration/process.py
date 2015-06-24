@@ -254,13 +254,13 @@ def remove_path(path):
     if platform.system() == 'Windows':
         # Need to have write permission before deleting the file.
         os.chmod(path, stat.S_IWRITE)
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    if os.path.isfile(path):
-        try:
+    try:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.isfile(path):
             shutil.os.remove(path)
-        except OSError:
-            logger.exception("Could not remove path: %s" % path)
+    except OSError:
+        logger.exception("Could not remove path: %s" % path)
 
 
 def write_config(params, config_path=None):
