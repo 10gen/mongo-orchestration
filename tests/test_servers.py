@@ -316,8 +316,6 @@ class ServerTestCase(unittest.TestCase):
 
     def test_reset(self):
         self.server.stop()
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
-            connected(pymongo.MongoClient(self.server.hostname))
         self.server.reset()
         # No ConnectionFailure.
         connected(pymongo.MongoClient(self.server.hostname))
