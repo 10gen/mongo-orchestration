@@ -22,7 +22,8 @@ Requires
 --------
 
 -  `Python 2.6, 2.7, or >= 3.2 <http://www.python.org/download/>`__
--  `PyMongo >= 2.8 <https://pypi.python.org/pypi/pymongo>`__
+-  `bottle >= 0.12.7 <https://pypi.python.org/pypi/bottle>`__
+-  `PyMongo >= 3.0.2 <https://pypi.python.org/pypi/pymongo>`__
 -  `CherryPy >= 3.5.0 <http://www.cherrypy.org/>`__
 -  `argparse >= 1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
 
@@ -52,7 +53,11 @@ Installation will place a ``mongo-orchestration`` script on your path.
 Usage
 -----
 
-``mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT] {start,stop,restart}``
+::
+
+    mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT]
+                        [-s {cherrypy,wsgiref}] [--socket-timeout-ms MILLIS] {start,stop,restart}
+
 
 Arguments:
 
@@ -62,7 +67,9 @@ Arguments:
    file
 -  **--no-fork** - run server in foreground
 -  **-b, --bind** - host on which Mongo Orchestration and subordinate mongo processes should listen for requests. Defaults to "localhost".
+-  **-s, --server** - HTTP backend to use: one of `cherrypy` or `wsgiref`
 -  **-p** - port number (8889 by default)
+-  **--socket-timeout-ms** - socket timeout when connecting to MongoDB servers
 -  **start/stop/restart**: start, stop, or restart the server,
    respectively
 
@@ -82,9 +89,9 @@ Starts Mongo Orchestration as service on port 8889.
 
 Stop the server.
 
-``mongo-orchestration -f mongo-orchestration.config -e 26-release -p 8888 --no-fork start``
+``mongo-orchestration -f mongo-orchestration.config -e 30-release -p 8888 --no-fork start``
 
-Starts Mongo Orchestration on port 8888 using ``26-release`` defined in
+Starts Mongo Orchestration on port 8888 using ``30-release`` defined in
 ``mongo-orchestration.config``. Stops with *Ctrl+C*.
 
 Configuration File
