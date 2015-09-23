@@ -2,7 +2,6 @@
 # coding=utf-8
 import argparse
 import logging
-import os
 import signal
 import sys
 
@@ -18,14 +17,10 @@ from bson import SON
 from mongo_orchestration import __version__
 from mongo_orchestration.common import (
     BaseModel,
-    DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER, DEFAULT_SOCKET_TIMEOUT)
+    DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER, DEFAULT_SOCKET_TIMEOUT,
+    PID_FILE, LOG_FILE)
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
-
-work_dir = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
-
-pid_file = os.path.join(work_dir, 'server.pid')
-log_file = os.path.join(work_dir, 'server.log')
 
 
 def read_env():
@@ -128,11 +123,11 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
         Server.silence_stdout = False
     else:
-        logging.basicConfig(level=logging.DEBUG, filename=log_file,
+        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,
                             filemode='w')
         Server.silence_stdout = True
 
-    daemon = MyDaemon(pid_file, timeout=5, stdout=sys.stdout)
+    daemon = MyDaemon(PID_FILE, timeout=5, stdout=sys.stdout)
     daemon.set_args(args)
     # Set default bind ip for mongo processes using argument from --bind.
     Server.mongod_default['bind_ip'] = args.bind

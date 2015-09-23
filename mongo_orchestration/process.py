@@ -220,7 +220,7 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
         proc_alive(proc) and time.sleep(3)  # wait while process stoped
         message = ("Could not connect to process during "
                    "{timeout} seconds".format(timeout=timeout))
-        raise TimeoutError(errno.ETIMEDOUT, message)
+        raise TimeoutError(message, errno.ETIMEDOUT)
     return (proc, host)
 
 
