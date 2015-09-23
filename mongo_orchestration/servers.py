@@ -309,7 +309,17 @@ class Server(BaseModel):
                     "Server did not respond to 'isMaster' after %d attempts."
                     % timeout)
         except (OSError, TimeoutError):
-            logger.exception("Could not start Server.")
+            logpath = self.cfg.get('logpath')
+            if logpath:
+                # Copy the server logs into the mongo-orchestration logs.
+                logger.error(
+                    "Could not start Server. Please find server log below.\n"
+                    "=====================================================")
+                with open(logpath) as lp:
+                    logger.error(lp.read())
+            else:
+                logger.exception(
+                    'Could not start Server, and no logpath was provided!')
             reraise(TimeoutError,
                     'Could not start Server. '
                     'Please check server log located in ' +
