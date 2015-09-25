@@ -29,7 +29,8 @@ import pymongo
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS, connected)
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS, connected, LOG_FILE)
+from mongo_orchestration.compat import reraise
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
@@ -308,8 +309,23 @@ class Server(BaseModel):
                     "Server did not respond to 'isMaster' after %d attempts."
                     % timeout)
         except (OSError, TimeoutError):
-            logger.exception("Could not start Server.")
-            raise
+            logpath = self.cfg.get('logpath')
+            if logpath:
+                # Copy the server logs into the mongo-orchestration logs.
+                logger.error(
+                    "Could not start Server. Please find server log below.\n"
+                    "=====================================================")
+                with open(logpath) as lp:
+                    logger.error(lp.read())
+            else:
+                logger.exception(
+                    'Could not start Server, and no logpath was provided!')
+            reraise(TimeoutError,
+                    'Could not start Server. '
+                    'Please check server log located in ' +
+                    self.cfg.get('logpath', '<no logpath given>') +
+                    ' or the mongo-orchestration log in ' +
+                    LOG_FILE + ' for more details.')
         if self.restart_required:
             if self.login:
                 # Add users to the appropriate database.

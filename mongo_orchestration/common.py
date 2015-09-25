@@ -21,7 +21,10 @@ import os
 import ssl
 import stat
 import tempfile
-import time
+
+WORK_DIR = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
+PID_FILE = os.path.join(WORK_DIR, 'server.pid')
+LOG_FILE = os.path.join(WORK_DIR, 'server.log')
 
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
