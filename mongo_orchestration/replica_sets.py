@@ -225,7 +225,10 @@ class ReplicaSet(BaseModel):
                   "mongodb_uri": mongodb_uri,
                   "orchestration": 'replica_sets'}
         if self.login:
-            result['mongodb_auth_uri'] = self.mongodb_auth_uri(hosts)
+            # Add replicaSet URI parameter.
+            uri = ('%s&replicaSet=%s'
+                   % (self.mongodb_auth_uri(hosts), self.repl_id))
+            result['mongodb_auth_uri'] = uri
         return result
 
     def repl_member_add(self, params):

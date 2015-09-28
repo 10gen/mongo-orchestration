@@ -762,6 +762,8 @@ class ReplicaSetSSLTestCase(SSLTestCase):
         self.assertIn(TEST_SUBJECT, repl_auth_uri)
         self.assertIn('authSource=$external', repl_auth_uri)
         self.assertIn('authMechanism=MONGODB-X509', repl_auth_uri)
+        replset_param = 'replicaSet=' + self.repl.repl_id
+        self.assertIn(replset_param, repl_auth_uri)
 
     def test_member_info_auth_uri(self):
         member_params = {
@@ -792,7 +794,6 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             self.assertIn(TEST_SUBJECT, uri)
             self.assertIn('authSource=$external', uri)
             self.assertIn('authMechanism=MONGODB-X509', uri)
-
 
 
 class ReplicaSetAuthTestCase(unittest.TestCase):
@@ -854,6 +855,8 @@ class ReplicaSetAuthTestCase(unittest.TestCase):
         self.assertIn(hosts, rs_auth_uri)
         self.assertIn('admin:admin', rs_auth_uri)
         self.assertIn('authSource=admin', rs_auth_uri)
+        replset_param = 'replicaSet=' + self.repl.repl_id
+        self.assertIn(replset_param, rs_auth_uri)
 
     def test_member_info_auth_uri(self):
         for i in range(len(self.repl)):
