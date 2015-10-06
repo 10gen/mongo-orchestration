@@ -44,16 +44,16 @@ class Daemon(object):
 
     def daemonize(self):
         if os.name == 'nt':
-            self.daemonize_win32()
+            return self.daemonize_win32()
         else:
-            self.daemonize_posix()
+            return self.daemonize_posix()
 
     def daemonize_win32(self):
         pid = subprocess.Popen(sys.argv + ["--no-fork"], creationflags=0x00000008, shell=True).pid
 
         with open(self.pidfile, 'w+') as fd:
             fd.write("%s\n" % pid)
-        sys.exit(0)
+        return pid
 
     def daemonize_posix(self):
         """
@@ -64,10 +64,7 @@ class Daemon(object):
         try:
             pid = os.fork()
             if pid > 0:
-                # exit first parent
-                sys.stdout.write("child process started successfully, parent exiting after {timeout} seconds\n".format(timeout=self.timeout))
-                time.sleep(self.timeout)
-                sys.exit(0)
+                return pid
         except OSError as error:
             sys.stderr.write("fork #1 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
@@ -123,7 +120,9 @@ class Daemon(object):
             sys.exit(1)
 
         # Start the daemon
-        self.daemonize()
+        pid = self.daemonize()
+        if pid:
+            return pid
         self.run()
 
     def stop(self):
