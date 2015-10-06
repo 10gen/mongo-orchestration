@@ -3,7 +3,10 @@
 import argparse
 import logging
 import signal
+import socket
 import sys
+import time
+import traceback
 
 try:
     # Need simplejson for the object_pairs_hook option in Python 2.6.
@@ -21,6 +24,9 @@ from mongo_orchestration.common import (
     PID_FILE, LOG_FILE)
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
+
+# How many times to attempt connecting to mongo-orchestration server.
+CONNECT_ATTEMPTS = 5
 
 
 def read_env():
@@ -105,16 +111,39 @@ class MyDaemon(Daemon):
         super(MyDaemon, self).__init__(*args, **kwd)
 
     def run(self):
+        log = logging.getLogger(__name__)
+
         from bottle import run
         setup(getattr(self.args, 'releases', {}), self.args.env)
         BaseModel.socket_timeout = self.args.socket_timeout
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
-            run(get_app(), host=self.args.bind, port=self.args.port, debug=False,
-                reloader=False, quiet=not self.args.no_fork, server=self.args.server)
+            try:
+                run(get_app(), host=self.args.bind, port=self.args.port,
+                    debug=False, reloader=False, quiet=not self.args.no_fork,
+                    server=self.args.server)
+            except Exception:
+                traceback.print_exc(file=sys.stdout)
+                log.exception('Could not start a new server.')
+                raise
 
     def set_args(self, args):
         self.args = args
+
+
+def await_connection(host, port):
+    """Wait for the mongo-orchestration server to accept connections."""
+    for i in range(CONNECT_ATTEMPTS):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((host, port))
+                return True
+            except (IOError, socket.error):
+                time.sleep(1)
+        finally:
+            s.close()
+    return False
 
 
 def main():
@@ -134,7 +163,13 @@ def main():
     if args.command == 'stop':
         daemon.stop()
     if args.command == 'start' and not args.no_fork:
-        daemon.start()
+        pid = daemon.start()
+        if not await_connection(host=args.bind, port=args.port):
+            print(
+                'Could not connect to daemon running on %s:%d (pid: %d) '
+                'within %d attempts.'
+                % (args.bind, args.port, pid, CONNECT_ATTEMPTS))
+            daemon.stop()
     if args.command == 'start' and args.no_fork:
         daemon.run()
     if args.command == 'restart':
