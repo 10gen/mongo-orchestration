@@ -2,6 +2,7 @@
 # coding=utf-8
 import argparse
 import logging
+import os.path
 import signal
 import socket
 import sys
@@ -54,6 +55,8 @@ def read_env():
     parser.add_argument('--socket-timeout-ms', action='store',
                         dest='socket_timeout',
                         type=int, default=DEFAULT_SOCKET_TIMEOUT)
+    parser.add_argument('--pidfile', action='store', type=str, dest='pidfile',
+                        default=PID_FILE)
 
     cli_args = parser.parse_args()
 
@@ -156,7 +159,8 @@ def main():
                             filemode='w')
         Server.silence_stdout = True
 
-    daemon = MyDaemon(PID_FILE, timeout=5, stdout=sys.stdout)
+    daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
+                      stdout=sys.stdout)
     daemon.set_args(args)
     # Set default bind ip for mongo processes using argument from --bind.
     Server.mongod_default['bind_ip'] = args.bind

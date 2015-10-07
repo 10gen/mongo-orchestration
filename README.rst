@@ -56,7 +56,8 @@ Usage
 ::
 
     mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT]
-                        [-s {cherrypy,wsgiref}] [--socket-timeout-ms MILLIS] {start,stop,restart}
+                        [-s {cherrypy,wsgiref}] [--socket-timeout-ms MILLIS]
+                        [--pidfile PIDFILE] {start,stop,restart}
 
 
 Arguments:
@@ -70,6 +71,7 @@ Arguments:
 -  **-s, --server** - HTTP backend to use: one of `cherrypy` or `wsgiref`
 -  **-p** - port number (8889 by default)
 -  **--socket-timeout-ms** - socket timeout when connecting to MongoDB servers
+-  **--pidfile** - location where mongo-orchestration should place its pid file
 -  **start/stop/restart**: start, stop, or restart the server,
    respectively
 
