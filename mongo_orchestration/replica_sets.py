@@ -414,10 +414,10 @@ class ReplicaSet(BaseModel):
                 else:
                     db.authenticate(
                         self.login, self.password)
-            except:
+            except Exception:
                 logger.exception(
-                    "Could not authenticate to %s:%d as %s/%s"
-                    % (client.host, client.port, self.login, self.password))
+                    "Could not authenticate to %s as %s/%s"
+                    % (','.join(client.nodes), self.login, self.password))
                 raise
 
     def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
