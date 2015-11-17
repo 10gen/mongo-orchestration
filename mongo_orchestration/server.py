@@ -47,6 +47,8 @@ def read_env():
     parser.add_argument('-p', '--port',
                         action='store', dest='port', type=int,
                         default=DEFAULT_PORT)
+    parser.add_argument('--enable-majority-read-concern', action='store_true',
+                        default=False)
     parser.add_argument('-s', '--server',
                         action='store', dest='server', type=str,
                         default=DEFAULT_SERVER, choices=('cherrypy', 'wsgiref'))
@@ -151,6 +153,7 @@ def await_connection(host, port):
 
 def main():
     args = read_env()
+    Server.enable_majority_read_concern = args.enable_majority_read_concern
     if args.no_fork:
         logging.basicConfig(level=logging.DEBUG)
         Server.silence_stdout = False
