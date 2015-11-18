@@ -43,6 +43,8 @@ class Server(BaseModel):
 
     # redirect stdout to /dev/null?
     silence_stdout = True
+    # Try to enable majority read concern?
+    enable_majority_read_concern = False
 
     # default params for all mongo instances
     mongod_default = {"oplogSize": 100}
@@ -94,6 +96,9 @@ class Server(BaseModel):
 
         self.__init_test_commands(cfg)
 
+        if self.enable_majority_read_concern and self.version >= (3, 2):
+            cfg['enableMajorityReadConcern'] = True
+
         return process.write_config(cfg), cfg
 
     def __init_mongos(self, params):
@@ -138,6 +143,7 @@ class Server(BaseModel):
         self.kwargs = {}
         self.ssl_params = sslParams
         self.restart_required = self.login or self.auth_key
+        self.__version = None
 
         if self.ssl_params:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
@@ -181,13 +187,15 @@ class Server(BaseModel):
     @property
     def version(self):
         """Get the version of MongoDB that this Server runs as a tuple."""
-        command = (self.name, '--version')
-        stdout, _ = subprocess.Popen(
-            command, stdout=subprocess.PIPE).communicate()
-        first_line = str(stdout).split('\n')[0]
-        match = re.search(self.version_patt, first_line)
-        version_string = match.group('version')
-        return tuple(map(int, version_string.split('.')))
+        if not self.__version:
+            command = (self.name, '--version')
+            stdout, _ = subprocess.Popen(
+                command, stdout=subprocess.PIPE).communicate()
+            first_line = str(stdout).split('\n')[0]
+            match = re.search(self.version_patt, first_line)
+            version_string = match.group('version')
+            self.__version = tuple(map(int, version_string.split('.')))
+        return self.__version
 
     def freeze(self, timeout=60):
         """Run `replSetFreeze` on this server.

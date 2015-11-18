@@ -172,6 +172,23 @@ class ServersTestCase(unittest.TestCase):
         h_id = self.servers.create('mongod', {}, autostart=False, server_id=id)
         self.assertEqual(id, h_id)
 
+    def test_majority_read_concern(self):
+        Server.enable_majority_read_concern = True
+        server_id = self.servers.create('mongod', {})
+        try:
+            opts = self.servers.db_command(server_id, 'getCmdLineOpts')
+            majority_rc_enabled = (opts
+                                   .get('parsed', {})
+                                   .get('replication', {})
+                                   .get('enableMajorityReadConcern'))
+            if SERVER_VERSION >= (3, 2):
+                self.assertTrue(majority_rc_enabled)
+            else:
+                self.assertFalse(majority_rc_enabled)
+        finally:
+            Server.enable_majority_read_concern = False
+
+
 class ServerTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
