@@ -57,7 +57,7 @@ Usage
 
     mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT]
                         [-s {cherrypy,wsgiref}] [--socket-timeout-ms MILLIS]
-                        [--pidfile PIDFILE] {start,stop,restart}
+                        [--pidfile PIDFILE] [--enable-majority-read-concern] {start,stop,restart}
 
 
 Arguments:
@@ -72,6 +72,7 @@ Arguments:
 -  **-p** - port number (8889 by default)
 -  **--socket-timeout-ms** - socket timeout when connecting to MongoDB servers
 -  **--pidfile** - location where mongo-orchestration should place its pid file
+-  **--enable-majority-read-concern** - enable "majority" read concern on server versions that support it.
 -  **start/stop/restart**: start, stop, or restart the server,
    respectively
 
