@@ -67,6 +67,10 @@ class ShardedCluster(BaseModel):
             ReplicaSets() if self.uses_rs_configdb else Servers())
         if self.uses_rs_configdb:
             self.__init_configrs(configsvr_configs[0])
+        elif mongos_version >= (3, 3, 2):
+            raise ShardedClusterError(
+                'mongos >= 3.3.2 requires the config database to be backed by '
+                'a replica set.')
         elif mongos_version >= (3, 1, 2) and len(configsvr_configs) != 3:
             raise ShardedClusterError(
                 "mongos >= 3.1.2 needs a config replica set or 3 old-style "
