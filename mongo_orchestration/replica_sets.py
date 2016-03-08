@@ -597,6 +597,7 @@ class ReplicaSet(BaseModel):
             server_id = self._servers.host_to_server_id(host)
             server = self._servers._storage[server_id]
             server.restart(timeout, config_callback)
+        self.waiting_member_state()
 
 
 class ReplicaSets(Singleton, Container):

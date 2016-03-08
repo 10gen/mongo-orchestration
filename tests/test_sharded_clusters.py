@@ -550,11 +550,16 @@ class ShardTestCase(unittest.TestCase):
         # Shut down config server and router.
         config_id = self.sh.configsvrs[0]['id']
         print("config_id=%r" % config_id)
-        all_hosts.append(Servers().hostname(config_id))
+        if self.sh.uses_rs_configdb:
+            all_hosts.append(ReplicaSets().info(config_id)['mongodb_uri'])
+            for member in ReplicaSets().members(config_id):
+                Servers().command(member['server_id'], 'stop')
+        else:
+            all_hosts.append(Servers().hostname(config_id))
+            Servers().command(config_id, 'stop')
         router_id = self.sh.routers[0]['id']
         print("router_id=%r" % router_id)
         all_hosts.append(Servers().hostname(router_id))
-        Servers().command(config_id, 'stop')
         Servers().command(router_id, 'stop')
 
         # Reset the ShardedCluster.
@@ -588,6 +593,14 @@ class ShardTestCase(unittest.TestCase):
 
 class ShardSSLTestCase(SSLTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        if SERVER_VERSION >= (3, 1, 2):
+            cls.x509_configsvrs = [
+                {'members': [{'procParams': {'clusterAuthMode': 'x509'}}]}]
+        else:
+            cls.x509_configsvrs = [{'clusterAuthMode': 'x509'}]
+
     def setUp(self):
         self.sh = None
         PortPool().change_range()
@@ -612,7 +625,7 @@ class ShardSSLTestCase(SSLTestCase):
         config = {
             'login': TEST_SUBJECT,
             'authSource': '$external',
-            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'configsvrs': self.x509_configsvrs,
             'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [shard_params, shard_params],
             'sslParams': {
@@ -645,7 +658,7 @@ class ShardSSLTestCase(SSLTestCase):
         config = {
             'login': 'luke',
             'password': 'ekul',
-            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'configsvrs': self.x509_configsvrs,
             'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [{'shardParams': proc_params},
                        {'shardParams': {'members': [proc_params]}}],
@@ -713,7 +726,7 @@ class ShardSSLTestCase(SSLTestCase):
         config = {
             'login': TEST_SUBJECT,
             'authSource': '$external',
-            'configsvrs': [{'clusterAuthMode': 'x509'}],
+            'configsvrs': self.x509_configsvrs,
             'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [shard_params, shard_params],
             'sslParams': {
