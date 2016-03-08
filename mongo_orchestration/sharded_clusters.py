@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import logging
+import os
 import tempfile
 
 from uuid import uuid4
@@ -57,7 +58,8 @@ class ShardedCluster(BaseModel):
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         # Determine what to do with config servers via mongos version.
-        mongos = Server(name='mongos', procParams={})
+        mongos_name = os.path.join(Servers().bin_path(self._version), 'mongos')
+        mongos = Server(name=mongos_name, procParams={})
         mongos_version = mongos.version
         mongos.cleanup()
         configsvr_configs = params.get('configsvrs', [{}])
