@@ -124,6 +124,7 @@ class MyDaemon(Daemon):
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
             try:
+                log.debug('Server starting')
                 run(get_app(), host=self.args.bind, port=self.args.port,
                     debug=False, reloader=False, quiet=not self.args.no_fork,
                     server=self.args.server)
@@ -158,8 +159,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
         Server.silence_stdout = False
     else:
-        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,
-                            filemode='w')
+        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
         Server.silence_stdout = True
 
     daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
