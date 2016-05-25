@@ -49,7 +49,9 @@ class Daemon(object):
             return self.daemonize_posix()
 
     def daemonize_win32(self):
-        pid = subprocess.Popen(sys.argv + ["--no-fork"], creationflags=0x00000008, shell=True).pid
+        pid = subprocess.Popen(sys.argv + ["--subprocess"],
+                               creationflags=0x00000008,
+                               shell=True).pid
 
         with open(self.pidfile, 'w+') as fd:
             fd.write("%s\n" % pid)

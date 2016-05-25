@@ -39,8 +39,6 @@ def read_env():
                         action='store', type=str, dest='env', default=None)
     parser.add_argument(action='store', type=str, dest='command',
                         default='start', choices=('start', 'stop', 'restart'))
-    parser.add_argument('--no-fork',
-                        action='store_false', dest='fork', default=True)
     parser.add_argument('-b', '--bind',
                         action='store', dest='bind', type=str,
                         default=DEFAULT_BIND)
@@ -59,6 +57,12 @@ def read_env():
                         type=int, default=DEFAULT_SOCKET_TIMEOUT)
     parser.add_argument('--pidfile', action='store', type=str, dest='pidfile',
                         default=PID_FILE)
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--subprocess', action='store_true', default=False,
+                       help='Internal use only')
+    group.add_argument('--no-fork',
+                       action='store_false', dest='fork', default=True)
 
     cli_args = parser.parse_args()
 
@@ -125,8 +129,9 @@ class MyDaemon(Daemon):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
             try:
                 log.debug('Server starting')
+                quiet = self.args.fork or self.args.subprocess
                 run(get_app(), host=self.args.bind, port=self.args.port,
-                    debug=False, reloader=False, quiet=self.args.fork,
+                    debug=False, reloader=False, quiet=quiet,
                     server=self.args.server)
             except Exception:
                 traceback.print_exc(file=sys.stdout)
@@ -155,7 +160,7 @@ def await_connection(host, port):
 def main():
     args = read_env()
     Server.enable_majority_read_concern = args.enable_majority_read_concern
-    if args.fork:
+    if args.fork or args.subprocess:
         logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
         Server.silence_stdout = True
     else:
@@ -169,7 +174,7 @@ def main():
     Server.mongod_default['bind_ip'] = args.bind
     if args.command == 'stop':
         daemon.stop()
-    if args.command == 'start' and args.fork:
+    if args.command == 'start' and (args.fork or args.subprocess):
         pid = daemon.start()
         if not await_connection(host=args.bind, port=args.port):
             print(
@@ -177,7 +182,7 @@ def main():
                 'within %d attempts.'
                 % (args.bind, args.port, pid, CONNECT_ATTEMPTS))
             daemon.stop()
-    if args.command == 'start' and not args.fork:
+    if args.command == 'start' and not (args.fork or args.daemon):
         daemon.run()
     if args.command == 'restart':
         daemon.restart()
