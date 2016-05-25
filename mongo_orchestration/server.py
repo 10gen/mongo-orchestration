@@ -124,7 +124,8 @@ class MyDaemon(Daemon):
         if self.args.command in ('start', 'restart'):
             print("Starting Mongo Orchestration on port %d..." % self.args.port)
             try:
-                log.debug('Server starting')
+                log.debug('Starting HTTP server on host: %s; port: %d',
+                          self.args.bind, self.args.port)
                 run(get_app(), host=self.args.bind, port=self.args.port,
                     debug=False, reloader=False, quiet=not self.args.no_fork,
                     server=self.args.server)
@@ -155,12 +156,12 @@ def await_connection(host, port):
 def main():
     args = read_env()
     Server.enable_majority_read_concern = args.enable_majority_read_concern
-    if args.no_fork:
-        logging.basicConfig(level=logging.DEBUG)
-        Server.silence_stdout = False
-    else:
-        logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
-        Server.silence_stdout = True
+    # Silence STDOUT from mongo processes if MO is running as a deamon.
+    Server.silence_stdout = not args.no_fork
+    # Log both to STDOUT and the log file.
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger(__name__)
+    log.addHandler(logging.FileHandler(filename=LOG_FILE))
 
     daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
                       stdout=sys.stdout)
@@ -170,7 +171,9 @@ def main():
     if args.command == 'stop':
         daemon.stop()
     if args.command == 'start' and not args.no_fork:
+        print('Preparing to start mongo-orchestration daemon')
         pid = daemon.start()
+        print('Daemon process started with pid: %d' % pid)
         if not await_connection(host=args.bind, port=args.port):
             print(
                 'Could not connect to daemon running on %s:%d (pid: %d) '
@@ -178,6 +181,7 @@ def main():
                 % (args.bind, args.port, pid, CONNECT_ATTEMPTS))
             daemon.stop()
     if args.command == 'start' and args.no_fork:
+        log.debug('Starting mongo-orchestration in the foreground')
         daemon.run()
     if args.command == 'restart':
         daemon.restart()
