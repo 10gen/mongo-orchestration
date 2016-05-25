@@ -40,7 +40,7 @@ def read_env():
     parser.add_argument(action='store', type=str, dest='command',
                         default='start', choices=('start', 'stop', 'restart'))
     parser.add_argument('--no-fork',
-                        action='store_true', dest='no_fork', default=False)
+                        action='store_false', dest='fork', default=True)
     parser.add_argument('-b', '--bind',
                         action='store', dest='bind', type=str,
                         default=DEFAULT_BIND)
@@ -126,7 +126,7 @@ class MyDaemon(Daemon):
             try:
                 log.debug('Server starting')
                 run(get_app(), host=self.args.bind, port=self.args.port,
-                    debug=False, reloader=False, quiet=not self.args.no_fork,
+                    debug=False, reloader=False, quiet=self.args.fork,
                     server=self.args.server)
             except Exception:
                 traceback.print_exc(file=sys.stdout)
@@ -155,12 +155,12 @@ def await_connection(host, port):
 def main():
     args = read_env()
     Server.enable_majority_read_concern = args.enable_majority_read_concern
-    if args.no_fork:
-        logging.basicConfig(level=logging.DEBUG)
-        Server.silence_stdout = False
-    else:
+    if args.fork:
         logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
         Server.silence_stdout = True
+    else:
+        logging.basicConfig(level=logging.DEBUG)
+        Server.silence_stdout = False
 
     daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
                       stdout=sys.stdout)
@@ -169,7 +169,7 @@ def main():
     Server.mongod_default['bind_ip'] = args.bind
     if args.command == 'stop':
         daemon.stop()
-    if args.command == 'start' and not args.no_fork:
+    if args.command == 'start' and args.fork:
         pid = daemon.start()
         if not await_connection(host=args.bind, port=args.port):
             print(
@@ -177,7 +177,7 @@ def main():
                 'within %d attempts.'
                 % (args.bind, args.port, pid, CONNECT_ATTEMPTS))
             daemon.stop()
-    if args.command == 'start' and args.no_fork:
+    if args.command == 'start' and not args.fork:
         daemon.run()
     if args.command == 'restart':
         daemon.restart()
