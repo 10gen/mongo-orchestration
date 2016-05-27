@@ -191,7 +191,12 @@ class Server(BaseModel):
             command = (self.name, '--version')
             stdout, _ = subprocess.Popen(
                 command, stdout=subprocess.PIPE).communicate()
-            match = re.search(self.version_patt, str(stdout))
+            version_output = str(stdout)
+            match = re.search(self.version_patt, version_output)
+            if match is None:
+                raise ServersError(
+                    'Could not determine version of %s from string: %s'
+                    % (self.name, version_output))
             version_string = match.group('version')
             self.__version = tuple(map(int, version_string.split('.')))
         return self.__version
