@@ -24,7 +24,7 @@ Requires
 -  `Python 2.6, 2.7, or >= 3.2 <http://www.python.org/download/>`__
 -  `bottle >= 0.12.7 <https://pypi.python.org/pypi/bottle>`__
 -  `PyMongo >= 3.0.2 <https://pypi.python.org/pypi/pymongo>`__
--  `CherryPy >= 3.5.0 <http://www.cherrypy.org/>`__
+-  `CherryPy >= 3.5.0, < 7.1 <http://www.cherrypy.org/>`__
 -  `argparse >= 1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
 
 Installation

@@ -91,7 +91,7 @@ setup(
     url='https://github.com/10gen/mongo-orchestration',
     install_requires=['pymongo>=3.0.2',
                       'bottle>=0.12.7',
-                      'CherryPy>=3.5.0'] + extra_deps,
+                      'CherryPy>=3.5.0,<7.1'] + extra_deps,
     tests_require=['coverage>=3.5'] + extra_test_deps,
     packages=find_packages(exclude=('tests',)),
     package_data={
