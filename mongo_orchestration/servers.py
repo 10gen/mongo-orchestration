@@ -51,8 +51,9 @@ class Server(BaseModel):
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
-        '(?:db version v|MongoS version |mongos db version )'
-        '(?P<version>(\d+\.)+\d+)')
+        '(?:db version v?|MongoS version v?|mongos db version v?)'
+        '(?P<version>(\d+\.)+\d+)',
+        re.IGNORECASE)
 
     def __init_db(self, dbpath):
         if not dbpath:

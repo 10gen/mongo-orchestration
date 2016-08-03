@@ -36,6 +36,44 @@ from tests import (
     TEST_RELEASES)
 
 
+class ServerVersionTestCase(unittest.TestCase):
+    def _test_version_parse(self, version_str, expected_version):
+        match = Server.version_patt.search(version_str)
+        assert match is not None
+        self.assertEqual(expected_version, match.group('version'))
+
+    def test_mongod_2_4_9(self):
+        self._test_version_parse("""db version v2.4.9
+Wed Aug  3 11:02:33.903 git version: 52fe0d21959e32a5bdbecdc62057db386e4e029c
+""", "2.4.9")
+
+    def test_mongos_2_4_9(self):
+        self._test_version_parse("""MongoS version 2.4.9 starting: pid=22088 port=27017 64-bit host=As-MBP-2.fios-router.home (--help for usage)
+git version: 52fe0d21959e32a5bdbecdc62057db386e4e029c
+build sys info: Darwin bs-osx-106-x86-64-2.10gen.cc 10.8.0 Darwin Kernel Version 10.8.0: Tue Jun  7 16:32:41 PDT 2011; root:xnu-1504.15.3~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49
+""", "2.4.9")
+
+    def test_mongod_3_3_10(self):
+        self._test_version_parse("""db version v3.3.10-262-g2743e90
+git version: 2743e906fef318763e753a67967d503b37fcdd07
+allocator: system
+modules: none
+build environment:
+    distarch: x86_64
+    target_arch: x86_64
+""", "3.3.10")
+
+    def test_mongos_3_3_10(self):
+        self._test_version_parse("""mongos version v3.3.10-239-g4caf167
+git version: 4caf167d193b3b6b4a4cf584f1d903de631a13ef
+allocator: system
+modules: none
+build environment:
+    distarch: x86_64
+    target_arch: x86_64
+""", "3.3.10")
+
+
 class ServersTestCase(unittest.TestCase):
     def setUp(self):
         PortPool().change_range()
