@@ -25,6 +25,7 @@ import tempfile
 WORK_DIR = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 PID_FILE = os.path.join(WORK_DIR, 'server.pid')
 LOG_FILE = os.path.join(WORK_DIR, 'server.log')
+TMP_DIR = os.environ.get('MONGO_ORCHESTRATION_TMP')
 
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
@@ -64,7 +65,7 @@ class BaseModel(object):
     def key_file(self):
         """Get the path to the key file containig our auth key, or None."""
         if self.auth_key:
-            key_file_path = os.path.join(tempfile.mkdtemp(), 'key')
+            key_file_path = os.path.join(orchestration_mkdtemp(), 'key')
             with open(key_file_path, 'w') as fd:
                 fd.write(self.auth_key)
             os.chmod(key_file_path, stat.S_IRUSR)
@@ -152,3 +153,16 @@ def preset_merge(data, cluster_type):
             preset_data = json.loads(preset_file.read())
         data = update(copy.deepcopy(preset_data), data)
     return data
+
+
+def orchestration_mkdtemp(prefix=None):
+    if TMP_DIR and not os.path.exists(TMP_DIR):
+        os.makedirs(TMP_DIR)
+
+    kwargs = {}
+    if prefix is not None:
+        kwargs['prefix'] = prefix
+    if TMP_DIR is not None:
+        kwargs['dir'] = TMP_DIR
+
+    return tempfile.mkdtemp(**kwargs)

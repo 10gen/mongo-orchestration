@@ -29,7 +29,8 @@ import pymongo
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS, connected, LOG_FILE)
+    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS, connected, LOG_FILE,
+    orchestration_mkdtemp)
 from mongo_orchestration.compat import reraise
 from mongo_orchestration.errors import ServersError, TimeoutError
 from mongo_orchestration.singleton import Singleton
@@ -57,7 +58,7 @@ class Server(BaseModel):
 
     def __init_db(self, dbpath):
         if not dbpath:
-            dbpath = tempfile.mkdtemp(prefix="mongo-")
+            dbpath = orchestration_mkdtemp(prefix="mongo-")
         if not os.path.exists(dbpath):
             os.makedirs(dbpath)
         return dbpath
@@ -107,7 +108,7 @@ class Server(BaseModel):
 
         log_path = cfg.setdefault(
             'logpath',
-            os.path.join(tempfile.mkdtemp(prefix='mongo-'), 'mongos.log'))
+            os.path.join(orchestration_mkdtemp(prefix='mongo-'), 'mongos.log'))
         self.__init_logpath(log_path)
 
         # use keyFile
