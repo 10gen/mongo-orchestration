@@ -39,6 +39,7 @@ from mongo_orchestration.errors import TimeoutError, RequestError
 from mongo_orchestration.singleton import Singleton
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def _host():
@@ -185,7 +186,9 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
     return tuple (Popen object, host) if process started, return (None, None) if not
     """
 
-    logger.debug("mprocess({name}, {config_path}, {port}, {timeout})".format(**locals()))
+    logger.debug(
+        "mprocess(name={name!r}, config_path={config_path!r}, port={port!r}, "
+                 "timeout={timeout!r})".format(**locals()))
     if not (config_path and isinstance(config_path, str) and os.path.exists(config_path)):
         raise OSError("can't find config file {config_path}".format(**locals()))
 
@@ -197,7 +200,7 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
         cmd.extend(['--port', str(port)])
     host = "{host}:{port}".format(host=_host(), port=port)
     try:
-        logger.debug("execute process: {cmd}".format(**locals()))
+        logger.debug("execute process: {}".format(' '.join(cmd)))
         proc = subprocess.Popen(
             cmd,
             stdout=DEVNULL if silence_stdout else None,

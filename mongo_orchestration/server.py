@@ -159,9 +159,8 @@ def main():
     # Silence STDOUT from mongo processes if MO is running as a deamon.
     Server.silence_stdout = not args.no_fork
     # Log both to STDOUT and the log file.
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
     log = logging.getLogger(__name__)
-    log.addHandler(logging.FileHandler(filename=LOG_FILE))
 
     daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
                       stdout=sys.stdout)

@@ -43,14 +43,14 @@ def setup_versioned_routes(routes, version=None):
 
 
 def send_result(code, result=None):
-    logger.debug("send_result({code}, {result})".format(**locals()))
-    content = None
     response.content_type = None
-    if result is not None:
-        content = json.dumps(result)
+    if result is not None and 200 <= code < 300:
+        result = json.dumps(result)
         response.content_type = "application/json"
+
+    logger.debug("send_result({code})".format(**locals()))
     response.status = code
-    return content
+    return result
 
 
 def error_wrap(f):
@@ -60,18 +60,9 @@ def error_wrap(f):
             f_name=f_name, arg=arg, kwd=kwd))
         try:
             return f(*arg, **kwd)
-        except RequestError:
-            err_message = traceback.format_exception(*sys.exc_info())
-            logger.critical(err_message)
-            return send_result(400, err_message)
         except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            err_message = traceback.format_exception(
-                exc_type, exc_value, exc_tb)
-            logger.critical(
-                "Exception {exc_type} {exc_value} while {f_name}".format(
-                    **locals()))
-            logger.critical(err_message)
+            logger.exception(str(f))
+            err_message = ''.join(traceback.format_exception(*sys.exc_info()))
             return send_result(500, err_message)
 
     return wrap

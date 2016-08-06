@@ -190,6 +190,7 @@ class Server(BaseModel):
         """Get the version of MongoDB that this Server runs as a tuple."""
         if not self.__version:
             command = (self.name, '--version')
+            logger.debug(command)
             stdout, _ = subprocess.Popen(
                 command, stdout=subprocess.PIPE).communicate()
             version_output = str(stdout)

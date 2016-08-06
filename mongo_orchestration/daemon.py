@@ -15,14 +15,17 @@
 # limitations under the License.
 
 import atexit
+import logging
 import os
 import subprocess
 import sys
-import time
 
 from signal import SIGTERM
 
 DEVNULL = open(os.devnull, 'r+b')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class Daemon(object):
@@ -49,13 +52,19 @@ class Daemon(object):
             return self.daemonize_posix()
 
     def daemonize_win32(self):
+        logger.info('daemonize_win32: %r' % (sys.argv, ))
         DETACHED_PROCESS = 0x00000008
         pid = subprocess.Popen(sys.argv + ["--no-fork"],
                                creationflags=DETACHED_PROCESS, shell=True,
                                stderr=sys.stderr, stdout=sys.stdout).pid
 
-        with open(self.pidfile, 'w+') as fd:
-            fd.write("%s\n" % pid)
+        try:
+            with open(self.pidfile, 'w+') as fd:
+                fd.write("%s\n" % pid)
+        except:
+            logger.exception('write pidfile %r' % self.pidfile)
+            raise
+
         return pid
 
     def daemonize_posix(self):
@@ -64,11 +73,15 @@ class Daemon(object):
         Programming in the UNIX Environment" for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
         """
+        logger.info('daemonize_posix')
         try:
             pid = os.fork()
             if pid > 0:
+                logger.debug('forked first child, pid = %d' % (pid,))
                 return pid
+            logger.debug('in child after first fork, pid = %d' % (pid, ))
         except OSError as error:
+            logger.exception('fork #1')
             sys.stderr.write("fork #1 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
@@ -82,12 +95,15 @@ class Daemon(object):
             pid = os.fork()
             if pid > 0:
                 # exit from second parent
+                logger.debug('forked second child, pid = %d, exiting' % (pid,))
                 sys.exit(0)
         except OSError as error:
+            logger.exception('fork #2')
             sys.stderr.write("fork #2 failed: %d (%s)\n" % (error.errno, error.strerror))
             sys.exit(1)
 
         # redirect standard file descriptors
+        logger.info('daemonized, pid = %d' % (pid, ))
         sys.stdin.flush()
         sys.stdout.flush()
         sys.stderr.flush()
@@ -111,6 +127,7 @@ class Daemon(object):
         Start the daemon
         """
         # Check for a pidfile to see if the daemon already runs
+        logger.info('Starting daemon')
         try:
             with open(self.pidfile, 'r') as fd:
                 pid = int(fd.read().strip())
@@ -133,10 +150,12 @@ class Daemon(object):
         Stop the daemon
         """
         # Get the pid from the pidfile
+        logger.debug("reading %s" % (self.pidfile,))
         try:
             with open(self.pidfile, 'r') as fd:
                 pid = int(fd.read().strip())
         except IOError:
+            logger.exception("reading %s" % (self.pidfile, ))
             pid = None
 
         if not pid:
