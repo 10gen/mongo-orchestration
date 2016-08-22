@@ -323,6 +323,9 @@ class ShardedCluster(BaseModel):
         member_id = member_id or str(uuid4())
         if 'members' in params:
             # is replica set
+            for member in params['members']:
+                if not member.get('rsParams', {}).get('arbiterOnly', False):
+                    member.setdefault('procParams', {})['shardsvr'] = True
             rs_params = params.copy()
             # Turn 'rs_id' -> 'id', to be consistent with 'server_id' below.
             rs_params['id'] = rs_params.pop('rs_id', None)
@@ -341,6 +344,7 @@ class ShardedCluster(BaseModel):
 
         else:
             # is single server
+            params.setdefault('procParams', {})['shardsvr'] = True
             params.update({'autostart': True, 'sslParams': self.sslParams})
             params = params.copy()
             params['procParams'] = self._strip_auth(
