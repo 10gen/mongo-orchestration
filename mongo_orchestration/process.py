@@ -200,7 +200,7 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
         cmd.extend(['--port', str(port)])
     host = "{host}:{port}".format(host=_host(), port=port)
     try:
-        logger.debug("execute process: {}".format(' '.join(cmd)))
+        logger.debug("execute process: %s", ' '.join(cmd))
         proc = subprocess.Popen(
             cmd,
             stdout=DEVNULL if silence_stdout else None,
