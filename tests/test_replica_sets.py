@@ -604,7 +604,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         self.repl = ReplicaSet(self.repl_cfg)
 
         server_ids = [m['server_id'] for m in self.repl.members()]
-        all_hosts = map(Servers().hostname, server_ids)
+        all_hosts = [Servers().hostname(server_id) for server_id in server_ids]
 
         # Shut down all members of the ReplicaSet.
         for server_id in server_ids:

@@ -353,7 +353,7 @@ class ReplicaSet(BaseModel):
             # Can't call serverStatus on arbiter when running with auth enabled.
             # (SERVER-5479)
             if self.login or self.auth_key:
-                arbiter_ids = map(lambda member: member['_id'], self.arbiters())
+                arbiter_ids = [member['_id'] for member in self.arbiters()]
                 if member_id in arbiter_ids:
                     result['rsInfo'] = {
                         'arbiterOnly': True, 'secondary': False, 'primary': False}

@@ -332,7 +332,8 @@ class ShardedCluster(BaseModel):
             rs_params.update({'sslParams': self.sslParams})
 
             rs_params['version'] = params.pop('version', self._version)
-            rs_params['members'] = map(self._strip_auth, rs_params['members'])
+            rs_params['members'] = [
+                self._strip_auth(params) for params in rs_params['members']]
             rs_id = ReplicaSets().create(rs_params)
             members = ReplicaSets().members(rs_id)
             cfgs = rs_id + r"/" + ','.join([item['host'] for item in members])
