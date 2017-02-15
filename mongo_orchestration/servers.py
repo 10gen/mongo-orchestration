@@ -263,6 +263,9 @@ class Server(BaseModel):
             try:
                 c = self.connection
                 server_info = c.server_info()
+                # Remove $gleStats because it contains BSON types that are not
+                # JSON serializable.
+                server_info.pop('$gleStats', None)
                 logger.debug("server_info: {server_info}".format(**locals()))
                 mongodb_uri = 'mongodb://' + self.hostname
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
