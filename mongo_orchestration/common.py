@@ -27,6 +27,8 @@ PID_FILE = os.path.join(WORK_DIR, 'server.pid')
 LOG_FILE = os.path.join(WORK_DIR, 'server.log')
 TMP_DIR = os.environ.get('MONGO_ORCHESTRATION_TMP')
 
+LOGGING_FORMAT = '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s'
+
 DEFAULT_BIND = os.environ.get('MO_HOST', 'localhost')
 DEFAULT_PORT = int(os.environ.get('MO_PORT', '8889'))
 DEFAULT_SERVER = 'cherrypy'
