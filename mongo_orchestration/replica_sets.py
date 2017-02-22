@@ -552,7 +552,7 @@ class ReplicaSet(BaseModel):
 
     def check_member_state(self):
         """Verify that all RS members have an acceptable state."""
-        bad_states = (3, 4, 5, 6, 9)
+        bad_states = (0, 3, 4, 5, 6, 9)
         try:
             rs_status = self.run_command('replSetGetStatus')
             bad_members = [member for member in rs_status['members']
