@@ -22,7 +22,7 @@ from mongo_orchestration import __version__
 from mongo_orchestration.common import (
     BaseModel,
     DEFAULT_BIND, DEFAULT_PORT, DEFAULT_SERVER, DEFAULT_SOCKET_TIMEOUT,
-    PID_FILE, LOG_FILE)
+    PID_FILE, LOG_FILE, LOGGING_FORMAT)
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
 
@@ -159,7 +159,8 @@ def main():
     # Silence STDOUT from mongo processes if MO is running as a deamon.
     Server.silence_stdout = not args.no_fork
     # Log both to STDOUT and the log file.
-    logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE)
+    logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,
+                        format=LOGGING_FORMAT)
     log = logging.getLogger(__name__)
 
     daemon = MyDaemon(os.path.abspath(args.pidfile), timeout=5,
