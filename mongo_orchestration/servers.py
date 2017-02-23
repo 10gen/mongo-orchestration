@@ -98,8 +98,20 @@ class Server(BaseModel):
 
         self.__init_test_commands(cfg)
 
-        if self.enable_majority_read_concern and self.version >= (3, 2):
-            cfg['enableMajorityReadConcern'] = True
+        # Read concern majority requires MongoDB >= 3.2, WiredTiger storage
+        # engine, and protocol version 1:
+        # https://docs.mongodb.com/manual/reference/read-concern/
+        if ('enableMajorityReadConcern' not in cfg
+                and self.enable_majority_read_concern
+                and self.version >= (3, 2)):
+            if (cfg.get('storageEngine', 'wiredTiger') == 'wiredTiger'
+                    and cfg.get('protocolVersion', 1) == 1):
+                cfg['enableMajorityReadConcern'] = True
+            else:
+                logger.info('Not adding enableMajorityReadConcern because '
+                            'storageEngine=%r and protocolVersion=%r is '
+                            'incompatible' % (cfg.get('storageEngine'),
+                                              cfg.get('protocolVersion')))
 
         return process.write_config(cfg), cfg
 
