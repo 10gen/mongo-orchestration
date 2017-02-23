@@ -81,7 +81,7 @@ class test(Command):
 
 setup(
     name='mongo-orchestration',
-    version='0.6.8',
+    version='0.6.9.dev0',
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
     description='Restful service for managing MongoDB servers',
