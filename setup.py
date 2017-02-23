@@ -7,11 +7,11 @@ from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
 
 extra_opts = {'test_suite': 'tests'}
+py26_requires = ['argparse', 'simplejson']
 extra_deps = []
 extra_test_deps = []
 if sys.version_info[:2] == (2, 6):
-    extra_deps.append('argparse')
-    extra_deps.append('simplejson')
+    extra_deps.extend(py26_requires)
     extra_test_deps.append('unittest2')
     extra_opts['test_suite'] = 'unittest2.collector'
 
@@ -92,6 +92,9 @@ setup(
     install_requires=['pymongo>=3.0.2',
                       'bottle>=0.12.7',
                       'CherryPy>=3.5.0,<7.1'] + extra_deps,
+    extras_require={
+        ':python_version=="2.6"': py26_requires
+    },
     tests_require=['coverage>=3.5'] + extra_test_deps,
     packages=find_packages(exclude=('tests',)),
     package_data={
