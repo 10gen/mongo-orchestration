@@ -64,6 +64,7 @@ class Server(BaseModel):
         return dbpath
 
     def __init_logpath(self, log_path):
+        logger.debug('Creating log file for %s: %s', self.name, log_path)
         log_dir = os.path.dirname(log_path)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -333,6 +334,7 @@ class Server(BaseModel):
                     self.run_command('isMaster')
                     break
                 except pymongo.errors.ConnectionFailure:
+                    logger.exception('isMaster command failed:')
                     time.sleep(0.1)
             else:
                 raise TimeoutError(
