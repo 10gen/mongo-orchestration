@@ -17,6 +17,8 @@ import logging
 import sys
 import traceback
 
+from bson import json_util
+
 from collections import namedtuple
 
 from bottle import route, response
@@ -45,7 +47,9 @@ def setup_versioned_routes(routes, version=None):
 def send_result(code, result=None):
     response.content_type = None
     if result is not None and 200 <= code < 300:
-        result = json.dumps(result)
+        # Use json.dumps instead of json_util.dumps to only encode
+        # non JSON serializable BSON types with json_util.
+        result = json.dumps(result, default=json_util.default)
         response.content_type = "application/json"
 
     logger.debug("send_result({code})".format(**locals()))

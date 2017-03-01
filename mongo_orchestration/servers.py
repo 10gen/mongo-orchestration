@@ -274,16 +274,7 @@ class Server(BaseModel):
         if self.hostname and self.cfg.get('port', None):
             try:
                 c = self.connection
-                server_info_raw = c.server_info()
-                # Do add the raw command response because it might contain
-                # non JSON serializable BSON types.
-                whitelisted_keys = set([
-                    'bits', 'gitVersion', 'version', 'versionArray',
-                    'openssl', 'modules',  'debug', 'maxBsonObjectSize',
-                    'javascriptEngine', 'storageEngines'])
-                for field in server_info_raw:
-                    if field in whitelisted_keys:
-                        server_info[field] = server_info_raw[field]
+                server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 mongodb_uri = 'mongodb://' + self.hostname
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
