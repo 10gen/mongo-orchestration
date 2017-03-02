@@ -47,9 +47,9 @@ def setup_versioned_routes(routes, version=None):
 def send_result(code, result=None):
     response.content_type = None
     if result is not None and 200 <= code < 300:
-        # Use json.dumps instead of json_util.dumps to only encode
-        # non JSON serializable BSON types with json_util.
-        result = json.dumps(result, default=json_util.default)
+        # Use json_util.dumps in case the result contains non JSON
+        # serializable BSON types.
+        result = json_util.dumps(result)
         response.content_type = "application/json"
 
     logger.debug("send_result({code})".format(**locals()))
