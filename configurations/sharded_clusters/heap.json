@@ -1,0 +1,29 @@
+{
+    "configsvrs": [
+        {
+        }
+    ],
+    "shards": [
+        {
+            "id": "sh01", 
+            "shardParams": {
+                "procParams": {
+                    "storageEngine": "heap1"
+                }
+            }
+        }, 
+        {
+            "id": "sh02", 
+            "shardParams": {
+                "procParams": {
+                }
+            }
+        }
+    ], 
+    "routers": [
+        {
+        }, 
+        {
+        }
+    ]
+}
