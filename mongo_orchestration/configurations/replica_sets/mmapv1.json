@@ -3,7 +3,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "mmapv1",
                 "noprealloc": true,
@@ -21,7 +20,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "mmapv1",
                 "noprealloc": true,
@@ -39,7 +37,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "mmapv1",
                 "noprealloc": true,

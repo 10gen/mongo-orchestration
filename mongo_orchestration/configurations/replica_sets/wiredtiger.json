@@ -3,7 +3,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "wiredTiger"
             },
@@ -18,7 +17,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "wiredTiger"
             },
@@ -33,7 +31,6 @@
         {
             "procParams": {
                 "ipv6": true,
-                "nohttpinterface": true,
                 "journal": true,
                 "storageEngine": "wiredTiger"
             },
