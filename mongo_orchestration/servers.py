@@ -326,17 +326,18 @@ class Server(BaseModel):
             self.port = int(self.hostname.split(':')[1])
 
             # Wait for Server to respond to isMaster.
-            for i in range(timeout):
+            # Only try 6 times, each ConnectionFailure is 30 seconds.
+            max_attempts = 6
+            for i in range(max_attempts):
                 try:
                     self.run_command('isMaster')
                     break
                 except pymongo.errors.ConnectionFailure:
                     logger.exception('isMaster command failed:')
-                    time.sleep(0.1)
             else:
                 raise TimeoutError(
                     "Server did not respond to 'isMaster' after %d attempts."
-                    % timeout)
+                    % max_attempts)
         except (OSError, TimeoutError):
             logpath = self.cfg.get('logpath')
             if logpath:
