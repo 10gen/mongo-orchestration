@@ -278,7 +278,7 @@ class Server(BaseModel):
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
                 mongodb_uri = 'mongodb://' + self.hostname
-                status_info = {"primary": c.is_primary, "mongos": c.is_mongos, "locked": c.is_locked}
+                status_info = {"primary": c.is_primary, "mongos": c.is_mongos}
                 logger.debug("status_info: {status_info}".format(**locals()))
             except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
                 server_info = {}
