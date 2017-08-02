@@ -76,6 +76,16 @@ class Server(BaseModel):
             params['enableTestCommands'] = 1
             config['setParameter'] = params
 
+    def __init_compressors(self, config):
+        """Conditionally enable compression in the Server's config file."""
+        compressors = config.get('networkMessageCompressors')
+        if compressors is None:
+            # SERVER-27310 added zlib support in 3.5.9.
+            if self.version >= (3, 5, 9):
+                config['networkMessageCompressors'] = 'zlib,snappy,noop'
+            elif self.version >= (3, 4):
+                config['networkMessageCompressors'] = 'snappy,noop'
+
     def __init_mongod(self, params, add_auth=False):
         cfg = self.mongod_default.copy()
         cfg.update(params)
@@ -98,6 +108,7 @@ class Server(BaseModel):
             cfg['port'] = process.PortPool().port(check=True)
 
         self.__init_test_commands(cfg)
+        self.__init_compressors(cfg)
 
         # Read concern majority requires MongoDB >= 3.2, WiredTiger storage
         # engine, and protocol version 1:
@@ -132,6 +143,7 @@ class Server(BaseModel):
             cfg['port'] = process.PortPool().port(check=True)
 
         self.__init_test_commands(cfg)
+        self.__init_compressors(cfg)
 
         return process.write_config(cfg), cfg
 
