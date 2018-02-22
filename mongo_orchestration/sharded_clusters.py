@@ -137,6 +137,8 @@ class ShardedCluster(BaseModel):
             if self.password:
                 secondary_login['password'] = self.password
 
+            if mongos_version >= (3, 7, 2):
+                secondary_login['mechanisms'] = ['SCRAM-SHA-1']
             # Do the same for the shards.
             for shard_id, config in zip(self._shards, shard_configs):
                 shard = self._shards[shard_id]
