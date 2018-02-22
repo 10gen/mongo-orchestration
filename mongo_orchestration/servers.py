@@ -418,7 +418,8 @@ class Server(BaseModel):
             if len(auth_mechs) == 1 and auth_mechs[0] == 'MONGODB-X509':
                 self.x509_extra_user = True
 
-            super(Server, self)._add_users(self.connection[self.auth_source])
+            super(Server, self)._add_users(self.connection[self.auth_source],
+                                           self.version)
         except pymongo.errors.OperationFailure as e:
             logger.error("Error: {0}".format(e))
             # user added successfuly but OperationFailure exception raises
@@ -518,6 +519,13 @@ class Servers(Singleton, Container):
         result = self._storage[server_id].info()
         result['id'] = server_id
         return result
+
+    def version(self, server_id):
+        """return the binary version of the given server
+        Args:
+            server_id - server identity
+        """
+        return self._storage[server_id].version
 
     def hostname(self, server_id):
         return self._storage[server_id].hostname

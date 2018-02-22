@@ -103,7 +103,14 @@ class ReplicaSet(BaseModel):
                     self.x509_extra_user = True
                     break
 
-            self._add_users(self.connection()[self.auth_source])
+            if config["members"]:
+                server_id = self._servers.host_to_server_id(
+                    self.member_id_to_host(0))
+                version = self._servers.version(server_id)
+            else:
+                version = (2, 4, 0)
+
+            self._add_users(self.connection()[self.auth_source], version)
         if self.restart_required:
             # Restart all the servers with auth flags and ssl.
             for idx, member in enumerate(members):
