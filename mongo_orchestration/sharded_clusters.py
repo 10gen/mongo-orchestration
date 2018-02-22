@@ -127,7 +127,7 @@ class ShardedCluster(BaseModel):
             self._add_users(
                 self.connection().get_database(
                     self.auth_source, write_concern=write_concern.WriteConcern(
-                        fsync=True)))
+                        fsync=True)), mongos_version)
 
             # Secondary user given from request.
             secondary_login = {

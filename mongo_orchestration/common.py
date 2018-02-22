@@ -105,7 +105,7 @@ class BaseModel(object):
             return [role['role'] for role in self._user_role_documents]
         return self._user_role_documents
 
-    def _add_users(self, db):
+    def _add_users(self, db, mongo_version):
         """Add given user, and extra x509 user if necessary."""
         if self.x509_extra_user:
             # Build dict of kwargs to pass to add_user.
@@ -125,6 +125,9 @@ class BaseModel(object):
         }
         if self.password:
             secondary_login['password'] = self.password
+        if mongo_version >= (3, 7, 2):
+            # Use SCRAM_SHA-1 so that pymongo < 3.7 can authenticate.
+            secondary_login['mechanisms'] = ['SCRAM-SHA-1']
         db.add_user(**secondary_login)
 
 
