@@ -20,6 +20,7 @@ import tempfile
 
 from uuid import uuid4
 
+from mongo_orchestration import common
 from mongo_orchestration.common import (
     BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.container import Container
@@ -57,6 +58,7 @@ class ShardedCluster(BaseModel):
         if self.sslParams:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
+        self.enable_ipv6 = common.ipv6_enabled_sharded(params)
         # Determine what to do with config servers via mongos version.
         mongos_name = os.path.join(Servers().bin_path(self._version), 'mongos')
         mongos = Server(name=mongos_name, procParams={})
@@ -205,6 +207,8 @@ class ShardedCluster(BaseModel):
             member['procParams'] = self._strip_auth(
                 member.get('procParams', {}))
             member['procParams']['configsvr'] = True
+            if self.enable_ipv6:
+                common.enable_ipv6_single(member['procParams'])
         rs_cfg['sslParams'] = self.sslParams
         self._configsvrs.append(ReplicaSets().create(rs_cfg))
 
@@ -217,6 +221,8 @@ class ShardedCluster(BaseModel):
             server_id = cfg.pop('server_id', None)
             version = cfg.pop('version', self._version)
             cfg.update({'configsvr': True})
+            if self.enable_ipv6:
+                common.enable_ipv6_single(cfg)
             self._configsvrs.append(Servers().create(
                 'mongod', cfg, sslParams=self.sslParams, autostart=True,
                 version=version, server_id=server_id))
@@ -268,6 +274,8 @@ class ShardedCluster(BaseModel):
         version = params.pop('version', self._version)
         params.update({'configdb': configdb})
 
+        if self.enable_ipv6:
+            common.enable_ipv6_single(params)
         # Remove flags that turn auth on.
         params = self._strip_auth(params)
 
@@ -323,6 +331,8 @@ class ShardedCluster(BaseModel):
     def member_add(self, member_id=None, params=None):
         """add new member into existing configuration"""
         member_id = member_id or str(uuid4())
+        if self.enable_ipv6:
+            common.enable_ipv6_repl(params)
         if 'members' in params:
             # is replica set
             for member in params['members']:
