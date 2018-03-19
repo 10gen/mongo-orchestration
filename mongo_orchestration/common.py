@@ -201,6 +201,7 @@ def ipv6_enabled_sharded(params):
 
 def enable_ipv6_single(proc_params):
     proc_params.setdefault('ipv6', True)
+    proc_params.setdefault('bind_ip', '127.0.0.1,::1')
 
 
 def enable_ipv6_repl(params):
