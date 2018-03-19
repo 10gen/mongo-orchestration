@@ -199,15 +199,15 @@ def ipv6_enabled_sharded(params):
             any(ipv6_enabled_repl_single(p) for p in shards))
 
 
-def enable_ipv6_single(params):
-    params.setdefault('ipv6', True)
+def enable_ipv6_single(proc_params):
+    proc_params.setdefault('ipv6', True)
 
 
 def enable_ipv6_repl(params):
     if 'members' in params:
         members = params['members']
         for m in members:
-            m.setdefault('procParams', {}).setdefault('ipv6', True)
+            enable_ipv6_single(m.setdefault('procParams', {}))
     else:
         # Standalone mongod or mongos
-        params.setdefault('ipv6', True)
+        enable_ipv6_single(params.setdefault('procParams', {}))
