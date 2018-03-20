@@ -25,7 +25,8 @@ from uuid import uuid4
 import pymongo
 
 from mongo_orchestration.common import (
-    BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
+    BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS,
+    ipv6_enabled_repl, enable_ipv6_single)
 from mongo_orchestration.singleton import Singleton
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ReplicaSetError
@@ -64,7 +65,10 @@ class ReplicaSet(BaseModel):
         if self.sslParams:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
-        members = rs_params.get('members', {})
+        members = rs_params.get('members', [])
+        # Enable ipv6 on all members if any have it enabled.
+        self.enable_ipv6 = ipv6_enabled_repl(rs_params)
+
         config = {"_id": self.repl_id, "members": [
             self.member_create(member, index)
             for index, member in enumerate(members)
@@ -299,6 +303,8 @@ class ReplicaSet(BaseModel):
         version = params.pop('version', self._version)
         proc_params = {'replSet': self.repl_id}
         proc_params.update(params.get('procParams', {}))
+        if self.enable_ipv6:
+            enable_ipv6_single(proc_params)
         # Make sure that auth isn't set the first time we start the servers.
         proc_params = self._strip_auth(proc_params)
 

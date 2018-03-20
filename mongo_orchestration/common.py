@@ -171,3 +171,44 @@ def orchestration_mkdtemp(prefix=None):
         kwargs['dir'] = TMP_DIR
 
     return tempfile.mkdtemp(**kwargs)
+
+
+def ipv6_enabled_single(params):
+    return params.get('ipv6')
+
+
+def ipv6_enabled_repl(params):
+    members = params.get('members', [])
+    return any(m.get('procParams', {}).get('ipv6') for m in members)
+
+
+def ipv6_enabled_repl_single(params):
+    if 'members' in params:
+        return ipv6_enabled_repl(params)
+    else:
+        # Standalone mongod or mongos
+        return ipv6_enabled_single(params)
+
+
+def ipv6_enabled_sharded(params):
+    configs = params.get('configsvrs', [])
+    routers = params.get('routers', [])
+    shards = params.get('shards', [])
+    return (any(ipv6_enabled_repl_single(p) for p in configs) or
+            any(ipv6_enabled_single(p) for p in routers) or
+            any(ipv6_enabled_repl_single(p) for p in shards))
+
+
+def enable_ipv6_single(proc_params):
+    proc_params.setdefault('ipv6', True)
+    proc_params.setdefault('bind_ip', '127.0.0.1,::1')
+
+
+def enable_ipv6_repl(params):
+    if 'members' in params:
+        members = params['members']
+        for m in members:
+            enable_ipv6_single(m.setdefault('procParams', {}))
+    else:
+        # Standalone mongod or mongos
+        enable_ipv6_single(params.setdefault('procParams', {}))
