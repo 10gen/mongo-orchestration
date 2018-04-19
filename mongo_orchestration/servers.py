@@ -26,6 +26,7 @@ import time
 from uuid import uuid4
 
 import pymongo
+from pymongo.errors import ConnectionFailure, PyMongoError
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
@@ -388,9 +389,25 @@ class Server(BaseModel):
 
         return True
 
+    def shutdown(self):
+        """Send shutdown command and wait for the process to exit."""
+        logger.info("Attempting to send shutdown command to %s", self.name)
+        client = self.connection
+        try:
+            client.admin.command("shutdown", force=True)
+        except ConnectionFailure as exc:
+            # shutdown succeeds by closing the connection.
+            pass
+        self.proc.wait()
+
     def stop(self):
         """stop server"""
-        return process.kill_mprocess(self.proc)
+        try:
+            self.shutdown()
+        except PyMongoError as exc:
+            logger.info("Killing %s with signal, shutdown command failed: %r",
+                        self.name, exc)
+            return process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
