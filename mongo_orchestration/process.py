@@ -163,10 +163,15 @@ def repair_mongo(name, dbpath):
     log_file = os.path.join(dbpath, 'mongod.log')
     cmd = [name, "--dbpath", dbpath, "--logPath", log_file, "--logappend",
            "--repair"]
-    proc = subprocess.Popen(cmd)
+    proc = subprocess.Popen(
+        cmd, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     timeout = 45
     t_start = time.time()
     while time.time() - t_start < timeout:
+        # proc.stdout.flush()
+        line = str(proc.stdout.readline())
+        logger.info("repair output: %s" % (line,))
         return_code = proc.poll()
         if return_code is not None:
             if return_code:
