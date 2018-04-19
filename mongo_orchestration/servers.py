@@ -326,10 +326,10 @@ class Server(BaseModel):
         if self.is_alive:
             return True
         try:
-            dbpath = self.cfg.get('dbpath', None)
+            dbpath = self.cfg.get('dbpath')
             if dbpath and self._is_locked:
                 # repair if needed
-                logger.info("Performing repair on locked dbpath={dbpath}".format(dbpath=dbpath))
+                logger.info("Performing repair on locked dbpath %s", dbpath)
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
             self.proc, self.hostname = process.mprocess(

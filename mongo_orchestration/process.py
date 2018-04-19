@@ -179,6 +179,7 @@ def repair_mongo(name, dbpath):
             # Success when poll() returns 0
             return
         time.sleep(1)
+    proc.terminate()
     raise Exception("mongod --repair failed to exit after %s seconds, "
                     "check log file: %s" % (timeout, log_file))
 
