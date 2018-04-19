@@ -48,7 +48,7 @@ class Server(BaseModel):
     enable_majority_read_concern = False
 
     # default params for all mongo instances
-    mongod_default = {"oplogSize": 100}
+    mongod_default = {"oplogSize": 100, "logappend": True}
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
@@ -325,8 +325,10 @@ class Server(BaseModel):
         if self.is_alive:
             return True
         try:
-            if self.cfg.get('dbpath', None) and self._is_locked:
+            dbpath = self.cfg.get('dbpath', None)
+            if dbpath and self._is_locked:
                 # repair if needed
+                logger.info("Performing repair on locked dbpath={dbpath}".format(dbpath=dbpath))
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
             self.proc, self.hostname = process.mprocess(
