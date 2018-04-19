@@ -160,18 +160,28 @@ def wait_for(port_num, timeout):
 
 def repair_mongo(name, dbpath):
     """repair mongodb after usafe shutdown"""
-    cmd = [name, "--dbpath", dbpath, "--repair"]
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
-    timeout = 30
+    log_file = os.path.join(dbpath, 'mongod.log')
+    cmd = [name, "--dbpath", dbpath, "--logpath", log_file, "--logappend",
+           "--repair"]
+    proc = subprocess.Popen(
+        cmd, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    timeout = 45
     t_start = time.time()
     while time.time() - t_start < timeout:
-        proc.stdout.flush()
         line = str(proc.stdout.readline())
-        if "dbexit: really exiting now" in line:
+        logger.info("repair output: %s" % (line,))
+        return_code = proc.poll()
+        if return_code is not None:
+            if return_code:
+                raise Exception("mongod --repair failed with exit code %s, "
+                                "check log file: %s" % (return_code, log_file))
+            # Success when poll() returns 0
             return
-    return
+        time.sleep(1)
+    proc.terminate()
+    raise Exception("mongod --repair failed to exit after %s seconds, "
+                    "check log file: %s" % (timeout, log_file))
 
 
 def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):

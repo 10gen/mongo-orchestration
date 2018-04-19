@@ -26,6 +26,7 @@ import time
 from uuid import uuid4
 
 import pymongo
+from pymongo.errors import ConnectionFailure, PyMongoError
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
@@ -48,7 +49,7 @@ class Server(BaseModel):
     enable_majority_read_concern = False
 
     # default params for all mongo instances
-    mongod_default = {"oplogSize": 100}
+    mongod_default = {"oplogSize": 100, "logappend": True}
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
@@ -325,8 +326,10 @@ class Server(BaseModel):
         if self.is_alive:
             return True
         try:
-            if self.cfg.get('dbpath', None) and self._is_locked:
+            dbpath = self.cfg.get('dbpath')
+            if dbpath and self._is_locked:
                 # repair if needed
+                logger.info("Performing repair on locked dbpath %s", dbpath)
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
             self.proc, self.hostname = process.mprocess(
@@ -386,9 +389,25 @@ class Server(BaseModel):
 
         return True
 
+    def shutdown(self):
+        """Send shutdown command and wait for the process to exit."""
+        logger.info("Attempting to send shutdown command to %s", self.name)
+        client = self.connection
+        try:
+            client.admin.command("shutdown", force=True)
+        except ConnectionFailure as exc:
+            # shutdown succeeds by closing the connection.
+            pass
+        self.proc.wait()
+
     def stop(self):
         """stop server"""
-        return process.kill_mprocess(self.proc)
+        try:
+            self.shutdown()
+        except PyMongoError as exc:
+            logger.info("Killing %s with signal, shutdown command failed: %r",
+                        self.name, exc)
+            return process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
