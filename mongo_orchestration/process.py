@@ -161,7 +161,7 @@ def wait_for(port_num, timeout):
 def repair_mongo(name, dbpath):
     """repair mongodb after usafe shutdown"""
     log_file = os.path.join(dbpath, 'mongod.log')
-    cmd = [name, "--dbpath", dbpath, "--logPath", log_file, "--logappend",
+    cmd = [name, "--dbpath", dbpath, "--logpath", log_file, "--logappend",
            "--repair"]
     proc = subprocess.Popen(
         cmd, universal_newlines=True,
