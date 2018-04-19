@@ -169,7 +169,6 @@ def repair_mongo(name, dbpath):
     timeout = 45
     t_start = time.time()
     while time.time() - t_start < timeout:
-        # proc.stdout.flush()
         line = str(proc.stdout.readline())
         logger.info("repair output: %s" % (line,))
         return_code = proc.poll()
