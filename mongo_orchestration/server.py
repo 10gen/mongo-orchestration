@@ -171,6 +171,7 @@ def main():
     if args.command == 'stop':
         daemon.stop()
     if args.command == 'start' and not args.no_fork:
+        get_app()
         print('Preparing to start mongo-orchestration daemon')
         pid = daemon.start()
         print('Daemon process started with pid: %d' % pid)
