@@ -402,9 +402,20 @@ class Server(BaseModel):
 
     def stop(self):
         """stop server"""
-        try:
-            self.shutdown()
-        except PyMongoError as exc:
+        import threading
+        shutdown_errors = []
+        def shutdown():
+            try:
+                self.shutdown()
+            except Exception as exc:
+                shutdown_errors.append(exc)
+
+        # Launch a new thread to avoid 4.0 taking forever to shutdown.
+        t = threading.Thread(target=shutdown)
+        t.start()
+        t.join(10)
+        if t.is_alive() or shutdown_errors:
+            exc = shutdown_errors[0] if shutdown_errors else "took too long"
             logger.info("Killing %s with signal, shutdown command failed: %r",
                         self.name, exc)
             return process.kill_mprocess(self.proc)
