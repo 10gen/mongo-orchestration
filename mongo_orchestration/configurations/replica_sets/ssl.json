@@ -8,9 +8,7 @@
                 "logpath": "$LOGPATH/db27017.log", 
                 "journal": true,
                 "noprealloc": true, 
-                "nssize": 1, 
-                "port": 27017, 
-                "smallfiles": true
+                "port": 27017
             }, 
             "rsParams": {
                 "priority": 99,
@@ -27,9 +25,7 @@
                 "logpath": "$LOGPATH/db27018.log", 
                 "journal": true,
                 "noprealloc": true, 
-                "nssize": 1, 
-                "port": 27018, 
-                "smallfiles": true
+                "port": 27018
             }, 
             "rsParams": {
                 "priority": 1.1,
@@ -46,9 +42,7 @@
                 "logpath": "$LOGPATH/27019.log", 
                 "journal": true,
                 "noprealloc": true, 
-                "nssize": 1, 
-                "port": 27019, 
-                "smallfiles": true
+                "port": 27019
             },
             "rsParams": {
                 "arbiterOnly": true
