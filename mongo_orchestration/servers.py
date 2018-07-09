@@ -389,25 +389,11 @@ class Server(BaseModel):
 
         return True
 
-    def shutdown(self):
-        """Send shutdown command and wait for the process to exit."""
-        logger.info("Attempting to send shutdown command to %s", self.name)
-        client = self.connection
-        try:
-            client.admin.command("shutdown", force=True)
-        except ConnectionFailure as exc:
-            # shutdown succeeds by closing the connection.
-            pass
-        self.proc.wait()
-
     def stop(self):
         """stop server"""
-        try:
-            self.shutdown()
-        except PyMongoError as exc:
-            logger.info("Killing %s with signal, shutdown command failed: %r",
-                        self.name, exc)
-            return process.kill_mprocess(self.proc)
+        logger.info("Sending kill signal to %s on port %s",
+                    self.name, self.port)
+        return process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
