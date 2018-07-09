@@ -143,7 +143,7 @@ class ProcessTestCase(unittest.TestCase):
         self.tmp_files = list()
         self.bin_path = os.path.join(os.environ.get('MONGOBIN', ''), 'mongod')
         self.db_path = tempfile.mkdtemp()
-        self.cfg = {"noprealloc": True, "oplogSize": 10, 'dbpath': self.db_path}
+        self.cfg = {"oplogSize": 10, 'dbpath': self.db_path}
 
     def tearDown(self):
         for s in self.sockets:
@@ -218,7 +218,6 @@ class ProcessTestCase(unittest.TestCase):
     def test_mprocess_timeout(self):
         port = self.pp.port()
         cfg = self.cfg.copy()
-        cfg.pop('noprealloc')
         cfg['journal'] = True
         config_path = process.write_config(cfg)
         self.tmp_files.append(config_path)
@@ -318,7 +317,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertFalse(process.proc_alive(None))
 
     def test_read_config(self):
-        cfg = {"noprealloc": True, "oplogSize": 10, "other": "some string"}
+        cfg = {"oplogSize": 10, "other": "some string"}
         config_path = process.write_config(cfg)
         self.tmp_files.append(config_path)
         self.assertEqual(process.read_config(config_path), cfg)

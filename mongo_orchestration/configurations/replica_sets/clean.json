@@ -7,7 +7,6 @@
                 "ipv6": true, 
                 "logpath": "$LOGPATH/db27017.log", 
                 "journal": true,
-                "noprealloc": true, 
                 "port": 27017
             }, 
             "rsParams": {
@@ -24,7 +23,6 @@
                 "ipv6": true, 
                 "logpath": "$LOGPATH/db27018.log", 
                 "journal": true,
-                "noprealloc": true, 
                 "port": 27018
             }, 
             "rsParams": {
@@ -41,7 +39,6 @@
                 "ipv6": true, 
                 "logpath": "$LOGPATH/27019.log", 
                 "journal": true,
-                "noprealloc": true, 
                 "port": 27019
             },
             "rsParams": {

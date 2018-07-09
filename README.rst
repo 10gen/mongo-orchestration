@@ -171,7 +171,6 @@ piping the response into ``python -m json.tool``, e.g.:
                 "ipv6": true,
                 "journal": true,
                 "logappend": true,
-                "noprealloc": true,
                 "oplogSize": 100,
                 "port": 1025
             },

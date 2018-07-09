@@ -3,8 +3,7 @@
         {
             "procParams": {
                 "ipv6": true,
-                "journal": true,
-                "noprealloc": true
+                "journal": true
             }, 
             "rsParams": {
                 "priority": 99,
@@ -17,8 +16,7 @@
         {
             "procParams": {
                 "ipv6": true,
-                "journal": true,
-                "noprealloc": true
+                "journal": true
             },
             "rsParams": {
                 "priority": 1.1,
@@ -31,8 +29,7 @@
         {
             "procParams": {
                 "ipv6": true,
-                "journal": true,
-                "noprealloc": true
+                "journal": true
             },
             "rsParams": {
                 "arbiterOnly": true
