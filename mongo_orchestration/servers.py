@@ -389,36 +389,11 @@ class Server(BaseModel):
 
         return True
 
-    def shutdown(self):
-        """Send shutdown command and wait for the process to exit."""
-        logger.info("Attempting to send shutdown command to %s", self.name)
-        client = self.connection
-        try:
-            client.admin.command("shutdown", force=True)
-        except ConnectionFailure as exc:
-            # shutdown succeeds by closing the connection.
-            pass
-        self.proc.wait()
-
     def stop(self):
         """stop server"""
-        import threading
-        shutdown_errors = []
-        def shutdown():
-            try:
-                self.shutdown()
-            except Exception as exc:
-                shutdown_errors.append(exc)
-
-        # Launch a new thread to avoid 4.0 taking forever to shutdown.
-        t = threading.Thread(target=shutdown)
-        t.start()
-        t.join(10)
-        if t.is_alive() or shutdown_errors:
-            exc = shutdown_errors[0] if shutdown_errors else "took too long"
-            logger.info("Killing %s with signal, shutdown command failed: %r",
-                        self.name, exc)
-            return process.kill_mprocess(self.proc)
+        logger.info("Sending kill signal to %s on port %s",
+                    self.name, self.port)
+        return process.kill_mprocess(self.proc)
 
     def restart(self, timeout=300, config_callback=None):
         """restart server: stop() and start()
