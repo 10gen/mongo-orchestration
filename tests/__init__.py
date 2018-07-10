@@ -32,9 +32,8 @@ TEST_RELEASES = (
 # Set up the default mongo binaries to use from MONGOBIN.
 set_releases(*TEST_RELEASES)
 
-# Turn off journal and preallocation for tests.
+# Turn off journal for tests.
 Server.mongod_default['nojournal'] = True
-Server.mongod_default['noprealloc'] = True
 
 SSL_ENABLED = False
 SERVER_VERSION = (2, 6)
