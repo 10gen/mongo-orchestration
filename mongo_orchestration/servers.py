@@ -391,20 +391,38 @@ class Server(BaseModel):
 
     def shutdown(self):
         """Send shutdown command and wait for the process to exit."""
-        logger.info("Attempting to send shutdown command to %s", self.name)
+        # Return early if this server has already exited.
+        if not process.proc_alive(self.proc):
+            return
+        logger.info("Attempting to connect to %s", self.hostname)
         client = self.connection
-        try:
-            client.admin.command("shutdown", force=True)
-        except ConnectionFailure as exc:
-            # shutdown succeeds by closing the connection.
-            pass
-        self.proc.wait()
+        # Attempt the shutdown command twice, the first attempt might fail due
+        # to an election.
+        attempts = 2
+        for i in range(attempts):
+            logger.info("Attempting to send shutdown command to %s",
+                        self.hostname)
+            try:
+                client.admin.command("shutdown", force=True)
+            except ConnectionFailure:
+                # A shutdown succeeds by closing the connection but a
+                # connection error does not necessarily mean that the shutdown
+                # has succeeded.
+                pass
+            # Wait for the server to exit otherwise rerun the shutdown command.
+            try:
+                return process.wait_mprocess(self.proc, 5)
+            except TimeoutError as exc:
+                logger.info("Timed out waiting on process: %s", exc)
+                continue
+        raise ServersError("Server %s failed to shutdown after %s attempts" %
+                           (self.hostname, attempts))
 
     def stop(self):
         """stop server"""
         try:
             self.shutdown()
-        except PyMongoError as exc:
+        except (PyMongoError, ServersError) as exc:
             logger.info("Killing %s with signal, shutdown command failed: %r",
                         self.name, exc)
             return process.kill_mprocess(self.proc)
