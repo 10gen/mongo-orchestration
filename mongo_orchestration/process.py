@@ -34,7 +34,7 @@ except ImportError:
 from bottle import request
 
 from mongo_orchestration.common import DEFAULT_BIND
-from mongo_orchestration.compat import reraise
+from mongo_orchestration.compat import reraise, PY3
 from mongo_orchestration.errors import TimeoutError, RequestError
 from mongo_orchestration.singleton import Singleton
 
@@ -235,6 +235,29 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
                    "{timeout} seconds".format(timeout=timeout))
         raise TimeoutError(message, errno.ETIMEDOUT)
     return (proc, host)
+
+
+def wait_mprocess(process, timeout):
+    """Compatibility function for waiting on a process with a timeout.
+
+    Raises TimeoutError when the timeout is reached.
+    """
+    if PY3:
+        try:
+            return process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            raise TimeoutError(str(exc))
+
+    # On Python 2, simulate the timeout parameter and raise TimeoutError.
+    start = time.time()
+    while True:
+        exit_code = process.poll()
+        if exit_code is not None:
+            return exit_code
+        if time.time() - start > timeout:
+            raise TimeoutError("Process %s timed out after %s seconds" %
+                               (process.pid, timeout))
+        time.sleep(0.05)
 
 
 def kill_mprocess(process):
