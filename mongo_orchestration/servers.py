@@ -49,7 +49,7 @@ class Server(BaseModel):
     enable_majority_read_concern = False
 
     # default params for all mongo instances
-    mongod_default = {"oplogSize": 100, "logappend": True}
+    mongod_default = {"oplogSize": 100, "logappend": True, "verbose": "v"}
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
