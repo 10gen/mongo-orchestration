@@ -1,0 +1,40 @@
+{
+  "name": "@mongodb/orchestration",
+  "version": "0.0.0",
+  "description": "A javascript wrapper around mongo-orchestration",
+  "author": "Dan Aprahamian <daniel.aprahamian@mongodb.com> (https://github.com/daprahamian)",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "mongo",
+    "mongodb",
+    "orchestration",
+    "mongo-orchestration"
+  ],
+  "homepage": "https://github.com/10gen/mongo-orchestration",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/10gen/mongo-orchestration.git"
+  },
+  "main": "js-lib/index.js",
+  "scripts": {
+    "lint": "eslint js",
+    "format": "prettier --print-width 100 --tab-width 2 --single-quote --write 'js/**/*.js'",
+    "test": "npm run lint && mocha js/test/**/*.js"
+  },
+  "dependencies": {
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^5.6.1",
+    "eslint-plugin-prettier": "^3.0.0",
+    "mocha": "^5.2.0",
+    "prettier": "^1.14.3",
+    "sinon": "^6.3.4",
+    "sinon-chai": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=4.2"
+  }
+}

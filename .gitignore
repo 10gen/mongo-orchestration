@@ -53,3 +53,8 @@ work
 build
 dist
 mongo_orchestration.egg-info
+
+# Node stuff #
+##############
+yarn.lock
+node_modules/
