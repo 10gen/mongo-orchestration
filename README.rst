@@ -43,7 +43,7 @@ manually:
 
     git clone https://github.com/10gen/mongo-orchestration.git
     cd mongo-orchestration
-    python setup.py install
+    pip install .
 
 Cloning the `repository <https://github.com/10gen/mongo-orchestration>`__ this way will also give you access to the tests for Mongo Orchestration as well as the ``mo`` script. Note that you may
 have to run the above commands with ``sudo``, depending on where you're
