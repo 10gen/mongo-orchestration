@@ -16,6 +16,7 @@ except ImportError:
     # Python 2.7+.
     import json
 
+import portend
 from bson import SON
 
 from mongo_orchestration import __version__
@@ -26,8 +27,8 @@ from mongo_orchestration.common import (
 from mongo_orchestration.daemon import Daemon
 from mongo_orchestration.servers import Server
 
-# How many times to attempt connecting to mongo-orchestration server.
-CONNECT_ATTEMPTS = 5
+# Timout in seconds attempting to connect to mongo-orchestration server.
+CONNECT_TIMEOUT = 5
 
 
 def read_env():
@@ -138,21 +139,6 @@ class MyDaemon(Daemon):
         self.args = args
 
 
-def await_connection(host, port):
-    """Wait for the mongo-orchestration server to accept connections."""
-    for i in range(CONNECT_ATTEMPTS):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.connect((host, port))
-                return True
-            except (IOError, socket.error):
-                time.sleep(1)
-        finally:
-            s.close()
-    return False
-
-
 def main():
     args = read_env()
     Server.enable_majority_read_concern = args.enable_majority_read_concern
@@ -174,11 +160,13 @@ def main():
         print('Preparing to start mongo-orchestration daemon')
         pid = daemon.start()
         print('Daemon process started with pid: %d' % pid)
-        if not await_connection(host=args.bind, port=args.port):
+        try:
+            portend.occupied(args.bind, args.port, timeout=CONNECT_TIMEOUT)
+        except portend.Timeout:
             print(
                 'Could not connect to daemon running on %s:%d (pid: %d) '
-                'within %d attempts.'
-                % (args.bind, args.port, pid, CONNECT_ATTEMPTS))
+                'within %ds.'
+                % (args.bind, args.port, pid, CONNECT_TIMEOUT))
             daemon.stop()
     if args.command == 'start' and args.no_fork:
         log.debug('Starting mongo-orchestration in the foreground')
