@@ -142,14 +142,11 @@ def await_connection(host, port):
     """Wait for the mongo-orchestration server to accept connections."""
     for i in range(CONNECT_ATTEMPTS):
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.connect((host, port))
-                return True
-            except (IOError, socket.error):
-                time.sleep(1)
-        finally:
-            s.close()
+            conn = socket.create_connection((host, port))
+            conn.close()
+            return True
+        except (IOError, socket.error):
+            time.sleep(1)
     return False
 
 
