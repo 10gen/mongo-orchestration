@@ -28,6 +28,9 @@ from mongo_orchestration.servers import Server
 
 # How many times to attempt connecting to mongo-orchestration server.
 CONNECT_ATTEMPTS = 5
+# How many seconds to wait before timing out a connection attempt to the
+# mongo-orchestration server.
+CONNECT_TIMEOUT = 5
 
 
 def read_env():
@@ -142,7 +145,7 @@ def await_connection(host, port):
     """Wait for the mongo-orchestration server to accept connections."""
     for i in range(CONNECT_ATTEMPTS):
         try:
-            conn = socket.create_connection((host, port))
+            conn = socket.create_connection((host, port), CONNECT_TIMEOUT)
             conn.close()
             return True
         except (IOError, socket.error):
