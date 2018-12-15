@@ -97,6 +97,12 @@ Stop the server.
 Starts Mongo Orchestration on port 8888 using ``30-release`` defined in
 ``mongo-orchestration.config``. Stops with *Ctrl+C*.
 
+If you have installed mongo-orchestration but you're still getting
+``command not found: mongo-orchestration`` this means that the script was
+installed to a directory that is not on your ``PATH``. As an alternative use:
+
+``python -m mongo_orchestration.server start``
+
 Configuration File
 ~~~~~~~~~~~~~~~~~~
 
