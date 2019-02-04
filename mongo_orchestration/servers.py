@@ -81,8 +81,11 @@ class Server(BaseModel):
         """Conditionally enable compression in the Server's config file."""
         compressors = config.get('networkMessageCompressors')
         if compressors is None:
-            # SERVER-27310 added zlib support in 3.5.9.
-            if self.version >= (3, 5, 9):
+            if self.version >= (4, 1, 7):
+                # SERVER-38168 added zstd support in 4.1.7.
+                config['networkMessageCompressors'] = 'zstd,zlib,snappy,noop'
+            elif self.version >= (3, 5, 9):
+                # SERVER-27310 added zlib support in 3.5.9.
                 config['networkMessageCompressors'] = 'zlib,snappy,noop'
             elif self.version >= (3, 4):
                 config['networkMessageCompressors'] = 'snappy,noop'
