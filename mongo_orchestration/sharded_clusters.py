@@ -91,11 +91,11 @@ class ShardedCluster(BaseModel):
             if shard_tags:
                 self.tags[info['id']] = shard_tags
 
-        # SERVER-37631 changed sharded cluster setup so that it's required to
-        # run refreshLogicalSessionCacheNow on the config server followed by
+        # SERVER-37631 changed 3.6 sharded cluster setup so that it's required
+        # to run refreshLogicalSessionCacheNow on the config server followed by
         # each mongos. Only then will each 3.6 mongos correctly report
         # logicalSessionTimeoutMinutes in its isMaster responses.
-        if mongos_version >= (3, 6, 9):
+        if mongos_version[:2] == (3, 6):
             router_clients = self.router_connections()
             is_master = router_clients[0].admin.command('isMaster')
             if 'logicalSessionTimeoutMinutes' not in is_master:
