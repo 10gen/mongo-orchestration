@@ -91,6 +91,19 @@ class ShardedCluster(BaseModel):
             if shard_tags:
                 self.tags[info['id']] = shard_tags
 
+        # SERVER-37631 changed sharded cluster setup so that it's required to
+        # run refreshLogicalSessionCacheNow on the config server followed by
+        # each mongos. Only then will each 3.6 mongos correctly report
+        # logicalSessionTimeoutMinutes in its isMaster responses.
+        if mongos_version >= (3, 6, 9):
+            router_clients = self.router_connections()
+            is_master = router_clients[0].admin.command('isMaster')
+            if 'logicalSessionTimeoutMinutes' not in is_master:
+                self.config_connection().admin.command(
+                    'refreshLogicalSessionCacheNow')
+                for client in router_clients:
+                    client.admin.command('refreshLogicalSessionCacheNow')
+
         if self.tags:
             for sh_id in self.tags:
                 logger.debug('Add tags %r to %s' % (self.tags[sh_id], sh_id))
@@ -284,9 +297,9 @@ class ShardedCluster(BaseModel):
             version=version, server_id=server_id))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
-    def connection(self):
+    def create_connection(self, host):
         c = MongoClient(
-            self.router['hostname'], w='majority', fsync=True,
+            host, w='majority', fsync=True,
             socketTimeoutMS=self.socket_timeout, **self.kwargs)
         if self.login and not self.restart_required:
             try:
@@ -294,9 +307,25 @@ class ShardedCluster(BaseModel):
             except:
                 logger.exception(
                     "Could not authenticate to %s as %s/%s"
-                    % (self.router['hostname'], self.login, self.password))
+                    % (host, self.login, self.password))
                 raise
         return c
+
+    def connection(self):
+        return self.create_connection(self.router['hostname'])
+
+    def config_connection(self):
+        """Return a MongoClient connected to the replica set config db."""
+        return self.create_connection(self.configsvrs[0]['mongodb_uri'])
+
+    def router_connections(self):
+        """Return a list of MongoClients, one for each mongos."""
+        clients = []
+        for server in self._routers:
+            if Servers().is_alive(server):
+                client = self.create_connection(Servers().hostname(server))
+                clients.append(client)
+        return clients
 
     def router_command(self, command, arg=None, is_eval=False):
         """run command on the router server
