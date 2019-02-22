@@ -70,15 +70,16 @@ class Server(BaseModel):
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-    def __init_test_commands(self, config):
-        """Conditionally enable test commands in the Server's config file."""
+    def __init_config_params(self, config):
+        """Conditionally enable options in the Server's config file."""
         if self.version >= (2, 4):
             params = config.get('setParameter', {})
             params['enableTestCommands'] = 1
+            # Reduce transactionLifetimeLimitSeconds for faster driver testing.
+            if self.version >= (4, 1) and not self.is_mongos:
+                params.setdefault('transactionLifetimeLimitSeconds', 3)
             config['setParameter'] = params
 
-    def __init_compressors(self, config):
-        """Conditionally enable compression in the Server's config file."""
         compressors = config.get('networkMessageCompressors')
         if compressors is None:
             if self.version >= (4, 1, 7):
@@ -111,8 +112,7 @@ class Server(BaseModel):
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
-        self.__init_test_commands(cfg)
-        self.__init_compressors(cfg)
+        self.__init_config_params(cfg)
 
         # Read concern majority requires MongoDB >= 3.2, WiredTiger storage
         # engine, and protocol version 1:
@@ -146,8 +146,7 @@ class Server(BaseModel):
         if 'port' not in cfg:
             cfg['port'] = process.PortPool().port(check=True)
 
-        self.__init_test_commands(cfg)
-        self.__init_compressors(cfg)
+        self.__init_config_params(cfg)
 
         return process.write_config(cfg), cfg
 
