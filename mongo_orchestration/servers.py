@@ -74,7 +74,8 @@ class Server(BaseModel):
         """Conditionally enable options in the Server's config file."""
         if self.version >= (2, 4):
             params = config.get('setParameter', {})
-            params['enableTestCommands'] = 1
+            # Set enableTestCommands by default but allow enableTestCommands: 0.
+            params.setdefault('enableTestCommands', 1)
             # Reduce transactionLifetimeLimitSeconds for faster driver testing.
             if self.version >= (4, 1) and not self.is_mongos:
                 params.setdefault('transactionLifetimeLimitSeconds', 3)
