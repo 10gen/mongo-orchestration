@@ -19,8 +19,11 @@ import logging
 import os
 import subprocess
 import sys
+import time
 
 from signal import SIGTERM
+
+import psutil
 
 DEVNULL = open(os.devnull, 'r+b')
 
@@ -169,9 +172,12 @@ class Daemon(object):
             if os.path.exists(self.pidfile):
                 os.remove(self.pidfile)
         else:
+            process = psutil.Process(pid)
             # Try killing the daemon process
             try:
-                os.kill(pid, SIGTERM)
+                process.send_signal(SIGTERM)
+                while process.is_running():
+                    time.sleep(0.25)
             except OSError as err:
                 err = str(err)
                 if err.find("No such process") > 0:
