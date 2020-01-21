@@ -91,8 +91,7 @@ setup(
     url='https://github.com/10gen/mongo-orchestration',
     install_requires=['pymongo>=3.0.2,<3.6.0',
                       'bottle>=0.12.7',
-                      'CherryPy>=3.5.0,<9.0.0',
-                      'psutil>=5.6.7'] + extra_deps,
+                      'CherryPy>=3.5.0,<9.0.0'] + extra_deps,
     extras_require={
         ':python_version=="2.6"': py26_requires
     },
