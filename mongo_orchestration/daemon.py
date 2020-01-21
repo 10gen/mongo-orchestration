@@ -17,13 +17,12 @@
 import atexit
 import logging
 import os
+import psutil
 import subprocess
 import sys
 import time
 
 from signal import SIGTERM
-
-import psutil
 
 DEVNULL = open(os.devnull, 'r+b')
 
