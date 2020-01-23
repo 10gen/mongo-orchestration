@@ -269,12 +269,14 @@ class ProcessTestCase(unittest.TestCase):
             except OSError:
                 # fd_cfg may be closed already if fdopen() didn't raise
                 pass
-        cfg = {'keyFile': key_file, 'logPath': log_path, 'dbpath': db_path}
+        cfg = {'keyFile': key_file, 'logpath': log_path, 'dbpath': db_path}
         process.cleanup_mprocess(config_path, cfg)
         self.assertFalse(os.path.exists(config_path))
         self.assertFalse(os.path.exists(key_file))
-        self.assertFalse(os.path.exists(log_path))
+        self.assertTrue(os.path.exists(log_path))
         self.assertFalse(os.path.exists(db_path))
+        process.remove_path(log_path)
+        self.assertFalse(os.path.exists(log_path))
 
     def test_remove_path(self):
         fd, file_path = tempfile.mkstemp()
