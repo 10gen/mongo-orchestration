@@ -15,10 +15,12 @@
 # limitations under the License.
 
 import atexit
+import errno
 import logging
 import os
 import subprocess
 import sys
+import time
 
 from signal import SIGTERM
 
@@ -172,9 +174,10 @@ class Daemon(object):
             # Try killing the daemon process
             try:
                 os.kill(pid, SIGTERM)
+                while is_unix_process_running(pid):
+                    time.sleep(0.25)
             except OSError as err:
-                err = str(err)
-                if err.find("No such process") > 0:
+                if err.errno == errno.ESRCH:
                     if os.path.exists(self.pidfile):
                         os.remove(self.pidfile)
                 else:
@@ -192,3 +195,18 @@ class Daemon(object):
         You should override this method when you subclass Daemon. It will be called after the process has been
         daemonized by start() or restart().
         """
+
+def is_unix_process_running(pid):
+    """
+    Helper function used to determine if a given pid corresponds to a running process.
+    This does NOT work on Windows
+    """
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            return False
+        else:
+            raise err
+    return True
+

@@ -277,7 +277,7 @@ def cleanup_mprocess(config_path, cfg):
        config_path - process's options file
        cfg - process's config
     """
-    for key in ('keyFile', 'logPath', 'dbpath'):
+    for key in ('keyFile', 'dbpath'):
         remove_path(cfg.get(key, None))
     isinstance(config_path, str) and os.path.exists(config_path) and remove_path(config_path)
 
