@@ -156,6 +156,8 @@ def await_connection(host, port):
 def main():
     args = read_env()
     Server.enable_majority_read_concern = args.enable_majority_read_concern
+    # Silence STDOUT from mongo processes if MO is running as a deamon.
+    Server.silence_stdout = not args.no_fork
     # Log both to STDOUT and the log file.
     logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,
                         format=LOGGING_FORMAT)

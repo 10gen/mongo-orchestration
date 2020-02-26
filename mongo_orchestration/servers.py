@@ -43,6 +43,8 @@ logger = logging.getLogger(__name__)
 class Server(BaseModel):
     """Class Server represents behaviour of  mongo instances """
 
+    # redirect stdout to /dev/null?
+    silence_stdout = True
     # Try to enable majority read concern?
     enable_majority_read_concern = False
 
@@ -57,7 +59,7 @@ class Server(BaseModel):
 
     def __init_db(self, dbpath):
         if not dbpath:
-            dbpath = orchestration_mkdtemp(prefix="mongod-")
+            dbpath = orchestration_mkdtemp(prefix="mongo-")
         if not os.path.exists(dbpath):
             os.makedirs(dbpath)
         return dbpath
@@ -67,7 +69,6 @@ class Server(BaseModel):
         log_dir = os.path.dirname(log_path)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        self._log_path = log_path
 
     def __init_config_params(self, config):
         """Conditionally enable options in the Server's config file."""
@@ -140,7 +141,7 @@ class Server(BaseModel):
 
         log_path = cfg.setdefault(
             'logpath',
-            os.path.join(orchestration_mkdtemp(prefix='mongos-'), 'mongos.log'))
+            os.path.join(orchestration_mkdtemp(prefix='mongo-'), 'mongos.log'))
         self.__init_logpath(log_path)
 
         # use keyFile
@@ -178,7 +179,6 @@ class Server(BaseModel):
         self.ssl_params = sslParams
         self.restart_required = self.login or self.auth_key
         self.__version = None
-        self._log_path = None
 
         if self.ssl_params:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
@@ -340,8 +340,8 @@ class Server(BaseModel):
                 process.repair_mongo(self.name, self.cfg['dbpath'])
 
             self.proc, self.hostname = process.mprocess(
-                self.name, self.config_path, self._log_path,
-                self.cfg.get('port', None), timeout)
+                self.name, self.config_path, self.cfg.get('port', None),
+                timeout, self.silence_stdout)
             self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]
