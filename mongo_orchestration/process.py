@@ -135,9 +135,30 @@ class PortPool(Singleton):
         self.__init_range(min_port, max_port, port_sequence)
 
 
-def wait_for(port_num, timeout):
+def connect_port(port):
     """waits while process starts.
     Args:
+        proc        - Popen object
+        port_num    - port number
+        timeout     - specify how long, in seconds, a command can take before times out.
+    return True if process started, return False if not
+    """
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((_host(), port))
+        s.close()
+        return True
+    except (IOError, socket.error):
+        if s:
+            s.close()
+        return False
+
+
+def wait_for(proc, port_num, timeout):
+    """waits while process starts.
+    Args:
+        proc        - Popen object
         port_num    - port number
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
@@ -146,15 +167,11 @@ def wait_for(port_num, timeout):
     t_start = time.time()
     sleeps = 0.1
     while time.time() - t_start < timeout:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.connect((_host(), port_num))
-                return True
-            except (IOError, socket.error):
-                time.sleep(sleeps)
-        finally:
-            s.close()
+        if proc.poll() is not None:
+            logger.debug("process is not alive")
+            raise OSError("Process started, but died immediately")
+        if connect_port(port_num):
+            return True
     return False
 
 
@@ -184,15 +201,15 @@ def repair_mongo(name, dbpath):
                     "check log file: %s" % (timeout, log_file))
 
 
-def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
+def mprocess(name, config_path, log_path, port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
         name - process name or path
         config_path - path to file where should be stored configuration
+        log_path - Path to the mongo log file.
         port - process's port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
-        silence_stdout - if True (default), redirect stdout to /dev/null
     return tuple (Popen object, host) if process started, return (None, None) if not
     """
 
@@ -211,10 +228,11 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
     host = "{host}:{port}".format(host=_host(), port=port)
     try:
         logger.debug("execute process: %s", ' '.join(cmd))
-        proc = subprocess.Popen(
-            cmd,
-            stdout=DEVNULL if silence_stdout else None,
-            stderr=subprocess.STDOUT)
+        with open(log_path, 'w') as outfile:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=outfile,
+                stderr=subprocess.STDOUT)
 
         if proc.poll() is not None:
             logger.debug("process is not alive")
@@ -223,17 +241,21 @@ def mprocess(name, config_path, port=None, timeout=180, silence_stdout=True):
         message = "exception while executing process: {err}".format(err=err)
         logger.debug(message)
         raise OSError(message)
-    if timeout > 0 and wait_for(port, timeout):
-        logger.debug("process '{name}' has started: pid={proc.pid}, host={host}".format(**locals()))
-        return (proc, host)
-    elif timeout > 0:
-        logger.debug("hasn't connected to pid={proc.pid} with host={host} during timeout {timeout} ".format(**locals()))
-        logger.debug("terminate process with pid={proc.pid}".format(**locals()))
-        kill_mprocess(proc)
-        proc_alive(proc) and time.sleep(3)  # wait while process stoped
-        message = ("Could not connect to process during "
-                   "{timeout} seconds".format(timeout=timeout))
-        raise TimeoutError(message, errno.ETIMEDOUT)
+    if timeout > 0:
+        if wait_for(proc, port, timeout):
+            logger.debug("process '{name}' has started: pid={proc.pid},"
+                         " host={host}".format(**locals()))
+            return (proc, host)
+        else:
+            logger.debug("hasn't connected to pid={proc.pid} with host={host}"
+                         " during timeout {timeout} ".format(**locals()))
+            logger.debug("terminate process with"
+                         " pid={proc.pid}".format(**locals()))
+            kill_mprocess(proc)
+            proc_alive(proc) and time.sleep(3)  # wait while process stoped
+            message = ("Could not connect to process during "
+                       "{timeout} seconds".format(timeout=timeout))
+            raise TimeoutError(message, errno.ETIMEDOUT)
     return (proc, host)
 
 
