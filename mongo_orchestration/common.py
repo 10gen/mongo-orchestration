@@ -107,28 +107,23 @@ class BaseModel(object):
 
     def _add_users(self, db, mongo_version):
         """Add given user, and extra x509 user if necessary."""
+        roles = self._user_roles(db.client)
         if self.x509_extra_user:
-            # Build dict of kwargs to pass to add_user.
-            auth_dict = {
-                'name': DEFAULT_SUBJECT,
-                'roles': self._user_roles(db.client)
-            }
-            db.add_user(**auth_dict)
+            db.add_user(DEFAULT_SUBJECT, roles=roles)
             # Fix kwargs to MongoClient.
             self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
 
         # Add secondary user given from request.
+        create_user(db, mongo_version, self.login, self.password, roles)
 
-        secondary_login = {
-            'name': self.login,
-            'roles': self._user_roles(db.client)
-        }
-        if self.password:
-            secondary_login['password'] = self.password
-        if mongo_version >= (3, 7, 2):
-            # Use SCRAM_SHA-1 so that pymongo < 3.7 can authenticate.
-            secondary_login['mechanisms'] = ['SCRAM-SHA-1']
-        db.add_user(**secondary_login)
+
+def create_user(db, mongo_version, user, password, roles):
+    if mongo_version >= (3, 7, 2):
+        # Use SCRAM_SHA-1 so that pymongo < 3.7 can authenticate.
+        db.command('createUser', user, pwd=password, roles=roles,
+                   mechanisms=['SCRAM-SHA-1', 'SCRAM-SHA-256'])
+    else:
+        db.add_user(user, password=password, roles=roles)
 
 
 def connected(client):

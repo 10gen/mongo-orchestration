@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from mongo_orchestration import common
 from mongo_orchestration.common import (
-    BaseModel, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
+    BaseModel, create_user, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers, Server
@@ -144,17 +144,8 @@ class ShardedCluster(BaseModel):
                     self.auth_source, write_concern=write_concern.WriteConcern(
                         fsync=True)), mongos_version)
 
-            # Secondary user given from request.
-            secondary_login = {
-                'name': self.login,
-                'roles': self._user_roles(self.connection())
-            }
-            if self.password:
-                secondary_login['password'] = self.password
-
-            if mongos_version >= (3, 7, 2):
-                secondary_login['mechanisms'] = ['SCRAM-SHA-1']
-            # Do the same for the shards.
+            # Create the user on all the shards.
+            roles = self._user_roles(self.connection())
             for shard_id, config in zip(self._shards, shard_configs):
                 shard = self._shards[shard_id]
                 instance_id = shard['_id']
@@ -164,9 +155,10 @@ class ShardedCluster(BaseModel):
                     client = ReplicaSets()._storage[instance_id].connection()
                 db = client[self.auth_source]
                 if self.x509_extra_user:
-                    db.add_user(DEFAULT_SUBJECT, roles=self._user_roles(client))
-                if self.login:
-                    db.add_user(**secondary_login)
+                    db.add_user(DEFAULT_SUBJECT, roles=roles)
+
+                create_user(db, mongos_version, self.login, self.password,
+                            roles)
 
         if self.restart_required:
             # Do we need to add clusterAuthMode back?
