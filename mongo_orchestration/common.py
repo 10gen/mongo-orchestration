@@ -119,9 +119,10 @@ class BaseModel(object):
 
 def create_user(db, mongo_version, user, password, roles):
     if mongo_version >= (3, 7, 2):
-        # Use SCRAM_SHA-1 so that pymongo < 3.7 can authenticate.
-        db.command('createUser', user, pwd=password, roles=roles,
-                   mechanisms=['SCRAM-SHA-1', 'SCRAM-SHA-256'])
+        # Call createUser directly so that the server creates the user with
+        # both SCRAM-SHA-1 and SCRAM-SHA-256 credentials. This ensures that
+        # pymongo < 3.7 (which only supports SCRAM-SHA-1) can authenticate.
+        db.command('createUser', user, pwd=password, roles=roles)
     else:
         db.add_user(user, password=password, roles=roles)
 
