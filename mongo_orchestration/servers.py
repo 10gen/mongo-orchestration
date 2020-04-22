@@ -81,6 +81,11 @@ class Server(BaseModel):
             # fail with LockTimeout: "Unable to acquire lock {...} within 5ms".
             if self.version >= (4, 0) and not self.is_mongos:
                 params.setdefault('maxTransactionLockRequestTimeoutMillis', 25)
+            # Reduce periodicNoopIntervalSecs for faster driver change stream testing.
+            if self.version >= (3, 6) and not self.is_mongos:
+                # SERVER-31132 added periodicNoopIntervalSecs in 3.6.0.
+                params.setdefault('periodicNoopIntervalSecs', 1)
+                params.setdefault('writePeriodicNoops', 1)
             config['setParameter'] = params
 
         compressors = config.get('networkMessageCompressors')
