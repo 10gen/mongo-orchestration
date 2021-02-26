@@ -373,7 +373,7 @@ class ReplicaSet(BaseModel):
                     return result
             repl = self.run_command('serverStatus', arg=None, is_eval=False, member_id=member_id)['repl']
             logger.debug("member {member_id} repl info: {repl}".format(**locals()))
-            for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'votes', 'secondary'):
+            for key in ('votes', 'tags', 'arbiterOnly', 'buildIndexes', 'hidden', 'priority', 'slaveDelay', 'secondaryDelaySecs', 'secondary'):
                 if key in repl:
                     result['rsInfo'][key] = repl[key]
             result['rsInfo']['primary'] = repl.get('ismaster', False)
@@ -596,6 +596,10 @@ class ReplicaSet(BaseModel):
             member_hostname = self._servers.hostname(info['server_id'])
             real_member_info["host"] = member_hostname.lower()
             real_member_info.update(info['rsInfo'])
+            # Rename slaveDelay->secondaryDelaySecs to match SERVER-52349.
+            if 'secondaryDelaySecs' in cfg_member_info:
+                cfg_member_info.pop('slaveDelay', None)
+                real_member_info['secondaryDelaySecs'] = real_member_info.pop('slaveDelay', None)
             logger.debug("real_member_info({member_id}): {info}".format(member_id=member['_id'], info=info))
             for key in cfg_member_info:
                 if cfg_member_info[key] != real_member_info.get(key, None):
