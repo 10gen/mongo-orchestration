@@ -596,7 +596,7 @@ class ReplicaSet(BaseModel):
             member_hostname = self._servers.hostname(info['server_id'])
             real_member_info["host"] = member_hostname.lower()
             real_member_info.update(info['rsInfo'])
-            # Fixup slaveDelay->secondaryDelaySecs upgrade
+            # Rename slaveDelay->secondaryDelaySecs to match SERVER-52349.
             if 'secondaryDelaySecs' in cfg_member_info:
                 cfg_member_info.pop('slaveDelay', None)
                 real_member_info['secondaryDelaySecs'] = real_member_info.pop('slaveDelay', None)
