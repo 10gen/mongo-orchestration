@@ -80,20 +80,32 @@ class BaseModel(object):
         params.pop("clusterAuthMode", None)
         return params
 
-    def mongodb_auth_uri(self, hosts):
-        """Get a connection string with all info necessary to authenticate."""
-        parts = ['mongodb://']
-        if self.login:
-            parts.append(self.login)
-            if self.password:
-                parts.append(':' + self.password)
-            parts.append('@')
-        parts.append(hosts + '/')
-        if self.login:
-            parts.append('?authSource=' + self.auth_source)
-            if self.x509_extra_user:
-                parts.append('&authMechanism=MONGODB-X509')
+    def mongodb_uri(self, hosts, uri_opts):
+        """Get a connection string"""
+        parts = ['mongodb://', hosts, '/']
+
+        """Append URI options for auth, TLS, etc."""
+        """@todo Auth options"""
+        """@todo TLS options"""
+
+        if len(uri_opts) > 0:
+            parts.append('?' + '&'.join(uri_opts))
+
         return ''.join(parts)
+
+    def mongodb_auth_uri(self, hosts, uri_opts):
+        """Get a connection string with all info necessary to authenticate."""
+        auth = []
+        if self.login:
+            auth.append(self.login)
+            if self.password:
+                auth.append(':' + self.password)
+            auth.append('@')
+            uri_opts.append('authSource=' + self.auth_source)
+            if self.x509_extra_user:
+                uri_opts.append('authMechanism=MONGODB-X509')
+
+        return self.mongodb_uri(''.join(auth) + hosts, uri_opts)
 
     def _get_server_version(self, client):
         return tuple(client.admin.command('buildinfo')['versionArray'])

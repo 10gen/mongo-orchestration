@@ -300,7 +300,7 @@ class Server(BaseModel):
                 c = self.connection
                 server_info = c.server_info()
                 logger.debug("server_info: {server_info}".format(**locals()))
-                mongodb_uri = 'mongodb://' + self.hostname
+                mongodb_uri = self.mongodb_uri(self.hostname, [])
                 status_info = {"primary": c.is_primary, "mongos": c.is_mongos}
                 logger.debug("status_info: {status_info}".format(**locals()))
             except (pymongo.errors.AutoReconnect, pymongo.errors.OperationFailure, pymongo.errors.ConnectionFailure):
@@ -311,7 +311,7 @@ class Server(BaseModel):
                   "serverInfo": server_info, "procInfo": proc_info,
                   "orchestration": 'servers'}
         if self.login:
-            result['mongodb_auth_uri'] = self.mongodb_auth_uri(self.hostname)
+            result['mongodb_auth_uri'] = self.mongodb_auth_uri(self.hostname, [])
         logger.debug("return {result}".format(result=result))
         return result
 
