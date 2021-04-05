@@ -50,12 +50,12 @@ class ShardedCluster(BaseModel):
         self._shards = {}
         self.tags = {}
 
-        self.sslParams = params.get('sslParams', {})
+        self.ssl_params = params.get('sslParams', {})
         self.kwargs = {}
         self.restart_required = self.login or self.auth_key
         self.x509_extra_user = False
 
-        if self.sslParams:
+        if self.ssl_params:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         self.enable_ipv6 = common.ipv6_enabled_sharded(params)
@@ -172,7 +172,7 @@ class ShardedCluster(BaseModel):
             def restart_with_auth(server_or_rs):
                 server_or_rs.x509_extra_user = self.x509_extra_user
                 server_or_rs.auth_source = self.auth_source
-                server_or_rs.ssl_params = self.sslParams
+                server_or_rs.ssl_params = self.ssl_params
                 server_or_rs.login = self.login
                 server_or_rs.password = self.password
                 server_or_rs.auth_key = self.auth_key
@@ -214,7 +214,7 @@ class ShardedCluster(BaseModel):
             member['procParams']['configsvr'] = True
             if self.enable_ipv6:
                 common.enable_ipv6_single(member['procParams'])
-        rs_cfg['sslParams'] = self.sslParams
+        rs_cfg['sslParams'] = self.ssl_params
         self._configsvrs.append(ReplicaSets().create(rs_cfg))
 
     def __init_configsvrs(self, params):
@@ -229,7 +229,7 @@ class ShardedCluster(BaseModel):
             if self.enable_ipv6:
                 common.enable_ipv6_single(cfg)
             self._configsvrs.append(Servers().create(
-                'mongod', cfg, sslParams=self.sslParams, autostart=True,
+                'mongod', cfg, sslParams=self.ssl_params, autostart=True,
                 version=version, server_id=server_id))
 
     def __len__(self):
@@ -285,7 +285,7 @@ class ShardedCluster(BaseModel):
         params = self._strip_auth(params)
 
         self._routers.append(Servers().create(
-            'mongos', params, sslParams=self.sslParams, autostart=True,
+            'mongos', params, sslParams=self.ssl_params, autostart=True,
             version=version, server_id=server_id))
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
@@ -362,7 +362,7 @@ class ShardedCluster(BaseModel):
             rs_params = params.copy()
             # Turn 'rs_id' -> 'id', to be consistent with 'server_id' below.
             rs_params['id'] = rs_params.pop('rs_id', None)
-            rs_params.update({'sslParams': self.sslParams})
+            rs_params.update({'sslParams': self.ssl_params})
 
             rs_params['version'] = params.pop('version', self._version)
             rs_params['members'] = [
@@ -379,7 +379,7 @@ class ShardedCluster(BaseModel):
         else:
             # is single server
             params.setdefault('procParams', {})['shardsvr'] = True
-            params.update({'autostart': True, 'sslParams': self.sslParams})
+            params.update({'autostart': True, 'sslParams': self.ssl_params})
             params = params.copy()
             params['procParams'] = self._strip_auth(
                 params.get('procParams', {}))

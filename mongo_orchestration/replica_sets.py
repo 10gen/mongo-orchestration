@@ -57,12 +57,12 @@ class ReplicaSet(BaseModel):
         self.repl_id = rs_params.get('id', None) or str(uuid4())
         self._version = rs_params.get('version')
 
-        self.sslParams = rs_params.get('sslParams', {})
+        self.ssl_params = rs_params.get('sslParams', {})
         self.kwargs = {}
         self.restart_required = self.login or self.auth_key
         self.x509_extra_user = False
 
-        if self.sslParams:
+        if self.ssl_params:
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         members = rs_params.get('members', [])
@@ -310,7 +310,7 @@ class ReplicaSet(BaseModel):
         server_id = self._servers.create(
             name='mongod',
             procParams=proc_params,
-            sslParams=self.sslParams,
+            sslParams=self.ssl_params,
             version=version,
             server_id=server_id
         )
