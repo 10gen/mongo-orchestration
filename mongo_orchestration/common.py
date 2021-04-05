@@ -50,7 +50,11 @@ DEFAULT_SSL_OPTIONS = {
     'ssl_certfile': DEFAULT_CLIENT_CERT,
     'ssl_cert_reqs': ssl.CERT_NONE
 }
-
+SSL_TO_TLS_OPTION_MAPPINGS = {
+    'ssl': 'tls',
+    'ssl_certfile': 'tlsCertificateKeyFile',
+    'sslCAFile': 'tlsCAFile',
+}
 
 class BaseModel(object):
     """Base object for Server, ReplicaSet, and ShardedCluster."""
@@ -85,8 +89,19 @@ class BaseModel(object):
         parts = ['mongodb://', hosts, '/']
 
         """Append URI options for auth, TLS, etc."""
-        """@todo Auth options"""
-        """@todo TLS options"""
+        """Append TLS options"""
+        if self.ssl_params:
+            ssl_params = self.ssl_params
+            ssl_params.update(DEFAULT_SSL_OPTIONS)
+            """Rewrite ssl* option names to tls*"""
+            for sslKey, tlsKey in SSL_TO_TLS_OPTION_MAPPINGS.items():
+                sslValue = ssl_params.pop(sslKey)
+                if sslValue:
+                    if isinstance(sslValue, bool):
+                        sslValue = json.dumps(sslValue)
+                    uri_opts.append(tlsKey + '=' + sslValue)
+
+        """@todo Append Auth options"""
 
         if len(uri_opts) > 0:
             parts.append('?' + '&'.join(uri_opts))

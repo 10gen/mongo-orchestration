@@ -459,6 +459,12 @@ class ServerSSLTestCase(SSLTestCase):
             self.server.hostname, ssl_certfile=certificate('client.pem'),
             ssl_cert_reqs=ssl.CERT_NONE))
 
+        # Check if mongodb_uri contains tls args
+        uri = self.server.info()['mongodb_uri']
+        self.assertIn(self.server.hostname, uri)
+        self.assertIn('tls=', uri)
+        self.assertIn('tlsCertificateKeyFile=', uri)
+
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):
             raise SkipTest("Need to be able to set 'authenticationMechanisms' "
