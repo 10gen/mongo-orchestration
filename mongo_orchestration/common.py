@@ -85,9 +85,6 @@ class BaseModel(object):
         return params
 
     def mongodb_uri(self, hosts, uri_opts):
-        """Get a connection string"""
-        parts = ['mongodb://', hosts, '/']
-
         """Append URI options for auth, TLS, etc."""
         """Append TLS options"""
         if self.ssl_params:
@@ -101,26 +98,23 @@ class BaseModel(object):
                         sslValue = json.dumps(sslValue)
                     uri_opts.append(tlsKey + '=' + sslValue)
 
-        """@todo Append Auth options"""
+        """Append Auth options"""
+        auth_opts = []
+        if self.login:
+            auth_opts.append(self.login)
+            if self.password:
+                auth_opts.append(':' + self.password)
+            auth_opts.append('@')
+            uri_opts.append('authSource=' + self.auth_source)
+            if self.x509_extra_user:
+                uri_opts.append('authMechanism=MONGODB-X509')
+
+        parts = ['mongodb://', ''.join(auth_opts), hosts, '/']
 
         if len(uri_opts) > 0:
             parts.append('?' + '&'.join(uri_opts))
 
         return ''.join(parts)
-
-    def mongodb_auth_uri(self, hosts, uri_opts):
-        """Get a connection string with all info necessary to authenticate."""
-        auth = []
-        if self.login:
-            auth.append(self.login)
-            if self.password:
-                auth.append(':' + self.password)
-            auth.append('@')
-            uri_opts.append('authSource=' + self.auth_source)
-            if self.x509_extra_user:
-                uri_opts.append('authMechanism=MONGODB-X509')
-
-        return self.mongodb_uri(''.join(auth) + hosts, uri_opts)
 
     def _get_server_version(self, client):
         return tuple(client.admin.command('buildinfo')['versionArray'])

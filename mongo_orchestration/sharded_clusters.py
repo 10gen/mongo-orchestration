@@ -441,7 +441,7 @@ class ShardedCluster(BaseModel):
                   'mongodb_uri': mongodb_uri,
                   'orchestration': 'sharded_clusters'}
         if self.login:
-            result['mongodb_auth_uri'] = self.mongodb_auth_uri(hosts, [])
+            result['mongodb_auth_uri'] = mongodb_uri
         return result
 
     def cleanup(self):
