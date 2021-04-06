@@ -81,7 +81,7 @@ class test(Command):
 
 setup(
     name='mongo-orchestration',
-    version='0.6.13.dev0',
+    version='0.7.0',
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
     description='Restful service for managing MongoDB servers',
@@ -117,6 +117,11 @@ setup(
         "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython"
     ],
     entry_points={

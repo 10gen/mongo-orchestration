@@ -1,3 +1,7 @@
+-------------------
+Mongo Orchestration
+-------------------
+
 See the `wiki <https://github.com/10gen/mongo-orchestration/wiki>`__
 for documentation.
 
@@ -22,10 +26,11 @@ Requires
 --------
 
 -  `Python 2.6, 2.7, or >= 3.2 <http://www.python.org/download/>`__
--  `bottle >= 0.12.7 <https://pypi.python.org/pypi/bottle>`__
--  `PyMongo >= 3.0.2 <https://pypi.python.org/pypi/pymongo>`__
--  `CherryPy >= 3.5.0, < 7.1 <http://www.cherrypy.org/>`__
--  `argparse >= 1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
+-  `bottle>=0.12.7 <https://pypi.python.org/pypi/bottle>`__
+-  `pymongo>=3.0.2,<4 <https://pypi.python.org/pypi/pymongo>`__
+-  `CherryPy>=3.5.0,<9.0.0 <http://www.cherrypy.org/>`__
+-  `argparse>=1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
+-  `simplejson <https://pypi.python.org/pypi/simplejson>`__ (Python 2.6 only)
 
 Installation
 ------------
@@ -216,3 +221,30 @@ Run a single test example for debugging with verbose and immediate stdout output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``python -m unittest -v tests.test_servers.ServerSSLTestCase``
+
+Changelog
+---------
+
+Changes in Version 0.7.0 (2021-04-06)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Remove support for managing MongoDB 2.4 servers.
+- Add support for Python 3.8 and 3.9.
+- Add support for MongoDB 4.2 and 4.4.
+- Upgrade from pymongo 3.5.1 to 3.X latest. (#284).
+- Ensure createUser succeeds on all replica set members. (#282)
+- Create admin user with both SCRAM-SHA-256 and SCRAM-SHA-1. (#281)
+- Wait for mongo-orchestration server to fully terminate in "stop". (#276)
+- Allow starting clusters with enableTestCommands=0. (#269)
+- Decrease transactionLifetimeLimitSeconds on 4.2+ by default. (#267)
+- Increase maxTransactionLockRequestTimeoutMillis by default. (#270)
+- Reduce periodicNoopIntervalSecs for faster driver change stream testing. (#283)
+- Enable ztsd compression by default on 4.2+ (#263)
+
+Changes in Version 0.6.12 (2018-12-14)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Allow running the mongo-orchestration server over IPv6 localhost. (#237)
+- Increase default mongodb server logging verbosity. (#255)
+- Fixed a bug when shutting down clusters where mongo-orchestration would
+  hang forever if the server had already exited. (#253)
