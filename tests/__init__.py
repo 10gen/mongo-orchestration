@@ -44,7 +44,7 @@ try:
     version_str = re.search('((\d+\.)+\d+)', info['version']).group(0)
     SERVER_VERSION = tuple(map(int, version_str.split('.')))
     # Do we have SSL support?
-    SSL_ENABLED = bool(info.get('OpenSSLVersion'))
+    SSL_ENABLED = bool(info.get('OpenSSLVersion')) or bool(info.get('openssl'))
 finally:
     Servers().cleanup()
 
