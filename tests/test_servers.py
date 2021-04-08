@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import operator
 import os
 import socket
@@ -34,6 +35,9 @@ from mongo_orchestration.process import PortPool
 from tests import (
     SkipTest, certificate, unittest, TEST_SUBJECT, SSLTestCase, SERVER_VERSION,
     TEST_RELEASES)
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class ServerVersionTestCase(unittest.TestCase):
