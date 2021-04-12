@@ -20,7 +20,13 @@ import json
 import os
 import ssl
 import stat
+import sys
 import tempfile
+
+if sys.version_info[0] == 2:
+    from urllib import quote_plus
+else:
+    from urllib.parse import quote_plus
 
 WORK_DIR = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 PID_FILE = os.path.join(WORK_DIR, 'server.pid')
@@ -96,7 +102,7 @@ class BaseModel(object):
                 if sslValue:
                     if isinstance(sslValue, bool):
                         sslValue = json.dumps(sslValue)
-                    uri_opts.append(tlsKey + '=' + sslValue)
+                    uri_opts.append(tlsKey + '=' + quote_plus(sslValue))
 
         # Append Auth options
         auth_opts = []
