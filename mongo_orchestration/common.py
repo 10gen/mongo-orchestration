@@ -85,12 +85,12 @@ class BaseModel(object):
         return params
 
     def mongodb_uri(self, hosts, uri_opts):
-        """Append URI options for auth, TLS, etc."""
-        """Append TLS options"""
+        """Returns the connection string for the cluster"""
+        # Append TLS options
         if self.ssl_params:
             ssl_params = self.ssl_params
             ssl_params.update(DEFAULT_SSL_OPTIONS)
-            """Rewrite ssl* option names to tls*"""
+            # Rewrite ssl* option names to tls*
             for sslKey, tlsKey in SSL_TO_TLS_OPTION_MAPPINGS.items():
                 sslValue = ssl_params.pop(sslKey)
                 if sslValue:
@@ -98,7 +98,7 @@ class BaseModel(object):
                         sslValue = json.dumps(sslValue)
                     uri_opts.append(tlsKey + '=' + sslValue)
 
-        """Append Auth options"""
+        # Append Auth options
         auth_opts = []
         if self.login:
             auth_opts.append(self.login)
