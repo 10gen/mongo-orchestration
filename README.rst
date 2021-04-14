@@ -225,6 +225,11 @@ Run a single test example for debugging with verbose and immediate stdout output
 Changelog
 ---------
 
+Changes in Version 0.8.0 (TBD)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Expose TLS and authentication options in `mongodb_uri` field (#287).
+
 Changes in Version 0.7.0 (2021-04-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
