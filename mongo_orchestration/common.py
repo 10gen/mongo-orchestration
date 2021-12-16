@@ -59,7 +59,9 @@ class BaseModel(object):
         {'role': 'userAdminAnyDatabase', 'db': 'admin'},
         {'role': 'clusterAdmin', 'db': 'admin'},
         {'role': 'dbAdminAnyDatabase', 'db': 'admin'},
-        {'role': 'readWriteAnyDatabase', 'db': 'admin'}
+        {'role': 'readWriteAnyDatabase', 'db': 'admin'},
+        {'role': 'restore', 'db': 'admin'},
+        {'role': 'backup', 'db': 'admin'}
     ]
     socket_timeout = DEFAULT_SOCKET_TIMEOUT
 
