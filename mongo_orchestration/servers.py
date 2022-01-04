@@ -177,6 +177,7 @@ class Server(BaseModel):
         self.proc = None # Popen object
         self.host = None  # hostname without port
         self.hostname = None  # string like host:port
+        self.lb_port = None # the load balancer port for mongos
         self.is_mongos = False
         self.kwargs = {}
         self.ssl_params = sslParams
@@ -193,6 +194,7 @@ class Server(BaseModel):
 
         elif proc_name.startswith('mongos'):
             self.is_mongos = True
+            self.lb_port = procParams.pop('loadBalancerPort', None)
             self.config_path, self.cfg = self.__init_mongos(procParams)
 
         else:
@@ -344,7 +346,7 @@ class Server(BaseModel):
 
             self.proc, self.hostname = process.mprocess(
                 self.name, self.config_path, self.cfg.get('port', None),
-                timeout)
+                self.lb_port, timeout)
             self.pid = self.proc.pid
             logger.debug("pid={pid}, hostname={hostname}".format(pid=self.pid, hostname=self.hostname))
             self.host = self.hostname.split(':')[0]

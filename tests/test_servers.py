@@ -264,6 +264,12 @@ class ServerTestCase(unittest.TestCase):
         self.server2.stop()
         self.server2.cleanup()
 
+    def test_mongos_load_balancer_port(self):
+        self.server.cleanup()
+        self.server = Server('mongos', { 'loadBalancerPort': 27050 })
+        self.assertEqual(self.server.lb_port, 27050)
+        self.assertEqual(self.server.cfg.get('loadBalancerPort', None), None)
+
     def test_run_command(self):
         self.server.start(30)
 

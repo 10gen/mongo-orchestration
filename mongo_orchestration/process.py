@@ -201,12 +201,13 @@ def repair_mongo(name, dbpath):
                     "check log file: %s" % (timeout, log_file))
 
 
-def mprocess(name, config_path, port=None, timeout=180):
+def mprocess(name, config_path, port=None, lb_port=None, timeout=180):
     """start 'name' process with params from config_path.
     Args:
         name - process name or path
         config_path - path to file where should be stored configuration
         port - process's port
+        lb_port - the mongos load balancer connection port
         timeout - specify how long, in seconds, a command can take before times out.
                   if timeout <=0 - doesn't wait for complete start process
     return tuple (Popen object, host) if process started, return (None, None) if not
@@ -214,7 +215,7 @@ def mprocess(name, config_path, port=None, timeout=180):
 
     logger.debug(
         "mprocess(name={name!r}, config_path={config_path!r}, port={port!r}, "
-                 "timeout={timeout!r})".format(**locals()))
+                 "lb_port={lb_port!r}, timeout={timeout!r})".format(**locals()))
     if not (config_path and isinstance(config_path, str) and os.path.exists(config_path)):
         raise OSError("can't find config file {config_path}".format(**locals()))
 
@@ -224,6 +225,8 @@ def mprocess(name, config_path, port=None, timeout=180):
     if cfg.get('port', None) is None or port:
         port = port or PortPool().port(check=True)
         cmd.extend(['--port', str(port)])
+    if lb_port:
+        cmd.extend(['--loadBalancerPort', str(lb_port)])
     host = "{host}:{port}".format(host=_host(), port=port)
     try:
         logger.debug("execute process: %s", ' '.join(cmd))

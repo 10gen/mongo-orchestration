@@ -177,7 +177,8 @@ class ProcessTestCase(unittest.TestCase):
         lock_file = os.path.join(self.cfg['dbpath'], 'mongod.lock')
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        proc, host = process.mprocess(self.bin_path, config_path, port=port, timeout=60)
+        proc, host = process.mprocess(self.bin_path, config_path, port=port,
+                                      lb_port=None, timeout=60)
         self.assertTrue(os.path.exists(lock_file))
         if platform.system() == 'Windows':
             # mongod.lock cannot be read by any external process on Windows.
@@ -199,16 +200,16 @@ class ProcessTestCase(unittest.TestCase):
         os.close(fd_cfg)
         self.tmp_files.append(config_path)
         self.assertRaises(OSError, process.mprocess,
-                          'fake-process_', config_path, None, 30)
+                          'fake-process_', config_path, None, None, 30)
         process.write_config({"fake": True}, config_path)
         self.assertRaises(TimeoutError, process.mprocess,
-                          self.bin_path, config_path, None, 30)
+                          self.bin_path, config_path, None, None, 30)
 
     def test_mprocess(self):
         port = self.pp.port(check=True)
         config_path = process.write_config(self.cfg)
         self.tmp_files.append(config_path)
-        result = process.mprocess(self.bin_path, config_path, port=port)
+        result = process.mprocess(self.bin_path, config_path, port=port, lb_port=None)
         self.assertTrue(isinstance(result, tuple))
         proc, host = result
         self.assertTrue(isinstance(proc, subprocess.Popen))
@@ -221,14 +222,14 @@ class ProcessTestCase(unittest.TestCase):
         cfg['journal'] = True
         config_path = process.write_config(cfg)
         self.tmp_files.append(config_path)
-        proc, host = process.mprocess(self.bin_path, config_path, port, 0)
+        proc, host = process.mprocess(self.bin_path, config_path, port, None, 0)
         self.assertTrue(isinstance(proc, subprocess.Popen))
         self.assertTrue(isinstance(host, str))
         process.kill_mprocess(proc)
         if platform.system() == 'Windows':
             raise SkipTest("Cannot test mongod startup timeout on Windows.")
         with self.assertRaises(TimeoutError):
-            result = process.mprocess(self.bin_path, config_path, port, 0.1)
+            result = process.mprocess(self.bin_path, config_path, port, None, 0.1)
             print(result)
 
     def test_mprocess_busy_port(self):
@@ -237,7 +238,7 @@ class ProcessTestCase(unittest.TestCase):
         port = self.pp.port()
         self.listen_port(port, max_connection=0)
         proc, host = process.mprocess(self.executable, config_path,
-                                      port=port, timeout=2)
+                                      port=port, lb_port=None, timeout=2)
         self.assertTrue(proc.pid > 0)
         self.assertEqual(host, self.hostname + ':' + str(port))
         self.sockets.pop(port).close()
