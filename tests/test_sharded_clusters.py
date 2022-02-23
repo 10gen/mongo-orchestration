@@ -632,7 +632,6 @@ class ShardSSLTestCase(SSLTestCase):
                 'sslCAFile': certificate('ca.pem'),
                 'sslPEMKeyFile': certificate('server.pem'),
                 'sslMode': 'requireSSL',
-                'sslClusterFile': certificate('cluster_cert.pem'),
                 'sslAllowInvalidCertificates': True
             }
         }
@@ -666,7 +665,6 @@ class ShardSSLTestCase(SSLTestCase):
                 'sslCAFile': certificate('ca.pem'),
                 'sslPEMKeyFile': certificate('server.pem'),
                 'sslMode': 'requireSSL',
-                'sslClusterFile': certificate('cluster_cert.pem'),
                 'sslAllowInvalidCertificates': True
             }
         }
@@ -694,7 +692,6 @@ class ShardSSLTestCase(SSLTestCase):
                 'sslCAFile': certificate('ca.pem'),
                 'sslPEMKeyFile': certificate('server.pem'),
                 'sslMode': 'requireSSL',
-                'sslClusterFile': certificate('cluster_cert.pem'),
                 'sslAllowInvalidCertificates': True
             }
         }
@@ -733,7 +730,6 @@ class ShardSSLTestCase(SSLTestCase):
                 'sslCAFile': certificate('ca.pem'),
                 'sslPEMKeyFile': certificate('server.pem'),
                 'sslMode': 'requireSSL',
-                'sslClusterFile': certificate('cluster_cert.pem'),
                 'sslAllowInvalidCertificates': True
             }
         }
