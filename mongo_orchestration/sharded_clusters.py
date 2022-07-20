@@ -268,7 +268,7 @@ class ShardedCluster(BaseModel):
         """add new router (mongos) into existing configuration"""
         # featureFlagLoadBalancer was added in 5.0.7 (SERVER-60679) and
         # removed in 6.1.0 (SERVER-64205).
-        if (5, 0, 7) <= self.mongos_version[:3] <= (6, 0, 99):
+        if (5, 0, 7) <= self.mongos_version[:3] <= (6, 1, -1):
             set_params = params.get('setParameter', {})
             if 'loadBalancerPort' in set_params:
                 set_params.setdefault('featureFlagLoadBalancer', True)
