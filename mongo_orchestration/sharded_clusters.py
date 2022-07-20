@@ -62,20 +62,20 @@ class ShardedCluster(BaseModel):
         # Determine what to do with config servers via mongos version.
         mongos_name = os.path.join(Servers().bin_path(self._version), 'mongos')
         mongos = Server(name=mongos_name, procParams={})
-        mongos_version = mongos.version
+        self.mongos_version = mongos.version
         mongos.cleanup()
         configsvr_configs = params.get('configsvrs', [{}])
-        self.uses_rs_configdb = (mongos_version >= (3, 1, 2) and
+        self.uses_rs_configdb = (self.mongos_version >= (3, 1, 2) and
                                  len(configsvr_configs) == 1)
         self.configdb_singleton = (
             ReplicaSets() if self.uses_rs_configdb else Servers())
         if self.uses_rs_configdb:
             self.__init_configrs(configsvr_configs[0])
-        elif mongos_version >= (3, 3, 2):
+        elif self.mongos_version >= (3, 3, 2):
             raise ShardedClusterError(
                 'mongos >= 3.3.2 requires the config database to be backed by '
                 'a replica set.')
-        elif mongos_version >= (3, 1, 2) and len(configsvr_configs) != 3:
+        elif self.mongos_version >= (3, 1, 2) and len(configsvr_configs) != 3:
             raise ShardedClusterError(
                 "mongos >= 3.1.2 needs a config replica set or 3 old-style "
                 "config servers.")
@@ -95,7 +95,7 @@ class ShardedCluster(BaseModel):
         # to run refreshLogicalSessionCacheNow on the config server followed by
         # each mongos. Only then will each 3.6 mongos correctly report
         # logicalSessionTimeoutMinutes in its isMaster responses.
-        if mongos_version[:2] == (3, 6):
+        if self.mongos_version[:2] == (3, 6):
             router_clients = self.router_connections()
             is_master = router_clients[0].admin.command('isMaster')
             if 'logicalSessionTimeoutMinutes' not in is_master:
@@ -142,7 +142,7 @@ class ShardedCluster(BaseModel):
             self._add_users(
                 self.connection().get_database(
                     self.auth_source, write_concern=write_concern.WriteConcern(
-                        fsync=True)), mongos_version)
+                        fsync=True)), self.mongos_version)
 
             # Create the user on all the shards.
             roles = self._user_roles(self.connection())
@@ -157,7 +157,7 @@ class ShardedCluster(BaseModel):
                 if self.x509_extra_user:
                     db.add_user(DEFAULT_SUBJECT, roles=roles)
 
-                create_user(db, mongos_version, self.login, self.password,
+                create_user(db, self.mongos_version, self.login, self.password,
                             roles)
 
         if self.restart_required:
@@ -266,6 +266,12 @@ class ShardedCluster(BaseModel):
 
     def router_add(self, params):
         """add new router (mongos) into existing configuration"""
+        # featureFlagLoadBalancer was added in 5.0.7 (SERVER-60679) and
+        # removed in 6.1.0 (SERVER-64205).
+        if (5, 0, 7) <= self.mongos_version[:3] <= (6, 1, -1):
+            set_params = params.get('setParameter', {})
+            if 'loadBalancerPort' in set_params:
+                set_params.setdefault('featureFlagLoadBalancer', True)
         if self.uses_rs_configdb:
             # Replica set configdb.
             rs_id = self._configsvrs[0]
