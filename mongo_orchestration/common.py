@@ -20,7 +20,13 @@ import json
 import os
 import ssl
 import stat
+import sys
 import tempfile
+
+if sys.version_info[0] == 2:
+    from urllib import quote_plus
+else:
+    from urllib.parse import quote_plus
 
 WORK_DIR = os.environ.get('MONGO_ORCHESTRATION_HOME', os.getcwd())
 PID_FILE = os.path.join(WORK_DIR, 'server.pid')
@@ -50,7 +56,11 @@ DEFAULT_SSL_OPTIONS = {
     'ssl_certfile': DEFAULT_CLIENT_CERT,
     'ssl_cert_reqs': ssl.CERT_NONE
 }
-
+SSL_TO_TLS_OPTION_MAPPINGS = {
+    'ssl': 'tls',
+    'ssl_certfile': 'tlsCertificateKeyFile',
+    'sslCAFile': 'tlsCAFile',
+}
 
 class BaseModel(object):
     """Base object for Server, ReplicaSet, and ShardedCluster."""
@@ -82,19 +92,36 @@ class BaseModel(object):
         params.pop("clusterAuthMode", None)
         return params
 
-    def mongodb_auth_uri(self, hosts):
-        """Get a connection string with all info necessary to authenticate."""
-        parts = ['mongodb://']
+    def mongodb_uri(self, hosts, uri_opts):
+        """Returns the connection string for the cluster"""
+        # Append TLS options
+        if self.ssl_params:
+            ssl_params = self.ssl_params.copy()
+            ssl_params.update(DEFAULT_SSL_OPTIONS)
+            # Rewrite ssl* option names to tls*
+            for sslKey, tlsKey in SSL_TO_TLS_OPTION_MAPPINGS.items():
+                sslValue = ssl_params.pop(sslKey)
+                if sslValue:
+                    if isinstance(sslValue, bool):
+                        sslValue = json.dumps(sslValue)
+                    uri_opts.append(tlsKey + '=' + quote_plus(sslValue))
+
+        # Append Auth options
+        auth_opts = []
         if self.login:
-            parts.append(self.login)
+            auth_opts.append(self.login)
             if self.password:
-                parts.append(':' + self.password)
-            parts.append('@')
-        parts.append(hosts + '/')
-        if self.login:
-            parts.append('?authSource=' + self.auth_source)
+                auth_opts.append(':' + self.password)
+            auth_opts.append('@')
+            uri_opts.append('authSource=' + self.auth_source)
             if self.x509_extra_user:
-                parts.append('&authMechanism=MONGODB-X509')
+                uri_opts.append('authMechanism=MONGODB-X509')
+
+        parts = ['mongodb://', ''.join(auth_opts), hosts, '/']
+
+        if len(uri_opts) > 0:
+            parts.append('?' + '&'.join(uri_opts))
+
         return ''.join(parts)
 
     def _get_server_version(self, client):
