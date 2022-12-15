@@ -28,7 +28,7 @@ Requires
 -  `Python 2.6, 2.7, or >= 3.2 <http://www.python.org/download/>`__
 -  `bottle>=0.12.7 <https://pypi.python.org/pypi/bottle>`__
 -  `pymongo>=3.0.2,<4 <https://pypi.python.org/pypi/pymongo>`__
--  `CherryPy>=3.5.0,<9.0.0 <http://www.cherrypy.org/>`__
+-  `cheroot>=5.11 <https://pypi.python.org/pypi/cheroot/>`__
 -  `argparse>=1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
 -  `simplejson <https://pypi.python.org/pypi/simplejson>`__ (Python 2.6 only)
 
@@ -61,7 +61,7 @@ Usage
 ::
 
     mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT]
-                        [-s {cherrypy,wsgiref}] [--socket-timeout-ms MILLIS]
+                        [-s {cheroot,wsgiref}] [--socket-timeout-ms MILLIS]
                         [--pidfile PIDFILE] [--enable-majority-read-concern] {start,stop,restart}
 
 
@@ -73,7 +73,7 @@ Arguments:
    file
 -  **--no-fork** - run server in foreground
 -  **-b, --bind** - host on which Mongo Orchestration and subordinate mongo processes should listen for requests. Defaults to "localhost".
--  **-s, --server** - HTTP backend to use: one of `cherrypy` or `wsgiref`
+-  **-s, --server** - HTTP backend to use: one of `cheroot` or `wsgiref`
 -  **-p** - port number (8889 by default)
 -  **--socket-timeout-ms** - socket timeout when connecting to MongoDB servers
 -  **--pidfile** - location where mongo-orchestration should place its pid file
@@ -224,6 +224,12 @@ Run a single test example for debugging with verbose and immediate stdout output
 
 Changelog
 ---------
+
+Changes in Version 0.7.1 (TBD)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Replaced dependency on CherryPy with cheroot. `-s cheroot` is the new default
+  and `-s cherrypy` is no longer supported.
 
 Changes in Version 0.7.0 (2021-04-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
