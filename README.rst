@@ -61,7 +61,7 @@ Usage
 ::
 
     mongo-orchestration [-h] [-f CONFIG] [-e ENV] [--no-fork] [-b BIND IP="localhost"] [-p PORT]
-                        [-s {cheroot,wsgiref}] [--socket-timeout-ms MILLIS]
+                        [-s {auto,cheroot,wsgiref}] [--socket-timeout-ms MILLIS]
                         [--pidfile PIDFILE] [--enable-majority-read-concern] {start,stop,restart}
 
 
@@ -73,7 +73,8 @@ Arguments:
    file
 -  **--no-fork** - run server in foreground
 -  **-b, --bind** - host on which Mongo Orchestration and subordinate mongo processes should listen for requests. Defaults to "localhost".
--  **-s, --server** - HTTP backend to use: one of `cheroot` or `wsgiref`
+-  **-s, --server** - HTTP backend to use: one of `auto`, `cheroot`, or `wsgiref`. `auto`
+   configures bottle to automatically choose an available backend.
 -  **-p** - port number (8889 by default)
 -  **--socket-timeout-ms** - socket timeout when connecting to MongoDB servers
 -  **--pidfile** - location where mongo-orchestration should place its pid file
@@ -228,7 +229,7 @@ Changelog
 Changes in Version 0.7.1 (TBD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Replaced dependency on CherryPy with cheroot. `-s cheroot` is the new default
+- Replaced dependency on CherryPy with cheroot. `-s auto` is the new default
   and `-s cherrypy` is no longer supported.
 
 Changes in Version 0.7.0 (2021-04-06)
