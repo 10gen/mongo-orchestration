@@ -54,7 +54,7 @@ def read_env():
                         default=False)
     parser.add_argument('-s', '--server',
                         action='store', dest='server', type=str,
-                        default=DEFAULT_SERVER, choices=('cheroot', 'wsgiref'))
+                        default=DEFAULT_SERVER, choices=('auto', 'cheroot', 'wsgiref'))
     parser.add_argument('--version', action='version',
                         version='Mongo Orchestration v' + __version__)
     parser.add_argument('--socket-timeout-ms', action='store',
