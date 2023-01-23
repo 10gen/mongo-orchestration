@@ -74,9 +74,6 @@ class Server(BaseModel):
             params = config.get('setParameter', {})
             # Set enableTestCommands by default but allow enableTestCommands:0.
             params.setdefault('enableTestCommands', 1)
-            # Reduce transactionLifetimeLimitSeconds for faster driver testing.
-            if self.version >= (4, 1) and not self.is_mongos:
-                params.setdefault('transactionLifetimeLimitSeconds', 3)
             # Increase transaction lock timeout to reduce the chance that tests
             # fail with LockTimeout: "Unable to acquire lock {...} within 5ms".
             if self.version >= (4, 0) and not self.is_mongos:

@@ -231,6 +231,7 @@ Changes in Version 0.7.1 (TBD)
 
 - Replaced dependency on CherryPy with cheroot. `-s auto` is the new default
   and `-s cherrypy` is no longer supported.
+- Remove transactionLifetimeLimitSeconds default.
 
 Changes in Version 0.7.0 (2021-04-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
