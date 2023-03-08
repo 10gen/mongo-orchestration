@@ -447,10 +447,11 @@ class ReplicaSet(BaseModel):
         while True:
             try:
                 if hostname is None:
-                    c = pymongo.MongoReplicaSetClient(
+                    c = pymongo.MongoClient(
                         servers, replicaSet=self.repl_id,
                         read_preference=read_preference,
                         socketTimeoutMS=self.socket_timeout,
+                        directConnection=True,
                         w=self._write_concern, fsync=True, **self.kwargs)
                     connected(c)
                     if c.primary:
@@ -461,6 +462,7 @@ class ReplicaSet(BaseModel):
                     logger.debug("connection to the {servers}".format(**locals()))
                     c = pymongo.MongoClient(
                         servers, socketTimeoutMS=self.socket_timeout,
+                        directConnection=True,
                         w=self._write_concern, fsync=True, **self.kwargs)
                     connected(c)
                     self._authenticate_client(c)

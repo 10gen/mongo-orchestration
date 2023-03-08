@@ -7,13 +7,6 @@ from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
 
 extra_opts = {'test_suite': 'tests'}
-py26_requires = ['argparse', 'simplejson']
-extra_deps = []
-extra_test_deps = []
-if sys.version_info[:2] == (2, 6):
-    extra_deps.extend(py26_requires)
-    extra_test_deps.append('unittest2')
-    extra_opts['test_suite'] = 'unittest2.collector'
 
 try:
     from setuptools import setup, find_packages
@@ -89,13 +82,11 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     platforms=['any'],
     url='https://github.com/10gen/mongo-orchestration',
-    install_requires=['pymongo>=3.6,<4',
+    install_requires=['pymongo>=4,<5',
                       'bottle>=0.12.7',
                       'cheroot>=5.11'] + extra_deps,
-    extras_require={
-        ':python_version=="2.6"': py26_requires
-    },
     tests_require=['coverage>=3.5'] + extra_test_deps,
+    python_requires=">=3.6",
     packages=find_packages(exclude=('tests',)),
     package_data={
         'mongo_orchestration': [
@@ -110,14 +101,7 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.6",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

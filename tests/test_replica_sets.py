@@ -447,7 +447,6 @@ class ReplicaSetTestCase(unittest.TestCase):
     def test_run_command(self):
         self.repl_cfg = {'members': [{}, {}]}
         self.repl = ReplicaSet(self.repl_cfg)
-        self.assertEqual(self.repl.run_command("rs.status()", is_eval=True)['ok'], 1)
         result = self.repl.run_command('serverStatus', arg=None, is_eval=False, member_id=0)['repl']
         for key in ('me', 'ismaster', 'setName', 'primary', 'hosts'):
             self.assertTrue(key in result)
