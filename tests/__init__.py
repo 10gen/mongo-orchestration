@@ -41,7 +41,7 @@ __server_id = Servers().create(name='mongod', procParams={})
 try:
     # Server version
     info = Servers().info(__server_id)['serverInfo']
-    version_str = re.search('((\d+\.)+\d+)', info['version']).group(0)
+    version_str = re.search(r'((\d+\.)+\d+)', info['version']).group(0)
     SERVER_VERSION = tuple(map(int, version_str.split('.')))
     # Do we have SSL support?
     SSL_ENABLED = bool(info.get('OpenSSLVersion'))
