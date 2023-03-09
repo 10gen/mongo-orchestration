@@ -31,8 +31,6 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
-from bottle import request
-
 from mongo_orchestration.common import DEFAULT_BIND, LOG_FILE
 from mongo_orchestration.compat import reraise, PY3
 from mongo_orchestration.errors import TimeoutError, RequestError
@@ -40,17 +38,6 @@ from mongo_orchestration.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-def _host():
-    """Get the Host from the most recent HTTP request."""
-    host_and_port = request.urlparts[1]
-    try:
-        host, _ = host_and_port.split(':')
-    except ValueError:
-        # No port yet. Host defaults to '127.0.0.1' in bottle.request.
-        return DEFAULT_BIND
-    return host or DEFAULT_BIND
 
 
 class PortPool(Singleton):
@@ -84,7 +71,7 @@ class PortPool(Singleton):
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s.bind((_host(), port))
+            s.bind((DEFAULT_BIND, port))
             return True
         except socket.error:
             return False
@@ -135,10 +122,11 @@ class PortPool(Singleton):
         self.__init_range(min_port, max_port, port_sequence)
 
 
-def connect_port(port):
+def connect_port(host, port):
     """waits while process starts.
     Args:
         proc        - Popen object
+        host        - the hostname to connect to
         port_num    - port number
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
@@ -146,7 +134,7 @@ def connect_port(port):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((_host(), port))
+        s.connect((host, port))
         s.close()
         return True
     except (IOError, socket.error):
@@ -155,22 +143,23 @@ def connect_port(port):
         return False
 
 
-def wait_for(proc, port_num, timeout):
+def wait_for(proc, host, port_num, timeout):
     """waits while process starts.
     Args:
         proc        - Popen object
+        host        - the hostname to connect to
         port_num    - port number
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
     """
-    logger.debug("wait for {port_num}".format(**locals()))
+    logger.debug("wait for {host}:{port_num}".format(**locals()))
     t_start = time.time()
     sleeps = 0.1
     while time.time() - t_start < timeout:
         if proc.poll() is not None:
             logger.debug("process is not alive")
             raise OSError("Process started, but died immediately")
-        if connect_port(port_num):
+        if connect_port(host, port_num):
             return True
     return False
 
@@ -224,7 +213,9 @@ def mprocess(name, config_path, port=None, timeout=180):
     if cfg.get('port', None) is None or port:
         port = port or PortPool().port(check=True)
         cmd.extend(['--port', str(port)])
-    host = "{host}:{port}".format(host=_host(), port=port)
+    bind_ip = cfg.get('bind_ip', 'localhost')
+    hostname = bind_ip.split(',')[0]
+    host = "{host}:{port}".format(host=hostname, port=port)
     try:
         logger.debug("execute process: %s", ' '.join(cmd))
         # Redirect server startup errors (written to stdout/stderr) to our log
@@ -242,7 +233,7 @@ def mprocess(name, config_path, port=None, timeout=180):
         logger.debug(message)
         raise OSError(message)
     if timeout > 0:
-        if wait_for(proc, port, timeout):
+        if wait_for(proc, hostname, port, timeout):
             logger.debug("process '{name}' has started: pid={proc.pid},"
                          " host={host}".format(**locals()))
             return (proc, host)

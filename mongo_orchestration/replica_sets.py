@@ -22,6 +22,8 @@ import traceback
 
 from uuid import uuid4
 
+from concurrent.futures import ThreadPoolExecutor
+
 import pymongo
 
 from mongo_orchestration.common import (
@@ -68,11 +70,11 @@ class ReplicaSet(BaseModel):
         members = rs_params.get('members', [])
         # Enable ipv6 on all members if any have it enabled.
         self.enable_ipv6 = ipv6_enabled_repl(rs_params)
-
-        config = {"_id": self.repl_id, "members": [
-            self.member_create(member, index)
-            for index, member in enumerate(members)
-        ]}
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self.member_create, member, i)
+                       for i, member in enumerate(members)]
+            config_members = [f.result() for f in futures]
+        config = {"_id": self.repl_id, "members": config_members}
         if 'rsSettings' in rs_params:
             config['settings'] = rs_params['rsSettings']
         # Explicitly set write concern to number of data-bearing members.
@@ -116,8 +118,7 @@ class ReplicaSet(BaseModel):
 
             self._add_users(self.connection()[self.auth_source], version)
         if self.restart_required:
-            # Restart all the servers with auth flags and ssl.
-            for idx, member in enumerate(members):
+            def restart_member(idx, member):
                 server_id = self._servers.host_to_server_id(
                     self.member_id_to_host(idx))
                 server = self._servers._storage[server_id]
@@ -136,6 +137,12 @@ class ReplicaSet(BaseModel):
                     return config
 
                 server.restart(config_callback=add_auth)
+            # Restart all the servers with auth flags and ssl.
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(restart_member, i, member)
+                           for i, member in enumerate(members)]
+                for f in futures:
+                    f.result()
             self.restart_required = False
 
         if not self.waiting_member_state() and self.waiting_config_state():
