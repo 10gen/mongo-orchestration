@@ -47,8 +47,8 @@ DEFAULT_CLIENT_CERT = os.path.join(
 )
 DEFAULT_SSL_OPTIONS = {
     'ssl': True,
-    'ssl_certfile': DEFAULT_CLIENT_CERT,
-    'ssl_cert_reqs': ssl.CERT_NONE
+    'tlsCertificateKeyFile': DEFAULT_CLIENT_CERT,
+    'tlsAllowInvalidCertificates': True
 }
 
 
@@ -111,28 +111,23 @@ class BaseModel(object):
         """Add given user, and extra x509 user if necessary."""
         roles = self._user_roles(db.client)
         if self.x509_extra_user:
-            db.add_user(DEFAULT_SUBJECT, roles=roles)
+            db.command('createUser', DEFAULT_SUBJECT, roles=roles,
+                   writeConcern=db.write_concern.document)
             # Fix kwargs to MongoClient.
-            self.kwargs['ssl_certfile'] = DEFAULT_CLIENT_CERT
+            self.kwargs['tlsCertificateKeyFile'] = DEFAULT_CLIENT_CERT
 
         # Add secondary user given from request.
         create_user(db, mongo_version, self.login, self.password, roles)
 
 
 def create_user(db, mongo_version, user, password, roles):
-    if mongo_version >= (3, 7, 2):
-        # Call createUser directly so that the server creates the user with
-        # both SCRAM-SHA-1 and SCRAM-SHA-256 credentials. This ensures that
-        # pymongo < 3.7 (which only supports SCRAM-SHA-1) can authenticate.
-        db.command('createUser', user, pwd=password, roles=roles,
-                   writeConcern=db.write_concern.document)
-    else:
-        db.add_user(user, password=password, roles=roles)
+    db.command('createUser', user, pwd=password, roles=roles,
+               writeConcern=db.write_concern.document)
 
 
 def connected(client):
     # Await connection in PyMongo 3.0.
-    client.admin.command('ismaster')
+    client.admin.command('isMaster')
     return client
 
 

@@ -201,7 +201,7 @@ class Server(BaseModel):
     def connection(self):
         """return authenticated connection"""
         c = pymongo.MongoClient(
-            self.hostname, fsync=True,
+            self.hostname, fsync=True, directConnection=True,
             socketTimeoutMS=self.socket_timeout, **self.kwargs)
         connected(c)
         if not self.is_mongos and self.login and not self.restart_required:
@@ -213,11 +213,10 @@ class Server(BaseModel):
             kwargs = self.kwargs.copy()
             kwargs.update(**auth_dict)
             c = pymongo.MongoClient(
-                self.hostname, fsync=True,
+                self.hostname, fsync=True, directConnection=True,
                 socketTimeoutMS=self.socket_timeout, **kwargs)
-            db = c[self.auth_source]
             try:
-                db.command("isMaster")
+                connected(c)
             except:
                 logger.exception("Could not authenticate to %s with %r"
                                  % (self.hostname, auth_dict))
@@ -257,7 +256,6 @@ class Server(BaseModel):
         replica set member.
         """
         try:
-            import pdb; pdb.set_trace()
             self.run_command('replSetStepDown', timeout)
         except pymongo.errors.AutoReconnect:
             pass
@@ -423,7 +421,9 @@ class Server(BaseModel):
             logger.info("Attempting to send shutdown command to %s",
                         self.hostname)
             try:
-                client.admin.command("shutdown", force=True)
+                # SERVER-46951: Shorten the default 15 second quiesce mode
+                # timeout to 1 second.
+                client.admin.command("shutdown", force=True, timeoutSecs=1)
             except ConnectionFailure:
                 # A shutdown succeeds by closing the connection but a
                 # connection error does not necessarily mean that the shutdown

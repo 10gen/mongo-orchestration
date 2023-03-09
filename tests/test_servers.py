@@ -408,14 +408,14 @@ class ServerSSLTestCase(SSLTestCase):
         self.server.start()
         # Should create an extra user. Doesn't raise.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=DEFAULT_CLIENT_CERT,
-            ssl_cert_reqs=ssl.CERT_NONE)
+            self.server.hostname, tlsCertificateKeyFile=DEFAULT_CLIENT_CERT,
+            tlsAllowInvalidCertificates=True)
         client['$external'].authenticate(
             DEFAULT_SUBJECT, mechanism='MONGODB-X509')
         # Should also create the user we requested. Doesn't raise.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'),
-            ssl_cert_reqs=ssl.CERT_NONE)
+            self.server.hostname, tlsCertificateKeyFile=certificate('client.pem'),
+            tlsAllowInvalidCertificates=True)
         client['$external'].authenticate(
             TEST_SUBJECT, mechanism='MONGODB-X509')
 
@@ -432,8 +432,8 @@ class ServerSSLTestCase(SSLTestCase):
         self.server.start()
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'),
-            ssl_cert_reqs=ssl.CERT_NONE)
+            self.server.hostname, tlsCertificateKeyFile=certificate('client.pem'),
+            tlsAllowInvalidCertificates=True)
         client.admin.authenticate('luke', 'ekul')
         # This should be the only user.
         self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
@@ -454,8 +454,8 @@ class ServerSSLTestCase(SSLTestCase):
             connected(pymongo.MongoClient(self.server.hostname))
         # Doesn't raise with certificate provided.
         connected(pymongo.MongoClient(
-            self.server.hostname, ssl_certfile=certificate('client.pem'),
-            ssl_cert_reqs=ssl.CERT_NONE))
+            self.server.hostname, tlsCertificateKeyFile=certificate('client.pem'),
+            tlsAllowInvalidCertificates=True))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):
@@ -523,8 +523,7 @@ class ServerAuthTestCase(unittest.TestCase):
             self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
             self.assertTrue(c.admin.authenticate('admin', 'admin'))
             self.assertTrue(isinstance(c.admin.collection_names(), list))
-            self.assertTrue(c.admin.logout() is None)
-            self.assertRaises(pymongo.errors.OperationFailure, c.admin.collection_names)
+            c.close()
 
         self.server2.stop()
         self.server2.cleanup()

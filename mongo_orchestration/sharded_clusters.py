@@ -155,7 +155,7 @@ class ShardedCluster(BaseModel):
                     client = ReplicaSets()._storage[instance_id].connection()
                 db = client[self.auth_source]
                 if self.x509_extra_user:
-                    db.add_user(DEFAULT_SUBJECT, roles=roles)
+                    db.command('createUser', DEFAULT_SUBJECT, roles=roles)
 
                 create_user(db, self.mongos_version, self.login, self.password,
                             roles)
@@ -296,12 +296,15 @@ class ShardedCluster(BaseModel):
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def create_connection(self, host):
+        kwargs = self.kwargs.copy()
+        if self.login and not self.restart_required:
+            kwargs.update(username=self.login, password=self.password)
         c = MongoClient(
             host, w='majority', fsync=True,
-            socketTimeoutMS=self.socket_timeout, **self.kwargs)
+            socketTimeoutMS=self.socket_timeout, **kwargs)
         if self.login and not self.restart_required:
             try:
-                c.admin.authenticate(self.login, self.password)
+                c.admin.command("isMaster")
             except:
                 logger.exception(
                     "Could not authenticate to %s as %s/%s"

@@ -419,14 +419,7 @@ class ReplicaSet(BaseModel):
         if self.login and not self.restart_required:
             try:
                 db = client[self.auth_source]
-                if self.x509_extra_user:
-                    db.authenticate(
-                        DEFAULT_SUBJECT,
-                        mechanism='MONGODB-X509'
-                    )
-                else:
-                    db.authenticate(
-                        self.login, self.password)
+                db.command("isMaster")
             except Exception:
                 logger.exception(
                     "Could not authenticate to %r as %s/%s"
@@ -434,8 +427,7 @@ class ReplicaSet(BaseModel):
                 raise
 
     def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return MongoReplicaSetClient object if hostname specified
-        return MongoClient object if hostname doesn't specified
+        """return MongoClient object
         Args:
             hostname - connection uri
             read_preference - default PRIMARY
@@ -444,6 +436,17 @@ class ReplicaSet(BaseModel):
         logger.debug("connection({hostname}, {read_preference}, {timeout})".format(**locals()))
         t_start = time.time()
         servers = hostname or ",".join(self.server_map.values())
+        if self.login and not self.restart_required:
+            if self.x509_extra_user:
+                auth_args = dict(username=DEFAULT_SUBJECT,
+                            mechanism='MONGODB-X509')
+
+            else:
+                auth_args = dict(username=self.login, password=self.password)
+        else:
+            auth_args = {}
+        kwargs = self.kwargs.copy()
+        kwargs.update(auth_args)
         while True:
             try:
                 if hostname is None:
@@ -451,8 +454,7 @@ class ReplicaSet(BaseModel):
                         servers, replicaSet=self.repl_id,
                         read_preference=read_preference,
                         socketTimeoutMS=self.socket_timeout,
-                        directConnection=True,
-                        w=self._write_concern, fsync=True, **self.kwargs)
+                        w=self._write_concern, fsync=True, **kwargs)
                     connected(c)
                     if c.primary:
                         self._authenticate_client(c)
@@ -463,7 +465,7 @@ class ReplicaSet(BaseModel):
                     c = pymongo.MongoClient(
                         servers, socketTimeoutMS=self.socket_timeout,
                         directConnection=True,
-                        w=self._write_concern, fsync=True, **self.kwargs)
+                        w=self._write_concern, fsync=True, **kwargs)
                     connected(c)
                     self._authenticate_client(c)
                     return c

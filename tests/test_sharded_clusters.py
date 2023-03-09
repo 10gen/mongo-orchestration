@@ -27,7 +27,7 @@ from mongo_orchestration.common import (
     DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
-from mongo_orchestration.servers import Servers
+from mongo_orchestration.servers import Servers, Server
 from mongo_orchestration.process import PortPool
 from tests import (
     certificate, unittest, SkipTest,
@@ -39,11 +39,13 @@ logger = logging.getLogger(__name__)
 
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
+        del Server.mongod_default['nojournal']
         self.sh = ShardedClusters()
         PortPool().change_range()
 
     def tearDown(self):
         self.sh.cleanup()
+        Server.mongod_default['nojournal'] = True
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(ShardedClusters()))
@@ -122,7 +124,8 @@ class ShardsTestCase(unittest.TestCase):
         host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
         c = pymongo.MongoClient(host)
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
-        c.admin.authenticate('admin', 'adminpass')
+        c.close()
+        c = pymongo.MongoClient(host, username='admin', password='adminpass')
         self.assertTrue(isinstance(c.admin.command("listShards"), dict))
         c.close()
 
@@ -282,11 +285,13 @@ class ShardsTestCase(unittest.TestCase):
 class ShardTestCase(unittest.TestCase):
 
     def setUp(self):
+        del Server.mongod_default['nojournal']
         PortPool().change_range()
 
     def tearDown(self):
         if hasattr(self, 'sh') and self.sh is not None:
             self.sh.cleanup()
+        Server.mongod_default['nojournal'] = True
 
     def test_len(self):
         config = {}
@@ -327,10 +332,12 @@ class ShardTestCase(unittest.TestCase):
         self.sh = ShardedCluster(config)
         c = pymongo.MongoClient(self.sh.router['hostname'])
         self.assertRaises(pymongo.errors.OperationFailure, c.admin.command, "listShards")
-        c.admin.authenticate('admin', 'adminpass')
+        c.close()
+        c = pymongo.MongoClient(self.sh.router['hostname'], username='admin', password='adminpass')
         self.assertTrue(isinstance(c.admin.command("listShards"), dict))
         for item in c.admin.command("listShards")['shards']:
             self.assertTrue(item['_id'] in ('sh01', 'sh02'))
+        c.close()
 
     def test_cleanup(self):
         config = {
@@ -604,10 +611,12 @@ class ShardSSLTestCase(SSLTestCase):
     def setUp(self):
         self.sh = None
         PortPool().change_range()
+        del Server.mongod_default['nojournal']
 
     def tearDown(self):
         if self.sh is not None:
             self.sh.cleanup()
+        Server.mongod_default['nojournal'] = True
 
     def test_ssl_auth(self):
         if SERVER_VERSION < (2, 4):
@@ -641,16 +650,17 @@ class ShardSSLTestCase(SSLTestCase):
         # Should create an extra user. No raise on authenticate.
         host = self.sh.router['hostname']
         client = pymongo.MongoClient(
-            host, ssl_certfile=DEFAULT_CLIENT_CERT,
-            ssl_cert_reqs=ssl.CERT_NONE)
-        client['$external'].authenticate(
-            DEFAULT_SUBJECT, mechanism='MONGODB-X509')
+            host, tlsCertificateKeyFile=DEFAULT_CLIENT_CERT,
+            tlsAllowInvalidCertificates=True, username=DEFAULT_SUBJECT, mechanism='MONGODB-X509')
+        client['$external'].command('isMaster')
+        client.close()
 
         # Should create the user we requested. No raise on authenticate.
         client = pymongo.MongoClient(
-            host, ssl_certfile=certificate('client.pem'),
-            ssl_cert_reqs=ssl.CERT_NONE)
-        client['$external'].authenticate(TEST_SUBJECT, mechanism='MONGODB-X509')
+            host, tlsCertificateKeyFile=certificate('client.pem'),
+            tlsAllowInvalidCertificates=True, username=TEST_SUBJECT, mechanism='MONGODB-X509')
+        client['$external'].command('isMaster')
+        client.close()
 
     def test_scram_with_ssl(self):
         proc_params = {'procParams': {'clusterAuthMode': 'x509'}}
@@ -676,9 +686,8 @@ class ShardSSLTestCase(SSLTestCase):
         # Should create the user we requested. No raise on authenticate.
         host = self.sh.router['hostname']
         client = pymongo.MongoClient(
-            host, ssl_certfile=certificate('client.pem'),
-            ssl_cert_reqs=ssl.CERT_NONE)
-        client.admin.authenticate('luke', 'ekul')
+            host, tlsCertificateKeyFile=certificate('client.pem'),
+            tlsAllowInvalidCertificates=True, username='luke', password='ekul')
         # This should be the only user.
         self.assertEqual(len(client.admin.command('usersInfo')['users']), 1)
         self.assertFalse(client['$external'].command('usersInfo')['users'])
@@ -704,8 +713,8 @@ class ShardSSLTestCase(SSLTestCase):
             connected(pymongo.MongoClient(host))
         # This shouldn't raise.
         connected(
-            pymongo.MongoClient(host, ssl_certfile=certificate('client.pem'),
-                                ssl_cert_reqs=ssl.CERT_NONE))
+            pymongo.MongoClient(host, tlsCertificateKeyFile=certificate('client.pem'),
+                                tlsAllowInvalidCertificates=True))
 
     def test_mongodb_auth_uri(self):
         if SERVER_VERSION < (2, 4):
