@@ -602,11 +602,8 @@ class ShardSSLTestCase(SSLTestCase):
 
     @classmethod
     def setUpClass(cls):
-        if SERVER_VERSION >= (3, 1, 2):
-            cls.x509_configsvrs = [
+        cls.x509_configsvrs = [
                 {'members': [{'procParams': {'clusterAuthMode': 'x509'}}]}]
-        else:
-            cls.x509_configsvrs = [{'clusterAuthMode': 'x509'}]
 
     def setUp(self):
         self.sh = None
@@ -619,10 +616,6 @@ class ShardSSLTestCase(SSLTestCase):
         Server.mongod_default['nojournal'] = True
 
     def test_ssl_auth(self):
-        if SERVER_VERSION < (2, 4):
-            raise SkipTest("Need to be able to set 'authenticationMechanisms' "
-                           "parameter to test.")
-
         shard_params = {
             'shardParams': {
                 'procParams': {
@@ -638,10 +631,10 @@ class ShardSSLTestCase(SSLTestCase):
             'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [shard_params, shard_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         # Should not raise an Exception.
@@ -672,10 +665,10 @@ class ShardSSLTestCase(SSLTestCase):
             'shards': [{'shardParams': proc_params},
                        {'shardParams': {'members': [proc_params]}}],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
 
@@ -698,10 +691,10 @@ class ShardSSLTestCase(SSLTestCase):
             'routers': [{}],
             'shards': [{}, {'shardParams': {'members': [{}]}}],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         # Should not raise an Exception.
@@ -736,10 +729,10 @@ class ShardSSLTestCase(SSLTestCase):
             'routers': [{'clusterAuthMode': 'x509'}],
             'shards': [shard_params, shard_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         self.sh = ShardedCluster(config)

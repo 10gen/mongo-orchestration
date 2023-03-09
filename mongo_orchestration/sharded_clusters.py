@@ -388,6 +388,7 @@ class ShardedCluster(BaseModel):
         else:
             # is single server
             params.setdefault('procParams', {})['shardsvr'] = True
+            params.setdefault('procParams', {})['replSet'] = str(uuid4())
             params.update({'autostart': True, 'sslParams': self.sslParams})
             params = params.copy()
             params['procParams'] = self._strip_auth(

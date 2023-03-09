@@ -59,7 +59,7 @@ if ($authentication -eq "auth") {
 
 if ($ssl -eq "ssl") {
    echo "Using SSL"
-   $SSL_PARAMS="`"sslParams`": {`"sslMode`": `"requireSSL`", `"sslAllowInvalidCertificates`" : true, `"sslPEMKeyFile`":`"$($SSL_FILES_ROOT)\\server.pem`", `"sslCAFile`": `"$($SSL_FILES_ROOT)\\ca.pem`", `"sslWeakCertificateValidation`" : true},"
+   $SSL_PARAMS="`"sslParams`": {`"tlsMode`": `"requireTLS`", `"tlsAllowInvalidCertificates`" : true, `"tlsCertificateKeyFile`":`"$($SSL_FILES_ROOT)\\server.pem`", `"tlsCAFile`": `"$($SSL_FILES_ROOT)\\ca.pem`", `"sslWeakCertificateValidation`" : true},"
 }
 
 echo "TEST_PARAMS=$TEST_PARAMS"

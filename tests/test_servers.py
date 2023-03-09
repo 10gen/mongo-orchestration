@@ -396,10 +396,10 @@ class ServerSSLTestCase(SSLTestCase):
             }
         }
         ssl_params = {
-            'sslPEMKeyFile': certificate('server.pem'),
-            'sslCAFile': certificate('ca.pem'),
-            'sslMode': 'requireSSL',
-            'sslAllowInvalidCertificates': True
+            'tlsCertificateKeyFile': certificate('server.pem'),
+            'tlsCAFile': certificate('ca.pem'),
+            'tlsMode': 'requireTLS',
+            'tlsAllowInvalidCertificates': True
         }
         # Should not raise an Exception.
         self.server = Server(
@@ -421,10 +421,10 @@ class ServerSSLTestCase(SSLTestCase):
 
     def test_scram_with_ssl(self):
         ssl_params = {
-            'sslPEMKeyFile': certificate('server.pem'),
-            'sslCAFile': certificate('ca.pem'),
-            'sslMode': 'requireSSL',
-            'sslAllowInvalidCertificates': True
+            'tlsCertificateKeyFile': certificate('server.pem'),
+            'tlsCAFile': certificate('ca.pem'),
+            'tlsMode': 'requireTLS',
+            'tlsAllowInvalidCertificates': True
         }
         # Should not raise an Exception.
         self.server = Server(
@@ -441,10 +441,10 @@ class ServerSSLTestCase(SSLTestCase):
 
     def test_ssl(self):
         ssl_params = {
-            'sslPEMKeyFile': certificate('server.pem'),
-            'sslCAFile': certificate('ca.pem'),
-            'sslMode': 'requireSSL',
-            'sslAllowInvalidCertificates': True
+            'tlsCertificateKeyFile': certificate('server.pem'),
+            'tlsCAFile': certificate('ca.pem'),
+            'tlsMode': 'requireTLS',
+            'tlsAllowInvalidCertificates': True
         }
         # Should not raise an Exception.
         self.server = Server(self.mongod_name, {}, ssl_params)
@@ -468,10 +468,10 @@ class ServerSSLTestCase(SSLTestCase):
             }
         }
         ssl_params = {
-            'sslPEMKeyFile': certificate('server.pem'),
-            'sslCAFile': certificate('ca.pem'),
-            'sslMode': 'requireSSL',
-            'sslAllowInvalidCertificates': True
+            'tlsCertificateKeyFile': certificate('server.pem'),
+            'tlsCAFile': certificate('ca.pem'),
+            'tlsMode': 'requireTLS',
+            'tlsAllowInvalidCertificates': True
         }
         self.server = Server(
             self.mongod_name, proc_params, ssl_params,

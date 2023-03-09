@@ -655,10 +655,10 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             'authSource': '$external',
             'members': [member_params, member_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         # Should not raise an Exception.
@@ -683,10 +683,10 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             'password': 'ekul',
             'members': [member_params, member_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         # Should not raise an Exception.
@@ -706,10 +706,10 @@ class ReplicaSetSSLTestCase(SSLTestCase):
         self.repl_cfg = {
             'members': [member_params, member_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         # Should not raise an Exception.
@@ -740,10 +740,10 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             'authSource': '$external',
             'members': [member_params, member_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         self.repl = ReplicaSet(self.repl_cfg)
@@ -770,10 +770,10 @@ class ReplicaSetSSLTestCase(SSLTestCase):
             'authSource': '$external',
             'members': [member_params, member_params],
             'sslParams': {
-                'sslCAFile': certificate('ca.pem'),
-                'sslPEMKeyFile': certificate('server.pem'),
-                'sslMode': 'requireSSL',
-                'sslAllowInvalidCertificates': True
+                'tlsCAFile': certificate('ca.pem'),
+                'tlsCertificateKeyFile': certificate('server.pem'),
+                'tlsMode': 'requireTLS',
+                'tlsAllowInvalidCertificates': True
             }
         }
         self.repl = ReplicaSet(self.repl_cfg)
