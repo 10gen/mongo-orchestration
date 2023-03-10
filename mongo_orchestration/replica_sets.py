@@ -66,6 +66,7 @@ class ReplicaSet(BaseModel):
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         members = rs_params.get('members', [])
+        self._members = members
         # Enable ipv6 on all members if any have it enabled.
         self.enable_ipv6 = ipv6_enabled_repl(rs_params)
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -116,32 +117,7 @@ class ReplicaSet(BaseModel):
 
             self._add_users(self.connection()[self.auth_source], version)
         if self.restart_required:
-            def restart_member(idx, member):
-                server_id = self._servers.host_to_server_id(
-                    self.member_id_to_host(idx))
-                server = self._servers._storage[server_id]
-                # If this is an arbiter, we can't authenticate as the user,
-                # so don't set the login/password.
-                if not member.get('rsParams', {}).get('arbiterOnly'):
-                    server.x509_extra_user = self.x509_extra_user
-                    server.auth_source = self.auth_source
-                    server.login = self.login
-                    server.password = self.password
-
-                def add_auth(config):
-                    if self.auth_key:
-                        config['keyFile'] = self.key_file
-                    config.update(member.get('procParams', {}))
-                    return config
-
-                server.restart(config_callback=add_auth)
-            # Restart all the servers with auth flags and ssl.
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(restart_member, i, member)
-                           for i, member in enumerate(members)]
-                for f in futures:
-                    f.result()
-            self.restart_required = False
+            self.restart_with_auth()
 
         if not self.waiting_member_state() and self.waiting_config_state():
             raise ReplicaSetError(
@@ -153,13 +129,45 @@ class ReplicaSet(BaseModel):
         else:
             raise ReplicaSetError("No primary was ever elected.")
 
+    def restart_with_auth(self, cluster_auth_mode=None):
+        for idx, member in enumerate(self._members):
+            server_id = self._servers.host_to_server_id(
+                self.member_id_to_host(idx))
+            server = self._servers._storage[server_id]
+            # If this is an arbiter, we can't authenticate as the user,
+            # so don't set the login/password.
+            if not member.get('rsParams', {}).get('arbiterOnly'):
+                server.x509_extra_user = self.x509_extra_user
+                server.auth_source = self.auth_source
+                server.ssl_params = self.sslParams
+                server.login = self.login
+                server.password = self.password
+                server.auth_key = self.auth_key
+
+        def add_auth(config):
+            if self.auth_key:
+                config['keyFile'] = self.key_file
+            # Add clusterAuthMode back in.
+            if cluster_auth_mode:
+                config['clusterAuthMode'] = cluster_auth_mode
+            return config
+
+        # Restart all the servers with auth flags and ssl.
+        self.restart(config_callback=add_auth)
+        for server in self.server_instances():
+            server.restart_required = False
+        self.restart_required = False
+
     def __len__(self):
         return len(self.server_map)
 
     def cleanup(self):
         """remove all members without reconfig"""
-        for item in self.server_map:
-            self.member_del(item, reconfig=False)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self.member_del, item, reconfig=False)
+                       for item in self.server_map]
+            for f in futures:
+                f.result()
         self.server_map.clear()
 
     def member_id_to_host(self, member_id):
@@ -592,13 +600,20 @@ class ReplicaSet(BaseModel):
                     return False
         return True
 
+    def server_instances(self):
+        servers = []
+        for host in self.server_map.values():
+            server_id = self._servers.host_to_server_id(host)
+            servers.append(self._servers._storage[server_id])
+        return servers
+
     def restart(self, timeout=300, config_callback=None):
         """Restart each member of the replica set."""
-        for member_id in self.server_map:
-            host = self.server_map[member_id]
-            server_id = self._servers.host_to_server_id(host)
-            server = self._servers._storage[server_id]
-            server.restart(timeout, config_callback)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(s.restart, timeout, config_callback)
+                       for s in self.server_instances()]
+            for f in futures:
+                f.result()
         self.waiting_member_state()
 
 

@@ -201,7 +201,7 @@ class Server(BaseModel):
     def connection(self):
         """return authenticated connection"""
         kwargs = self.kwargs.copy()
-        if not self.is_mongos and self.login and not self.restart_required:
+        if self.login and not self.restart_required:
             kwargs["authSource"] = self.auth_source
             if self.x509_extra_user:
                 kwargs["username"] = DEFAULT_SUBJECT
@@ -209,6 +209,7 @@ class Server(BaseModel):
             else:
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
+        logger.info("connection: %s, %s", kwargs, (self.login, self.restart_required))
         c = pymongo.MongoClient(
             self.hostname, fsync=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)

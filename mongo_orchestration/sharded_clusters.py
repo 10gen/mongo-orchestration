@@ -28,7 +28,7 @@ from mongo_orchestration.common import (
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers, Server
-from mongo_orchestration.replica_sets import ReplicaSets
+from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.singleton import Singleton
 from pymongo import MongoClient, write_concern
 
@@ -193,27 +193,37 @@ class ShardedCluster(BaseModel):
                         cfg['keyFile'] = self.key_file
                     # Add clusterAuthMode back in.
                     if cluster_auth_mode:
-                        cfg['clusterAuthMode'] = cam
+                        cfg['clusterAuthMode'] = cluster_auth_mode
                     return cfg
 
-                server_or_rs.restart(config_callback=add_auth)
+                if isinstance(server_or_rs, ReplicaSet):
+                    server_or_rs.restart_with_auth(cluster_auth_mode=cluster_auth_mode)
+                else:
+                    server_or_rs.restart(config_callback=add_auth)
                 server_or_rs.restart_required = False
 
-            for config_id in self._configsvrs:
-                restart_with_auth(self.configdb_singleton._storage[config_id])
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                servers = []
 
-            for server_id in self._routers:
-                server = Servers()._storage[server_id]
-                restart_with_auth(server)
+                for config_id in self._configsvrs:
+                    servers.append(self.configdb_singleton._storage[config_id])
 
-            for shard_id in self._shards:
-                shard = self._shards[shard_id]
-                instance_id = shard['_id']
-                klass = ReplicaSets if shard.get('isReplicaSet') else Servers
-                instance = klass()._storage[instance_id]
-                restart_with_auth(instance)
+                for server_id in self._routers:
+                    server = Servers()._storage[server_id]
+                    servers.append(server)
 
-            self.restart_required = False
+                for shard_id in self._shards:
+                    shard = self._shards[shard_id]
+                    instance_id = shard['_id']
+                    klass = ReplicaSets if shard.get('isReplicaSet') else Servers
+                    server_or_rs = klass()._storage[instance_id]
+                    servers.append(server_or_rs)
+
+                futures = [executor.submit(restart_with_auth, s) for s in servers]
+                for f in futures:
+                    f.result()
+
+                self.restart_required = False
 
     def __init_configrs(self, rs_cfg):
         """Create and start a config replica set."""
@@ -463,17 +473,25 @@ class ShardedCluster(BaseModel):
 
     def cleanup(self):
         """cleanup configuration: stop and remove all servers"""
-        for _id, shard in self._shards.items():
-            if shard.get('isServer', False):
-                Servers().remove(shard['_id'])
-            if shard.get('isReplicaSet', False):
-                ReplicaSets().remove(shard['_id'])
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for _id, shard in self._shards.items():
+                if shard.get('isServer', False):
+                    futures.append(executor.submit(
+                        Servers().remove, shard['_id']))
+                if shard.get('isReplicaSet', False):
+                    futures.append(executor.submit(
+                        ReplicaSets().remove, shard['_id']))
 
-        for mongos in self._routers:
-            Servers().remove(mongos)
+            for mongos in self._routers:
+                futures.append(executor.submit(Servers().remove, mongos))
 
-        for config_id in self._configsvrs:
-            self.configdb_singleton.remove(config_id)
+            for config_id in self._configsvrs:
+                futures.append(executor.submit(
+                    self.configdb_singleton.remove, config_id))
+
+            for f in futures:
+                f.result()
 
         self._configsvrs = []
         self._routers = []
