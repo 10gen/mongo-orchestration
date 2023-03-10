@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from mongo_orchestration import common
 from mongo_orchestration.common import (
-    BaseModel, create_user, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
+    BaseModel, connected, create_user, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
 from mongo_orchestration.container import Container
 from mongo_orchestration.errors import ShardedClusterError
 from mongo_orchestration.servers import Servers, Server
@@ -296,17 +296,15 @@ class ShardedCluster(BaseModel):
         return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
 
     def create_connection(self, host):
+        kwargs = self.kwargs.copy()
+        if self.login and not self.restart_required:
+            kwargs["authSource"] = self.auth_source
+            kwargs["username"] = self.login
+            kwargs["password"] = self.password
         c = MongoClient(
             host, w='majority', fsync=True,
-            socketTimeoutMS=self.socket_timeout, **self.kwargs)
-        if self.login and not self.restart_required:
-            try:
-                c.admin.authenticate(self.login, self.password)
-            except:
-                logger.exception(
-                    "Could not authenticate to %s as %s/%s"
-                    % (host, self.login, self.password))
-                raise
+            socketTimeoutMS=self.socket_timeout, **kwargs)
+        connected(c)
         return c
 
     def connection(self):

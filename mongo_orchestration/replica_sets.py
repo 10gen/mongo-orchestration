@@ -421,28 +421,8 @@ class ReplicaSet(BaseModel):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def _authenticate_client(self, client):
-        """Authenticate the client if necessary."""
-        if self.login and not self.restart_required:
-            try:
-                db = client[self.auth_source]
-                if self.x509_extra_user:
-                    db.authenticate(
-                        DEFAULT_SUBJECT,
-                        mechanism='MONGODB-X509'
-                    )
-                else:
-                    db.authenticate(
-                        self.login, self.password)
-            except Exception:
-                logger.exception(
-                    "Could not authenticate to %r as %s/%s"
-                    % (client, self.login, self.password))
-                raise
-
-    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return MongoReplicaSetClient object if hostname specified
-        return MongoClient object if hostname doesn't specified
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=60):
+        """Return MongoClient object, if hostname is given it is a directly connected client
         Args:
             hostname - connection uri
             read_preference - default PRIMARY
@@ -451,32 +431,32 @@ class ReplicaSet(BaseModel):
         logger.debug("connection({hostname}, {read_preference}, {timeout})".format(**locals()))
         t_start = time.time()
         servers = hostname or ",".join(self.server_map.values())
+        logger.debug("Creating connection to: {servers}".format(**locals()))
+        kwargs = self.kwargs.copy()
+        if self.login and not self.restart_required:
+            kwargs["authSource"] = self.auth_source
+            if self.x509_extra_user:
+                kwargs["username"] = DEFAULT_SUBJECT
+                kwargs["authMechanism"] = "MONGODB-X509"
+            else:
+                kwargs["username"] = self.login
+                kwargs["password"] = self.password
+        if hostname is None:
+            c = pymongo.MongoClient(
+                servers, replicaSet=self.repl_id,
+                read_preference=read_preference,
+                socketTimeoutMS=self.socket_timeout,
+                w=self._write_concern, fsync=True, **kwargs)
+        else:
+            c = pymongo.MongoClient(
+                servers, socketTimeoutMS=self.socket_timeout,
+                w=self._write_concern, fsync=True, **kwargs)
         while True:
             try:
-                if hostname is None:
-                    c = pymongo.MongoReplicaSetClient(
-                        servers, replicaSet=self.repl_id,
-                        read_preference=read_preference,
-                        socketTimeoutMS=self.socket_timeout,
-                        w=self._write_concern, fsync=True, **self.kwargs)
-                    connected(c)
-                    if c.primary:
-                        self._authenticate_client(c)
-                        return c
-                    raise pymongo.errors.AutoReconnect("No replica set primary available")
-                else:
-                    logger.debug("connection to the {servers}".format(**locals()))
-                    c = pymongo.MongoClient(
-                        servers, socketTimeoutMS=self.socket_timeout,
-                        w=self._write_concern, fsync=True, **self.kwargs)
-                    connected(c)
-                    self._authenticate_client(c)
-                    return c
-            except (pymongo.errors.PyMongoError):
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-                logger.error("Exception {exc_type} {exc_value}".format(**locals()))
-                logger.error(err_message)
+                connected(c)
+                return c
+            except pymongo.errors.PyMongoError:
+                logger.exception("Error attempting to connect to: {servers}".format(**locals()))
                 if time.time() - t_start > timeout:
                     raise pymongo.errors.AutoReconnect("Couldn't connect while timeout {timeout} second".format(**locals()))
                 time.sleep(1)

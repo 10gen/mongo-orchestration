@@ -161,6 +161,7 @@ def wait_for(proc, host, port_num, timeout):
             raise OSError("Process started, but died immediately")
         if connect_port(host, port_num):
             return True
+        time.sleep(sleeps)
     return False
 
 
