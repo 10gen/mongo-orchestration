@@ -1,7 +1,7 @@
 name: Tests
 
 on:
-  push:
+  push: ['master']
   pull_request:
 
 jobs:
@@ -15,10 +15,6 @@ jobs:
         with:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.7.0
-        with:
-          mongodb-version: 6.0
       - name: Run tests
         run: |
           pip install -e .
@@ -27,7 +23,7 @@ jobs:
 
   test-other:
     runs-on: ubuntu-latest
-    name: Test Replica Sets
+    name: Test Other Files
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
@@ -35,10 +31,6 @@ jobs:
         with:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.7.0
-        with:
-          mongodb-version: 6.0
       - name: Run tests
         run: |
           pip install -e .
