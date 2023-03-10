@@ -5,11 +5,20 @@ on:
     branches: ['master']
   pull_request:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -eux {0}
+
 jobs:
   test:
     runs-on: ubuntu-22.04
     name: Run ${{ matrix.options[0] }} Tests
     strategy:
+      fail-fast: false
       matrix:
           # Github Actions doesn't support pairing matrix values together, let's improvise
           # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
