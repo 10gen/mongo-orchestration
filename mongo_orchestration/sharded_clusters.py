@@ -20,6 +20,8 @@ import tempfile
 
 from uuid import uuid4
 
+from concurrent.futures import ThreadPoolExecutor
+
 from mongo_orchestration import common
 from mongo_orchestration.common import (
     BaseModel, connected, create_user, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS)
@@ -82,14 +84,23 @@ class ShardedCluster(BaseModel):
         else:
             self.__init_configsvrs(configsvr_configs)
 
-        for r in params.get('routers', [{}]):
-            self.router_add(r)
-        for cfg in params.get('shards', []):
-            shard_params = cfg.get('shardParams', {})
-            shard_tags = shard_params.pop('tags', None)
-            info = self.member_add(cfg.get('id', None), shard_params)
-            if shard_tags:
-                self.tags[info['id']] = shard_tags
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self.router_add, r)
+                       for r in params.get('routers', [{}])]
+            for f in futures:
+                f.result()
+
+            def add_shard(cfg):
+                shard_params = cfg.get('shardParams', {})
+                shard_tags = shard_params.pop('tags', None)
+                info = self.member_add(cfg.get('id', None), shard_params)
+                if shard_tags:
+                    self.tags[info['id']] = shard_tags
+
+            futures = [executor.submit(add_shard, cfg)
+                       for cfg in params.get('shards', [])]
+            for f in futures:
+                f.result()
 
         # SERVER-37631 changed 3.6 sharded cluster setup so that it's required
         # to run refreshLogicalSessionCacheNow on the config server followed by
@@ -290,10 +301,11 @@ class ShardedCluster(BaseModel):
         # Remove flags that turn auth on.
         params = self._strip_auth(params)
 
-        self._routers.append(Servers().create(
+        server_id = Servers().create(
             'mongos', params, sslParams=self.sslParams, autostart=True,
-            version=version, server_id=server_id))
-        return {'id': self._routers[-1], 'hostname': Servers().hostname(self._routers[-1])}
+            version=version, server_id=server_id)
+        self._routers.append(server_id)
+        return {'id': server_id, 'hostname': Servers().hostname(server_id)}
 
     def create_connection(self, host):
         kwargs = self.kwargs.copy()

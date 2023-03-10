@@ -15,10 +15,8 @@
 # limitations under the License.
 
 import logging
-import sys
 import tempfile
 import time
-import traceback
 
 from uuid import uuid4
 
