@@ -22,11 +22,13 @@ jobs:
           echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
           sudo apt-get update
           sudo apt-get install -y mongodb-org
-      - name: Run tests
+      - name: Install deps
         run: |
           pip install -e .
           pip install pytest
-          pytest -v tests/test_replica_sets.py
+      - name: Run Tests
+        run: |
+          pytest -raXsv --durations 10 --color=yes tests/test_replica_sets.py
 
   test-other:
     runs-on: ubuntu-22.04
@@ -44,8 +46,10 @@ jobs:
           echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
           sudo apt-get update
           sudo apt-get install -y mongodb-org
-      - name: Run tests
+      - name: Install deps
         run: |
           pip install -e .
           pip install pytest
-          pytest -v --ignore=tests/test_replica_sets.py
+      - name: Run Tests
+        run: |
+          pytest -raXsv --durations 10 --color=yes --ignore=tests/test_replica_sets.py

@@ -25,12 +25,10 @@ Features
 Requires
 --------
 
--  `Python 2.6, 2.7, or >= 3.2 <http://www.python.org/download/>`__
+-  `Python >=3.7 <http://www.python.org/download/>`__
 -  `bottle>=0.12.7 <https://pypi.python.org/pypi/bottle>`__
 -  `pymongo>=3.0.2,<4 <https://pypi.python.org/pypi/pymongo>`__
 -  `cheroot>=5.11 <https://pypi.python.org/pypi/cheroot/>`__
--  `argparse>=1.2.1 <https://pypi.python.org/pypi/argparse>`__ (Python 2.6 only)
--  `simplejson <https://pypi.python.org/pypi/simplejson>`__ (Python 2.6 only)
 
 Installation
 ------------
@@ -194,14 +192,12 @@ piping the response into ``python -m json.tool``, e.g.:
 Tests
 -----
 
-In order to run the tests, you should first clone the `repository <https://github.com/10gen/mongo-orchestration>`__. Running the tests has the following additional dependency:
-
--  `unittest2 >= 0.6 <https://pypi.python.org/pypi/unittest2>`__ (Python 2.6 only)
+In order to run the tests, you should first clone the `repository <https://github.com/10gen/mongo-orchestration>`__.
 
 Run all tests
 ~~~~~~~~~~~~~
 
-``python setup.py test``
+``python -m unittest``
 
 Run a test module
 ~~~~~~~~~~~~~~~~~
@@ -226,9 +222,10 @@ Run a single test example for debugging with verbose and immediate stdout output
 Changelog
 ---------
 
-Changes in Version 0.7.1 (TBD)
+Changes in Version 0.8.0 (TBD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Upgrade to PyMongo 4.x and set up GitHub Actions testing.
 - Replaced dependency on CherryPy with cheroot. `-s auto` is the new default
   and `-s cherrypy` is no longer supported.
 - Remove transactionLifetimeLimitSeconds default.
