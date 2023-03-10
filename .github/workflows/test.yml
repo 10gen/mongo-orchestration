@@ -28,7 +28,7 @@ jobs:
           pip install pytest
       - name: Run Tests
         run: |
-          pytest -raXsv --durations 10 --color=yes tests/test_replica_sets.py
+          pytest -raXs -v --durations 10 --color=yes tests/test_replica_sets.py
 
   test-other:
     runs-on: ubuntu-22.04
@@ -52,4 +52,4 @@ jobs:
           pip install pytest
       - name: Run Tests
         run: |
-          pytest -raXsv --durations 10 --color=yes --ignore=tests/test_replica_sets.py
+          pytest -raXs -v --durations 10 --color=yes --ignore=tests/test_replica_sets.py
