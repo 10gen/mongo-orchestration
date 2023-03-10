@@ -9,13 +9,14 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     name: Run ${{ matrix.options[0] }} Tests
-    matrix:
-        # Github Actions doesn't support pairing matrix values together, let's improvise
-        # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
-        options:
-        - ["Other", "--ignore=tests/test_replica_sets.py --ignore=tests/test_replica_sets2.py"]
-        - ["Replica Set", "tests/test_replica_set.py"]
-        - ["Replica Sets", "tests/test_replica_sets.py"]
+    strategy:
+      matrix:
+          # Github Actions doesn't support pairing matrix values together, let's improvise
+          # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+          options:
+          - ["Other", "--ignore=tests/test_replica_sets.py --ignore=tests/test_replica_sets2.py"]
+          - ["Replica Set", "tests/test_replica_set.py"]
+          - ["Replica Sets", "tests/test_replica_sets.py"]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
