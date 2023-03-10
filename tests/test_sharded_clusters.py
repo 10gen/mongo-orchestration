@@ -47,13 +47,11 @@ def create_shard(i=0):
 
 class ShardsTestCase(unittest.TestCase):
     def setUp(self):
-        Server.mongod_default.pop('nojournal', None)
         self.sh = ShardedClusters()
         PortPool().change_range()
 
     def tearDown(self):
         self.sh.cleanup()
-        Server.mongod_default['nojournal'] = True
 
     def test_singleton(self):
         self.assertEqual(id(self.sh), id(ShardedClusters()))
@@ -293,13 +291,11 @@ class ShardsTestCase(unittest.TestCase):
 class ShardTestCase(unittest.TestCase):
 
     def setUp(self):
-        del Server.mongod_default['nojournal']
         PortPool().change_range()
 
     def tearDown(self):
         if hasattr(self, 'sh') and self.sh is not None:
             self.sh.cleanup()
-        Server.mongod_default['nojournal'] = True
 
     def test_len(self):
         raise SkipTest("test is not currently working")
@@ -620,12 +616,10 @@ class ShardSSLTestCase(SSLTestCase):
     def setUp(self):
         self.sh = None
         PortPool().change_range()
-        del Server.mongod_default['nojournal']
 
     def tearDown(self):
         if self.sh is not None:
             self.sh.cleanup()
-        Server.mongod_default['nojournal'] = True
 
     def test_ssl_auth(self):
         raise SkipTest("test is not currently working")
