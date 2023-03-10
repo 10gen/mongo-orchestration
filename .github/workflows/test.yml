@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-rs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Test Replica Sets
     steps:
       - uses: actions/checkout@v3
@@ -16,6 +16,12 @@ jobs:
         with:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
+      - name: Install MongoDB
+        run: |
+          wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org
       - name: Run tests
         run: |
           pip install -e .
@@ -23,7 +29,7 @@ jobs:
           pytest tests/test_replica_sets.py
 
   test-other:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Test Other Files
     steps:
       - uses: actions/checkout@v3
@@ -32,6 +38,12 @@ jobs:
         with:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
+      - name: Install MongoDB
+        run: |
+          wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org
       - name: Run tests
         run: |
           pip install -e .
