@@ -33,7 +33,7 @@ TEST_RELEASES = (
 set_releases(*TEST_RELEASES)
 
 # Turn off journal for tests.
-Server.mongod_default['nojournal'] = False
+Server.mongod_default['nojournal'] = True
 
 SSL_ENABLED = False
 SERVER_VERSION = (2, 6)

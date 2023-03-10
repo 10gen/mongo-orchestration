@@ -304,7 +304,6 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertTrue(self.rs.member_info(repl_id, _id)['procInfo']['alive'])
 
     def test_member_freeze(self):
-        raise SkipTest("test takes >100s")
         # This tests Server, but only makes sense in the context of a replica set.
         repl_id = self.rs.create(
             {'members': [{"rsParams": {"priority": 19}},

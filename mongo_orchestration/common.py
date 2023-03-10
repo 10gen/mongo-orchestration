@@ -126,7 +126,7 @@ def create_user(db, mongo_version, user, password, roles):
 
 
 def connected(client):
-    # Await connection in PyMongo 3.0.
+    # Await connection in PyMongo.
     client.admin.command('isMaster')
     return client
 

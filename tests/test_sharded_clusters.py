@@ -224,7 +224,6 @@ class ShardsTestCase(unittest.TestCase):
         self.assertTrue('_id' in info)
 
     def test_member_info_with_auth(self):
-        raise SkipTest("test takes ~100s")
         config = {'auth_key': 'secret', 'login': 'admin', 'password': 'admin', 'shards': [create_shard(), {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         sh_id = self.sh.create(config)
         info = self.sh.member_info(sh_id, 'sh00')
@@ -466,7 +465,6 @@ class ShardTestCase(unittest.TestCase):
         self.sh.cleanup()
 
     def test_member_info_with_auth(self):
-        raise SkipTest("test takes >100s")
         config = {'auth_key': 'secret', 'login': 'admin', 'password': 'adminpass', 'shards': [create_shard(), {'id': 'sh-rs-01', 'shardParams': {'id': 'rs1', 'members': [{}, {}]}}]}
         self.sh = ShardedCluster(config)
         info = self.sh.member_info('sh00')
