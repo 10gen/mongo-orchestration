@@ -197,6 +197,7 @@ class ShardedCluster(BaseModel):
                     return cfg
 
                 server_or_rs.restart(config_callback=add_auth)
+                server_or_rs.restart_required = False
 
             for config_id in self._configsvrs:
                 restart_with_auth(self.configdb_singleton._storage[config_id])
