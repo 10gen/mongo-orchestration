@@ -110,7 +110,7 @@ class ShardedCluster(BaseModel):
                 db = self.connection().get_database(
                     'config',
                     write_concern=write_concern.WriteConcern(fsync=True))
-                db.shards.update(
+                db.shards.update_one(
                     {'_id': sh_id},
                     {'$addToSet': {'tags': {'$each': self.tags[sh_id]}}})
 

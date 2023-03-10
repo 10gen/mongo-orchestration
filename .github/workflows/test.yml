@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-rs:
+    runs-on: ubuntu-latest
+    name: Test Replica Sets
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          cache: 'pip'
+          cache-dependency-path: 'setup.py'
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: 6.0
+      - name: Run tests
+        run: |
+          pip install -e .
+          pip install pytest
+          pytest tests/test_replica_sets.py
+
+  test-other:
+    runs-on: ubuntu-latest
+    name: Test Replica Sets
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          cache: 'pip'
+          cache-dependency-path: 'setup.py'
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: 6.0
+      - name: Run tests
+        run: |
+          pip install -e .
+          pip install pytest
+          pytest  --ignore=tests/test_replica_sets.py
