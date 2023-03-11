@@ -122,11 +122,10 @@ class PortPool(Singleton):
         self.__init_range(min_port, max_port, port_sequence)
 
 
-def connect_port(host, port):
+def connect_port(port):
     """waits while process starts.
     Args:
         proc        - Popen object
-        host        - the hostname to connect to
         port_num    - port number
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
@@ -134,7 +133,7 @@ def connect_port(host, port):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
+        s.connect((DEFAULT_BIND, port))
         s.close()
         return True
     except (IOError, socket.error):
@@ -143,23 +142,22 @@ def connect_port(host, port):
         return False
 
 
-def wait_for(proc, host, port_num, timeout):
+def wait_for(proc, port_num, timeout):
     """waits while process starts.
     Args:
         proc        - Popen object
-        host        - the hostname to connect to
         port_num    - port number
         timeout     - specify how long, in seconds, a command can take before times out.
     return True if process started, return False if not
     """
-    logger.debug("wait for {host}:{port_num}".format(**locals()))
+    logger.debug("wait for {port_num}".format(**locals()))
     t_start = time.time()
     sleeps = 0.1
     while time.time() - t_start < timeout:
         if proc.poll() is not None:
             logger.debug("process is not alive")
             raise OSError("Process started, but died immediately")
-        if connect_port(host, port_num):
+        if connect_port(port_num):
             return True
         time.sleep(sleeps)
     return False
@@ -214,9 +212,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     if cfg.get('port', None) is None or port:
         port = port or PortPool().port(check=True)
         cmd.extend(['--port', str(port)])
-    bind_ip = cfg.get('bind_ip', 'localhost')
-    hostname = bind_ip.split(',')[0]
-    host = "{host}:{port}".format(host=hostname, port=port)
+    host = "{host}:{port}".format(host=DEFAULT_BIND, port=port)
     try:
         logger.debug("execute process: %s", ' '.join(cmd))
         # Redirect server startup errors (written to stdout/stderr) to our log
@@ -234,7 +230,7 @@ def mprocess(name, config_path, port=None, timeout=180):
         logger.debug(message)
         raise OSError(message)
     if timeout > 0:
-        if wait_for(proc, hostname, port, timeout):
+        if wait_for(proc, port, timeout):
             logger.debug("process '{name}' has started: pid={proc.pid},"
                          " host={host}".format(**locals()))
             return (proc, host)
