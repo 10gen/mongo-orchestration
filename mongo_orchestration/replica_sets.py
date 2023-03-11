@@ -130,6 +130,9 @@ class ReplicaSet(BaseModel):
             raise ReplicaSetError("No primary was ever elected.")
 
     def restart_with_auth(self, cluster_auth_mode=None):
+        for server in self.server_instances():
+            server.restart_required = False
+        self.restart_required = False
         for idx, member in enumerate(self._members):
             server_id = self._servers.host_to_server_id(
                 self.member_id_to_host(idx))
@@ -154,9 +157,6 @@ class ReplicaSet(BaseModel):
 
         # Restart all the servers with auth flags and ssl.
         self.restart(config_callback=add_auth)
-        for server in self.server_instances():
-            server.restart_required = False
-        self.restart_required = False
 
     def __len__(self):
         return len(self.server_map)

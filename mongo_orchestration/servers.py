@@ -209,7 +209,6 @@ class Server(BaseModel):
             else:
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
-        logger.info("connection: %s, %s", kwargs, (self.login, self.restart_required))
         c = pymongo.MongoClient(
             self.hostname, fsync=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
