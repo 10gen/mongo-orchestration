@@ -15,12 +15,12 @@
 # limitations under the License.
 
 import logging
-import sys
 import tempfile
 import time
-import traceback
 
 from uuid import uuid4
+
+from concurrent.futures import ThreadPoolExecutor
 
 import pymongo
 
@@ -66,13 +66,14 @@ class ReplicaSet(BaseModel):
             self.kwargs.update(DEFAULT_SSL_OPTIONS)
 
         members = rs_params.get('members', [])
+        self._members = members
         # Enable ipv6 on all members if any have it enabled.
         self.enable_ipv6 = ipv6_enabled_repl(rs_params)
-
-        config = {"_id": self.repl_id, "members": [
-            self.member_create(member, index)
-            for index, member in enumerate(members)
-        ]}
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self.member_create, member, i)
+                       for i, member in enumerate(members)]
+            config_members = [f.result() for f in futures]
+        config = {"_id": self.repl_id, "members": config_members}
         if 'rsSettings' in rs_params:
             config['settings'] = rs_params['rsSettings']
         # Explicitly set write concern to number of data-bearing members.
@@ -116,27 +117,7 @@ class ReplicaSet(BaseModel):
 
             self._add_users(self.connection()[self.auth_source], version)
         if self.restart_required:
-            # Restart all the servers with auth flags and ssl.
-            for idx, member in enumerate(members):
-                server_id = self._servers.host_to_server_id(
-                    self.member_id_to_host(idx))
-                server = self._servers._storage[server_id]
-                # If this is an arbiter, we can't authenticate as the user,
-                # so don't set the login/password.
-                if not member.get('rsParams', {}).get('arbiterOnly'):
-                    server.x509_extra_user = self.x509_extra_user
-                    server.auth_source = self.auth_source
-                    server.login = self.login
-                    server.password = self.password
-
-                def add_auth(config):
-                    if self.auth_key:
-                        config['keyFile'] = self.key_file
-                    config.update(member.get('procParams', {}))
-                    return config
-
-                server.restart(config_callback=add_auth)
-            self.restart_required = False
+            self.restart_with_auth()
 
         if not self.waiting_member_state() and self.waiting_config_state():
             raise ReplicaSetError(
@@ -148,13 +129,45 @@ class ReplicaSet(BaseModel):
         else:
             raise ReplicaSetError("No primary was ever elected.")
 
+    def restart_with_auth(self, cluster_auth_mode=None):
+        for server in self.server_instances():
+            server.restart_required = False
+        self.restart_required = False
+        for idx, member in enumerate(self._members):
+            server_id = self._servers.host_to_server_id(
+                self.member_id_to_host(idx))
+            server = self._servers._storage[server_id]
+            # If this is an arbiter, we can't authenticate as the user,
+            # so don't set the login/password.
+            if not member.get('rsParams', {}).get('arbiterOnly'):
+                server.x509_extra_user = self.x509_extra_user
+                server.auth_source = self.auth_source
+                server.ssl_params = self.sslParams
+                server.login = self.login
+                server.password = self.password
+                server.auth_key = self.auth_key
+
+        def add_auth(config):
+            if self.auth_key:
+                config['keyFile'] = self.key_file
+            # Add clusterAuthMode back in.
+            if cluster_auth_mode:
+                config['clusterAuthMode'] = cluster_auth_mode
+            return config
+
+        # Restart all the servers with auth flags and ssl.
+        self.restart(config_callback=add_auth)
+
     def __len__(self):
         return len(self.server_map)
 
     def cleanup(self):
         """remove all members without reconfig"""
-        for item in self.server_map:
-            self.member_del(item, reconfig=False)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self.member_del, item, reconfig=False)
+                       for item in self.server_map]
+            for f in futures:
+                f.result()
         self.server_map.clear()
 
     def member_id_to_host(self, member_id):
@@ -414,28 +427,8 @@ class ReplicaSet(BaseModel):
         members = self.run_command(command='replSetGetStatus', is_eval=False)['members']
         return [member['name'] for member in members if member['state'] == state]
 
-    def _authenticate_client(self, client):
-        """Authenticate the client if necessary."""
-        if self.login and not self.restart_required:
-            try:
-                db = client[self.auth_source]
-                if self.x509_extra_user:
-                    db.authenticate(
-                        DEFAULT_SUBJECT,
-                        mechanism='MONGODB-X509'
-                    )
-                else:
-                    db.authenticate(
-                        self.login, self.password)
-            except Exception:
-                logger.exception(
-                    "Could not authenticate to %r as %s/%s"
-                    % (client, self.login, self.password))
-                raise
-
-    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=300):
-        """return MongoReplicaSetClient object if hostname specified
-        return MongoClient object if hostname doesn't specified
+    def connection(self, hostname=None, read_preference=pymongo.ReadPreference.PRIMARY, timeout=60):
+        """Return MongoClient object, if hostname is given it is a directly connected client
         Args:
             hostname - connection uri
             read_preference - default PRIMARY
@@ -444,32 +437,32 @@ class ReplicaSet(BaseModel):
         logger.debug("connection({hostname}, {read_preference}, {timeout})".format(**locals()))
         t_start = time.time()
         servers = hostname or ",".join(self.server_map.values())
+        logger.debug("Creating connection to: {servers}".format(**locals()))
+        kwargs = self.kwargs.copy()
+        if self.login and not self.restart_required:
+            kwargs["authSource"] = self.auth_source
+            if self.x509_extra_user:
+                kwargs["username"] = DEFAULT_SUBJECT
+                kwargs["authMechanism"] = "MONGODB-X509"
+            else:
+                kwargs["username"] = self.login
+                kwargs["password"] = self.password
+        if hostname is None:
+            c = pymongo.MongoClient(
+                servers, replicaSet=self.repl_id,
+                read_preference=read_preference,
+                socketTimeoutMS=self.socket_timeout,
+                w=self._write_concern, fsync=True, **kwargs)
+        else:
+            c = pymongo.MongoClient(
+                servers, socketTimeoutMS=self.socket_timeout,
+                w=self._write_concern, fsync=True, **kwargs)
         while True:
             try:
-                if hostname is None:
-                    c = pymongo.MongoReplicaSetClient(
-                        servers, replicaSet=self.repl_id,
-                        read_preference=read_preference,
-                        socketTimeoutMS=self.socket_timeout,
-                        w=self._write_concern, fsync=True, **self.kwargs)
-                    connected(c)
-                    if c.primary:
-                        self._authenticate_client(c)
-                        return c
-                    raise pymongo.errors.AutoReconnect("No replica set primary available")
-                else:
-                    logger.debug("connection to the {servers}".format(**locals()))
-                    c = pymongo.MongoClient(
-                        servers, socketTimeoutMS=self.socket_timeout,
-                        w=self._write_concern, fsync=True, **self.kwargs)
-                    connected(c)
-                    self._authenticate_client(c)
-                    return c
-            except (pymongo.errors.PyMongoError):
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                err_message = traceback.format_exception(exc_type, exc_value, exc_tb)
-                logger.error("Exception {exc_type} {exc_value}".format(**locals()))
-                logger.error(err_message)
+                connected(c)
+                return c
+            except pymongo.errors.PyMongoError:
+                logger.exception("Error attempting to connect to: {servers}".format(**locals()))
                 if time.time() - t_start > timeout:
                     raise pymongo.errors.AutoReconnect("Couldn't connect while timeout {timeout} second".format(**locals()))
                 time.sleep(1)
@@ -607,13 +600,20 @@ class ReplicaSet(BaseModel):
                     return False
         return True
 
+    def server_instances(self):
+        servers = []
+        for host in self.server_map.values():
+            server_id = self._servers.host_to_server_id(host)
+            servers.append(self._servers._storage[server_id])
+        return servers
+
     def restart(self, timeout=300, config_callback=None):
         """Restart each member of the replica set."""
-        for member_id in self.server_map:
-            host = self.server_map[member_id]
-            server_id = self._servers.host_to_server_id(host)
-            server = self._servers._storage[server_id]
-            server.restart(timeout, config_callback)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(s.restart, timeout, config_callback)
+                       for s in self.server_instances()]
+            for f in futures:
+                f.result()
         self.waiting_member_state()
 
 

@@ -7,7 +7,7 @@ from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
 
 extra_opts = {'test_suite': 'tests'}
-py26_requires = ['argparse', 'simplejson']
+py26_requires = ['argparse', 'simplejson', 'futures']
 extra_deps = []
 extra_test_deps = []
 if sys.version_info[:2] == (2, 6):
@@ -93,7 +93,8 @@ setup(
                       'bottle>=0.12.7',
                       'cheroot>=5.11'] + extra_deps,
     extras_require={
-        ':python_version=="2.6"': py26_requires
+        ':python_version=="2.6"': py26_requires,
+        ':python_version=="2.7"': ['futures'],
     },
     tests_require=['coverage>=3.5'] + extra_test_deps,
     packages=find_packages(exclude=('tests',)),
