@@ -31,6 +31,7 @@ setup(
                       'bottle>=0.12.7',
                       'cheroot>=5.11'],
     python_requires=">=3.7",
+    tests_require=['coverage>=3.5'],
     packages=find_packages(exclude=('tests',)),
     package_data={
         'mongo_orchestration': [

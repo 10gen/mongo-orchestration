@@ -31,8 +31,6 @@ try:
 except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
-from bottle import request
-
 from mongo_orchestration.common import DEFAULT_BIND, LOG_FILE
 from mongo_orchestration.compat import reraise, PY3
 from mongo_orchestration.errors import TimeoutError, RequestError
@@ -40,17 +38,6 @@ from mongo_orchestration.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-def _host():
-    """Get the Host from the most recent HTTP request."""
-    host_and_port = request.urlparts[1]
-    try:
-        host, _ = host_and_port.split(':')
-    except ValueError:
-        # No port yet. Host defaults to '127.0.0.1' in bottle.request.
-        return DEFAULT_BIND
-    return host or DEFAULT_BIND
 
 
 class PortPool(Singleton):
@@ -84,7 +71,7 @@ class PortPool(Singleton):
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s.bind((_host(), port))
+            s.bind((DEFAULT_BIND, port))
             return True
         except socket.error:
             return False
@@ -146,7 +133,7 @@ def connect_port(port):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((_host(), port))
+        s.connect((DEFAULT_BIND, port))
         s.close()
         return True
     except (IOError, socket.error):
@@ -172,6 +159,7 @@ def wait_for(proc, port_num, timeout):
             raise OSError("Process started, but died immediately")
         if connect_port(port_num):
             return True
+        time.sleep(sleeps)
     return False
 
 
@@ -224,7 +212,7 @@ def mprocess(name, config_path, port=None, timeout=180):
     if cfg.get('port', None) is None or port:
         port = port or PortPool().port(check=True)
         cmd.extend(['--port', str(port)])
-    host = "{host}:{port}".format(host=_host(), port=port)
+    host = "{host}:{port}".format(host=DEFAULT_BIND, port=port)
     try:
         logger.debug("execute process: %s", ' '.join(cmd))
         # Redirect server startup errors (written to stdout/stderr) to our log
