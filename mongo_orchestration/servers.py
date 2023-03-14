@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2023 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,8 +51,8 @@ class Server(BaseModel):
 
     # regular expression matching MongoDB versions
     version_patt = re.compile(
-        '(?:db version v?|MongoS version v?|mongos db version v?)'
-        '(?P<version>(\d+\.)+\d+)',
+        r'(?:db version v?|MongoS version v?|mongos db version v?)'
+        r'(?P<version>(\d+\.)+\d+)',
         re.IGNORECASE)
 
     def __init_db(self, dbpath):
@@ -210,7 +210,7 @@ class Server(BaseModel):
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
         c = pymongo.MongoClient(
-            self.hostname, fsync=True,
+            self.hostname, fsync=True, directConnection=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
         connected(c)
         return c
@@ -358,6 +358,13 @@ class Server(BaseModel):
                     % max_attempts)
         except (OSError, TimeoutError):
             logpath = self.cfg.get('logpath')
+            if logpath and not os.path.exists(logpath):
+                 logger.exception(
+                    'Could not start Server')
+                 reraise(TimeoutError,
+                    'Could not start Server. '
+                    'Please check the mongo-orchestration log in ' +
+                    LOG_FILE + ' for more details.')
             if logpath:
                 # Copy the server logs into the mongo-orchestration logs.
                 logger.error(
@@ -426,7 +433,7 @@ class Server(BaseModel):
     def stop(self):
         """stop server"""
         try:
-            self.shutdown()
+            return self.shutdown() == 0
         except (PyMongoError, ServersError) as exc:
             logger.info("Killing %s with signal, shutdown command failed: %r",
                         self.name, exc)

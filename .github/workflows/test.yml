@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  push:
+    branches: ['master']
+  pull_request:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -eux {0}
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    name: Run ${{ matrix.options[0] }} Tests
+    strategy:
+      fail-fast: false
+      matrix:
+          # Github Actions doesn't support pairing matrix values together, let's improvise
+          # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+          options:
+          - ["Other", "--ignore=tests/test_replica_set.py --ignore=tests/test_replica_sets.py --ignore=tests/test_sharded_clusters.py"]
+          - ["Replica Set", "tests/test_replica_set.py"]
+          - ["Replica Sets", "tests/test_replica_sets.py"]
+          - ["Sharded", "tests/test_sharded_clusters.py"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          cache: 'pip'
+          cache-dependency-path: 'setup.py'
+      - name: Install MongoDB
+        run: |
+          wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org
+      - name: Install Dependencies
+        run: |
+          pip install -e .
+          pip install pytest
+      - name: Run Tests
+        run: |
+          pytest -raXs -v --durations 10 --color=yes ${{ matrix.options[1] }}

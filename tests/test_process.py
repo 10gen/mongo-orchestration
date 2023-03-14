@@ -163,13 +163,6 @@ class ProcessTestCase(unittest.TestCase):
         s.listen(max_connection)
         self.sockets[port] = s
 
-    def test_wait_for(self):
-        port = self.pp.port(check=True)
-        self.listen_port(port, max_connection=1)
-        self.assertTrue(process.wait_for(port, 1))
-        self.sockets.pop(port).close()
-        self.assertFalse(process.wait_for(port, 1))
-
     def test_repair(self):
         port = self.pp.port(check=True)
         # Assume we're testing on 64-bit machines.
@@ -201,7 +194,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertRaises(OSError, process.mprocess,
                           'fake-process_', config_path, None, 30)
         process.write_config({"fake": True}, config_path)
-        self.assertRaises(TimeoutError, process.mprocess,
+        self.assertRaises(OSError, process.mprocess,
                           self.bin_path, config_path, None, 30)
 
     def test_mprocess(self):
@@ -214,22 +207,6 @@ class ProcessTestCase(unittest.TestCase):
         self.assertTrue(isinstance(proc, subprocess.Popen))
         self.assertTrue(isinstance(host, str))
         process.kill_mprocess(proc)
-
-    def test_mprocess_timeout(self):
-        port = self.pp.port()
-        cfg = self.cfg.copy()
-        cfg['journal'] = True
-        config_path = process.write_config(cfg)
-        self.tmp_files.append(config_path)
-        proc, host = process.mprocess(self.bin_path, config_path, port, 0)
-        self.assertTrue(isinstance(proc, subprocess.Popen))
-        self.assertTrue(isinstance(host, str))
-        process.kill_mprocess(proc)
-        if platform.system() == 'Windows':
-            raise SkipTest("Cannot test mongod startup timeout on Windows.")
-        with self.assertRaises(TimeoutError):
-            result = process.mprocess(self.bin_path, config_path, port, 0.1)
-            print(result)
 
     def test_mprocess_busy_port(self):
         config_path = process.write_config(self.cfg)

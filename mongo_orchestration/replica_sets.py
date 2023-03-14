@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2023 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -456,6 +456,7 @@ class ReplicaSet(BaseModel):
         else:
             c = pymongo.MongoClient(
                 servers, socketTimeoutMS=self.socket_timeout,
+                directConnection=True,
                 w=self._write_concern, fsync=True, **kwargs)
         while True:
             try:

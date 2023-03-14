@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2023 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ class ShardedCluster(BaseModel):
                 db = self.connection().get_database(
                     'config',
                     write_concern=write_concern.WriteConcern(fsync=True))
-                db.shards.update(
+                db.shards.update_one(
                     {'_id': sh_id},
                     {'$addToSet': {'tags': {'$each': self.tags[sh_id]}}})
 
@@ -166,7 +166,7 @@ class ShardedCluster(BaseModel):
                     client = ReplicaSets()._storage[instance_id].connection()
                 db = client[self.auth_source]
                 if self.x509_extra_user:
-                    db.add_user(DEFAULT_SUBJECT, roles=roles)
+                    db.command('createUser', DEFAULT_SUBJECT, roles=roles)
 
                 create_user(db, self.mongos_version, self.login, self.password,
                             roles)

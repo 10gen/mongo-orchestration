@@ -14,11 +14,12 @@
 
 import os
 import re
-import sys
 import time
+import unittest
+from unittest import SkipTest
 
 from mongo_orchestration import set_releases
-from mongo_orchestration.servers import Server, Servers
+from mongo_orchestration.servers import Servers
 
 PORT = int(os.environ.get('MO_PORT', '8889'))
 HOSTNAME = os.environ.get('MO_HOST', 'localhost')
@@ -32,29 +33,18 @@ TEST_RELEASES = (
 # Set up the default mongo binaries to use from MONGOBIN.
 set_releases(*TEST_RELEASES)
 
-# Turn off journal for tests.
-Server.mongod_default['nojournal'] = True
-
 SSL_ENABLED = False
 SERVER_VERSION = (2, 6)
 __server_id = Servers().create(name='mongod', procParams={})
 try:
     # Server version
     info = Servers().info(__server_id)['serverInfo']
-    version_str = re.search('((\d+\.)+\d+)', info['version']).group(0)
+    version_str = re.search(r'((\d+\.)+\d+)', info['version']).group(0)
     SERVER_VERSION = tuple(map(int, version_str.split('.')))
     # Do we have SSL support?
     SSL_ENABLED = bool(info.get('OpenSSLVersion'))
 finally:
     Servers().cleanup()
-
-
-if sys.version_info[:2] == (2, 6):
-    import unittest2 as unittest
-    from unittest2 import SkipTest
-else:
-    import unittest
-    from unittest import SkipTest
 
 
 class SSLTestCase(unittest.TestCase):
