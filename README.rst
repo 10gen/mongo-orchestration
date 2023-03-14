@@ -226,6 +226,8 @@ Changes in Version 0.8.0 (TBD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Upgrade to PyMongo 4.x and set up GitHub Actions testing.
+- Remove support for managing MongoDB 3.4 or earlier servers.
+- Remove support for Python 3.6 or earlier.
 - Replaced dependency on CherryPy with cheroot. `-s auto` is the new default
   and `-s cherrypy` is no longer supported.
 - Remove transactionLifetimeLimitSeconds default.
