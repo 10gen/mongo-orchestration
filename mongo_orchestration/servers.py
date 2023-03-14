@@ -413,9 +413,8 @@ class Server(BaseModel):
             logger.info("Attempting to send shutdown command to %s",
                         self.hostname)
             try:
-                # SERVER-46951: Shorten the default 15 second quiesce mode
-                # timeout to 1 second.
-                client.admin.command("shutdown", force=True, timeoutSecs=1)
+                # SERVER-46951: Disable quiesce mode which defaults to 15 seconds.
+                client.admin.command("shutdown", force=True, timeoutSecs=0)
             except ConnectionFailure:
                 # A shutdown succeeds by closing the connection but a
                 # connection error does not necessarily mean that the shutdown
