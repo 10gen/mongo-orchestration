@@ -30,7 +30,7 @@ setup(
     install_requires=['pymongo>=4,<5',
                       'bottle>=0.12.7',
                       'cheroot>=5.11'],
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     tests_require=['coverage>=3.5'],
     packages=find_packages(exclude=('tests',)),
     package_data={
@@ -47,6 +47,7 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
