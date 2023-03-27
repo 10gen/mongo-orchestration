@@ -43,7 +43,9 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -e .
-          pip install pytest
+          pip install pytest coverage
       - name: Run Tests
         run: |
-          pytest -raXs -v --durations 10 --color=yes ${{ matrix.options[1] }}
+          coverage run -m pytest -raXs -v --durations 10 --color=yes ${{ matrix.options[1] }}
+      - name: Coverage Report
+        run: coverage report
