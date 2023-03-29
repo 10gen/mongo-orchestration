@@ -147,7 +147,7 @@ buildvariants:
 - name: "tests-all"
   display_name: "All Tests"
   run_on:
-     - ubuntu2004-small
+     - ubuntu2204-small
   tasks:
      - name: "test-other"
      - name: "test-replica_set"
