@@ -141,9 +141,6 @@ tasks:
           vars:
             PYTEST_ARGS: "tests/test_sharded_clusters.py"
 
-github_pr_aliases:
-  - variant: "^.*$"
-    task: "^.*$"
 
 buildvariants:
 
