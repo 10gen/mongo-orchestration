@@ -96,8 +96,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          .venv/bin/python -m coverage run -m pytest ${PYTEST_ARGS}
-          .venv/bin/python -m coverage report
+          .venv/bin/python -m pytest ${PYTEST_ARGS}
 
   "install dependencies":
     - command: shell.exec
@@ -107,7 +106,7 @@ functions:
           ${PREPARE_SHELL}
           python3 -m venv .venv
           .venv/bin/python -m pip install -e .
-          .venv/bin/python -m pip install pytest coverage
+          .venv/bin/python -m pip install pytest
 
 pre:
   - func: "fetch source"
