@@ -1,4 +1,4 @@
-# Copyright 2015 MongoDB, Inc.
+# Copyright 2023-Present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -287,7 +287,7 @@ def main():
             _free_port = itertools.count(port)
         except:
             pass
-    for version in ['2.6.12', '3.0.12', '3.2.10', '3.4.0-rc0']:
+    for version in ['3.6', '4.0', '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']:
         if argv_has(version):
             _post_request_template['version'] = version
             break
@@ -331,7 +331,6 @@ def main():
 
 
 # Requires mongo-orchestration running on port 8889.
-# For SSL support you must modify the CERTS path.
 #
 # Usage:
 # mongo-launch <single|repl|shard> <auth> <ssl>
