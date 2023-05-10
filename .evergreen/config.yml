@@ -105,8 +105,7 @@ functions:
         script: |
           ${PREPARE_SHELL}
           python3 -m venv .venv
-          .venv/bin/python -m pip install -e .
-          .venv/bin/python -m pip install pytest
+          .venv/bin/python -m pip install -e ".[test]"
 
 pre:
   - func: "fetch source"

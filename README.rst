@@ -21,6 +21,7 @@ Features
 -  Freeze secondary members of replica sets.
 -  Retrieve information about MongoDB resources.
 -  Interaction all through REST interface.
+-  Launch simple local servers using ``mongo-launch`` CLI tool.
 
 Requires
 --------
@@ -189,6 +190,22 @@ piping the response into ``python -m json.tool``, e.g.:
         // etc.
     }
 
+Mongo Launch
+------------
+
+The ``mongo-launch`` CLI tool allows you to spin up servers locally
+with minimal configuration.
+
+..
+
+    mongo-launch --help
+    Usage: launch.py [single|replica|shard] [ssl] [auth]
+
+..
+
+    mongo-orchestration start
+    mongo-launch replica ssl auth
+
 Tests
 -----
 
@@ -225,6 +242,7 @@ Changelog
 Changes in Version 0.8.0 (TBD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Add `mongo launch` CLI tool.
 - Upgrade to PyMongo 4.x and set up GitHub Actions testing.
 - Remove support for managing MongoDB 3.4 or earlier servers.
 - Remove support for Python 3.5 or earlier.
