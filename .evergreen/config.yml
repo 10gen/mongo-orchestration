@@ -94,9 +94,11 @@ functions:
       type: test
       params:
         working_dir: "src"
+        shell: "bash"
         script: |
           ${PREPARE_SHELL}
-          .venv/bin/python -m pytest ${PYTEST_ARGS}
+          .venv/bin/activate
+          pytest ${PYTEST_ARGS}
 
   "install dependencies":
     - command: shell.exec
