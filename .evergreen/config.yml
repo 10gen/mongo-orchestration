@@ -97,7 +97,7 @@ functions:
         shell: "bash"
         script: |
           ${PREPARE_SHELL}
-          .venv/bin/activate
+          . .venv/bin/activate
           pytest ${PYTEST_ARGS}
 
   "install dependencies":
