@@ -29,7 +29,8 @@ setup(
     url='https://github.com/10gen/mongo-orchestration',
     install_requires=['pymongo>=4,<5',
                       'bottle>=0.12.7',
-                      'cheroot>=5.11'],
+                      'cheroot>=5.11',
+                      'requests'],
     python_requires=">=3.6",
     extras_require=dict(
         test=['coverage>=3.5', 'pytest', 'pexpect'],
