@@ -242,7 +242,7 @@ Changelog
 Changes in Version 0.8.0 (TBD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Add `mongo launch` CLI tool.
+- Add ``mongo-launch`` CLI tool.
 - Upgrade to PyMongo 4.x and set up GitHub Actions testing.
 - Remove support for managing MongoDB 3.4 or earlier servers.
 - Remove support for Python 3.5 or earlier.
