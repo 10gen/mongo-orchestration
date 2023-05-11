@@ -57,7 +57,9 @@ class SSLTestCase(unittest.TestCase):
 
 def certificate(cert_name):
     """Return the path to the PEM file with the given name."""
-    return os.path.join(os.path.dirname(__file__), 'lib', cert_name)
+    from mongo_orchestration import __path__
+    mo_path = list(__path__)[0]
+    return os.path.join(mo_path, 'lib', cert_name)
 
 
 def assert_eventually(condition, message=None, max_tries=60):

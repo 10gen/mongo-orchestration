@@ -29,15 +29,18 @@ setup(
     url='https://github.com/10gen/mongo-orchestration',
     install_requires=['pymongo>=4,<5',
                       'bottle>=0.12.7',
-                      'cheroot>=5.11'],
+                      'cheroot>=5.11',
+                      'requests'],
     python_requires=">=3.6",
-    tests_require=['coverage>=3.5'],
+    extras_require=dict(
+        test=['coverage>=3.5', 'pytest', 'pexpect'],
+    ),
     packages=find_packages(exclude=('tests',)),
     package_data={
         'mongo_orchestration': [
             os.path.join('configurations', config_dir, '*.json')
             for config_dir in ('servers', 'replica_sets', 'sharded_clusters')
-        ] + [os.path.join('lib', 'client.pem')]
+        ] + [os.path.join('lib', '*.pem')]
     },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -55,7 +58,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mongo-orchestration = mongo_orchestration.server:main'
+            'mongo-orchestration = mongo_orchestration.server:main',
+            'mongo-launch = mongo_orchestration.launch:main'
         ]
     }
 )
