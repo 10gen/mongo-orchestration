@@ -239,8 +239,8 @@ Run a single test example for debugging with verbose and immediate stdout output
 Changelog
 ---------
 
-Changes in Version 0.8.0 (TBD)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Changes in Version 0.8.0 (2023-05-16)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Add ``mongo-launch`` CLI tool.
 - Upgrade to PyMongo 4.x and set up GitHub Actions testing.

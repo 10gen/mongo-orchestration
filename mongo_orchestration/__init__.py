@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2023 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 import sys
 
+from mongo_orchestration._version import __version__
 from mongo_orchestration.servers import Servers
 from mongo_orchestration.replica_sets import ReplicaSets
 from mongo_orchestration.sharded_clusters import ShardedClusters
-
-__version__ = '0.7.1.dev0'
 
 
 def set_releases(releases=None, default_release=None):
