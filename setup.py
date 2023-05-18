@@ -16,9 +16,14 @@ except IOError:
         long_description = ''
 
 
+version_ns = {}
+with open("mongo_orchestration/_version.py") as fp:
+    exec(fp.read(), version_ns)
+version = version_ns["__version__"]
+
 setup(
     name='mongo-orchestration',
-    version='0.8.0.dev0',
+    version=version,
     author='MongoDB, Inc.',
     author_email='mongodb-user@googlegroups.com',
     description='Restful service for managing MongoDB servers',
@@ -50,10 +55,11 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython"
     ],
     entry_points={
