@@ -85,6 +85,14 @@ class Server(BaseModel):
                 params.setdefault('writePeriodicNoops', 1)
             config['setParameter'] = params
 
+        # no 'journal' after 6.1 onwards...
+        # https://www.mongodb.com/docs/manual/reference/program/mongod/#options
+        if self.version >= (6, 1):
+            if config.get('journal'):
+                config.pop('journal')
+            if config.get('nojournal'):
+                config.pop('nojournal')
+
         compressors = config.get('networkMessageCompressors')
         if compressors is None:
             if self.version >= (4, 1, 7):
