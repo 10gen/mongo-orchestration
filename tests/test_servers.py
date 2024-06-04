@@ -219,7 +219,7 @@ class ServersTestCase(unittest.TestCase):
                                    .get('parsed', {})
                                    .get('replication', {})
                                    .get('enableMajorityReadConcern'))
-            if SERVER_VERSION >= (3, 2):
+            if SERVER_VERSION >= (3, 2) and SERVER_VERSION < (5, 0):
                 self.assertTrue(majority_rc_enabled)
             else:
                 self.assertFalse(majority_rc_enabled)
