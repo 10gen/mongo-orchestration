@@ -26,7 +26,7 @@ Features
 Requires
 --------
 
--  `Python >=3.7 <http://www.python.org/download/>`__
+-  `Python >=3.8 <http://www.python.org/download/>`__
 -  `bottle>=0.12.7 <https://pypi.python.org/pypi/bottle>`__
 -  `pymongo>=3.0.2,<4 <https://pypi.python.org/pypi/pymongo>`__
 -  `cheroot>=5.11 <https://pypi.python.org/pypi/cheroot/>`__

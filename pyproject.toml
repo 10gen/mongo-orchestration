@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mongo-orchestration"
+dynamic = ["version"]
+description = "Restful service for managing MongoDB servers"
+readme = "README.rst"
+license = {file="LICENSE"}
+requires-python = ">=3.8"
+authors = [
+    { name = "The MongoDB Python Team" },
+]
+keywords = [
+    "mongo",
+    "mongo-orchestration",
+    "mongodb",
+    "rest",
+    "testing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "bottle>=0.12.7",
+    "cheroot>=5.11",
+    "pymongo>=4,<5",
+    "requests",
+]
+
+[project.optional-dependencies]
+test = [
+    "coverage>=3.5",
+    "pexpect",
+    "pytest",
+]
+
+[project.scripts]
+mongo-launch = "mongo_orchestration.launch:main"
+mongo-orchestration = "mongo_orchestration.server:main"
+
+[project.urls]
+Homepage = "https://github.com/10gen/mongo-orchestration"
+
+[tool.hatch.version]
+path = "mongo_orchestration/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/mongo_orchestration",
+]
+
+[tool.coverage.run]
+include = "mongo_orchestration/*"
+
+[tool.coverage.report]
+fail_under = 84
+
+[tool.pytest.ini_options]
+addopts = ["-raXs", "-v", "--durations", "10", "--color=yes"]
