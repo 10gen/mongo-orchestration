@@ -22,6 +22,7 @@ import re
 import subprocess
 import tempfile
 import time
+from pathlib import Path
 
 from uuid import uuid4
 
@@ -227,6 +228,9 @@ class Server(BaseModel):
                 kwargs["password"] = self.password
         if self.require_api_version:
             kwargs["server_api"] = ServerApi(self.require_api_version)
+        target = Path("~/test.out").expanduser()
+        import json
+        target.write_text(json.dumps(kwargs)) 
         c = pymongo.MongoClient(
             self.hostname, fsync=True, directConnection=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
