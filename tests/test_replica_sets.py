@@ -364,6 +364,12 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertEqual(len(self.rs.hidden(repl_id)), 0)
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
+    def test_require_api_version2(self):
+        repl_id = self.rs.create({'members': [{}, {}, {}], 'requireApiVersion': '1'})
+        server_ids = [m['server_id'] for m in self.rs.members(repl_id)]
+        for host in [Servers().hostname(server_id) for server_id in server_ids]:
+            assert self.rs[repl_id].connection(host).options.pool_options.server_api.version == "1"
+
 
 if __name__ == '__main__':
     unittest.main()

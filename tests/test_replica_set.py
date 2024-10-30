@@ -304,6 +304,14 @@ class ReplicaSetTestCase(unittest.TestCase):
             config = conn.local.system.replset.find_one()
         self.assertEqual(config['settings']['heartbeatTimeoutSecs'], 20)
 
+    def test_require_api_version(self):
+        self.repl_cfg = {'members': [{}, {}, {}], 'requireApiVersion': '1'} 
+        self.repl = ReplicaSet(self.repl_cfg)
+
+        server_ids = [m['server_id'] for m in self.repl.members()]
+        for host in [Servers().hostname(server_id) for server_id in server_ids]:
+            assert self.repl.connection(host).options.pool_options.server_api.version == "1"
+
 
 class ReplicaSetSSLTestCase(SSLTestCase):
 

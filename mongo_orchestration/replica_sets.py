@@ -23,6 +23,7 @@ from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor
 
 import pymongo
+from pymongo.server_api import ServerApi
 
 from mongo_orchestration.common import (
     BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS,
@@ -56,6 +57,7 @@ class ReplicaSet(BaseModel):
         self.admin_added = False
         self.repl_id = rs_params.get('id', None) or str(uuid4())
         self._version = rs_params.get('version')
+        self._require_api_version = rs_params.get('requireApiVersion', '')
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
@@ -447,6 +449,8 @@ class ReplicaSet(BaseModel):
             else:
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
+        if self._require_api_version:
+            kwargs["server_api"] = ServerApi(self._require_api_version)
         if hostname is None:
             c = pymongo.MongoClient(
                 servers, replicaSet=self.repl_id,

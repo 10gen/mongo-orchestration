@@ -26,7 +26,7 @@ from mongo_orchestration.common import (
     DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
-from mongo_orchestration.servers import Servers, Server
+from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
 from tests import (
     certificate, unittest, SkipTest,
@@ -287,6 +287,15 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(result['id'], 'test2')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
 
+    def test_require_api_version(self):
+        port = PortPool().port(check=True)
+        config = {
+            'routers': [{'port': port}],
+            "requireApiVersion": "1"
+        }
+        sh_id = self.sh.create(config)
+        self.assertEqual(len(self.sh.members(sh_id)), 0)
+        self.sh.cleanup()
 
 class ShardTestCase(unittest.TestCase):
 
@@ -604,6 +613,15 @@ class ShardTestCase(unittest.TestCase):
             'shards': [create_shard()]
         })
         self.assertIsNotNone(self.sh.key_file)
+
+    def test_require_api_version(self):
+        self.sh = ShardedCluster({
+            'auth_key': 'secret',
+            'routers': [{}],
+            'shards': [create_shard()],
+            "requireApiVersion": "1"
+        })
+        assert self.sh.connection().options.pool_options.server_api.version == "1"
 
 
 class ShardSSLTestCase(SSLTestCase):
