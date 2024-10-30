@@ -451,6 +451,7 @@ class ReplicaSet(BaseModel):
                 kwargs["password"] = self.password
         if self._require_api_version:
             kwargs["server_api"] = ServerApi(self._require_api_version)
+        print('require api version?', self._require_api_version)
         if hostname is None:
             c = pymongo.MongoClient(
                 servers, replicaSet=self.repl_id,
