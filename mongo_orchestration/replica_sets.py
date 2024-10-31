@@ -133,6 +133,8 @@ class ReplicaSet(BaseModel):
 
         if self._require_api_version:
             for host in self.members():
+                if host.get('rsParams', {}).get('arbiterOnly'):
+                    continue
                 client = self.connection(host['host'])
                 client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
