@@ -306,7 +306,8 @@ class ServerTestCase(unittest.TestCase):
     def test_require_api_version(self):
         server = Server(self.mongod, {}, require_api_version="1")
         server.start()
-        assert server.connection.options.pool_options.server_api.version == "1"
+        server_params = server.connection.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
 
     def test_start(self):
         self.assertNotIn('pid', self.server.info()['procInfo'])

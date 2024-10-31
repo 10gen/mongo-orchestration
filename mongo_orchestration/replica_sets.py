@@ -94,7 +94,6 @@ class ReplicaSet(BaseModel):
         if not self.waiting_config_state():
             raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
-
         if self.login:
             # If the only authentication mechanism enabled is MONGODB-X509,
             # we'll need to add our own user using SSL certificates we already
@@ -118,6 +117,7 @@ class ReplicaSet(BaseModel):
                 version = (2, 4, 0)
 
             self._add_users(self.connection()[self.auth_source], version)
+
         if self.restart_required:
             self.restart_with_auth()
 
@@ -130,6 +130,10 @@ class ReplicaSet(BaseModel):
             time.sleep(0.1)
         else:
             raise ReplicaSetError("No primary was ever elected.")
+
+        if self._require_api_version:
+            client = self.connection(self.primary())
+            client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
     def restart_with_auth(self, cluster_auth_mode=None):
         for server in self.server_instances():
@@ -451,7 +455,6 @@ class ReplicaSet(BaseModel):
                 kwargs["password"] = self.password
         if self._require_api_version:
             kwargs["server_api"] = ServerApi(self._require_api_version)
-        print('require api version?', self._require_api_version)
         if hostname is None:
             c = pymongo.MongoClient(
                 servers, replicaSet=self.repl_id,

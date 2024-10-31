@@ -21,8 +21,6 @@ import platform
 import re
 import subprocess
 import tempfile
-import time
-from pathlib import Path
 
 from uuid import uuid4
 
@@ -228,13 +226,12 @@ class Server(BaseModel):
                 kwargs["password"] = self.password
         if self.require_api_version:
             kwargs["server_api"] = ServerApi(self.require_api_version)
-        target = Path("~/test.out").expanduser()
-        import json
-        target.write_text(json.dumps(kwargs)) 
         c = pymongo.MongoClient(
             self.hostname, fsync=True, directConnection=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
         connected(c)
+        if self.require_api_version:
+            c.admin.command("setParameter", 1, requireApiVersion=int(self.require_api_version))
         return c
 
     @property
@@ -542,7 +539,7 @@ class Servers(Singleton, Container):
 
         bin_path = self.bin_path(version)
         server = Server(os.path.join(bin_path, name), procParams, sslParams,
-                        auth_key, login, password, auth_source, require_api_version)
+                        auth_key, login, password, auth_source, require_api_version=require_api_version)
         if autostart:
             server.start(timeout)
         self[server_id] = server

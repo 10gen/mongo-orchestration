@@ -227,6 +227,10 @@ class ShardedCluster(BaseModel):
 
                 self.restart_required = False
 
+        if self.login and self._require_api_version:
+            client = self.connection()
+            client[self.auth_source].command("setParameter", 1, requireApiVersion=int(self._require_api_version))
+
     def __init_configrs(self, rs_cfg):
         """Create and start a config replica set."""
         # Use 'rs_id' to set the id for consistency, but need to rename

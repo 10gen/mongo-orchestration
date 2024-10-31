@@ -307,10 +307,9 @@ class ReplicaSetTestCase(unittest.TestCase):
     def test_require_api_version(self):
         self.repl_cfg = {'members': [{}, {}, {}], 'requireApiVersion': '1'} 
         self.repl = ReplicaSet(self.repl_cfg)
-
-        server_ids = [m['server_id'] for m in self.repl.members()]
-        for host in [Servers().hostname(server_id) for server_id in server_ids]:
-            assert self.repl.connection(host).options.pool_options.server_api.version == "1"
+        client = self.repl.connection()
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
 
 
 class ReplicaSetSSLTestCase(SSLTestCase):

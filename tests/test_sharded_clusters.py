@@ -17,6 +17,7 @@
 import logging
 import operator
 import pymongo
+from pymongo.server_api import ServerApi
 import sys
 import time
 
@@ -293,8 +294,11 @@ class ShardsTestCase(unittest.TestCase):
             'routers': [{'port': port}],
             "requireApiVersion": "1"
         }
-        sh_id = self.sh.create(config)
-        self.assertEqual(len(self.sh.members(sh_id)), 0)
+        self.sh.create(config)
+        host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
+        client = pymongo.MongoClient(host, server_api=ServerApi("1"))
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
         self.sh.cleanup()
 
 class ShardTestCase(unittest.TestCase):
@@ -616,13 +620,14 @@ class ShardTestCase(unittest.TestCase):
 
     def test_require_api_version(self):
         self.sh = ShardedCluster({
-            'auth_key': 'secret',
+            'login': 'luke', 'password': 'ekul',
             'routers': [{}],
             'shards': [create_shard()],
             "requireApiVersion": "1"
         })
-        assert self.sh.connection().options.pool_options.server_api.version == "1"
-
+        client = self.sh.connection()
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
 
 class ShardSSLTestCase(SSLTestCase):
 
