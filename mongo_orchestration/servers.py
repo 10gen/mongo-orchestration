@@ -425,6 +425,9 @@ class Server(BaseModel):
             return
         logger.info("Attempting to connect to %s", self.hostname)
         client = self.connection
+        # If we have set requireApiVersion, disable it.
+        if self.require_api_version:
+            client.admin.command("setParameter", 1, requireApiVersion=0)
         # Attempt the shutdown command twice, the first attempt might fail due
         # to an election.
         attempts = 2
