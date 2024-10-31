@@ -132,8 +132,9 @@ class ReplicaSet(BaseModel):
             raise ReplicaSetError("No primary was ever elected.")
 
         if self._require_api_version:
-            client = self.connection()
-            client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
+            for host in self.members():
+                client = self.connection(host['host'])
+                client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
     def restart_with_auth(self, cluster_auth_mode=None):
         for server in self.server_instances():

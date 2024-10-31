@@ -303,7 +303,13 @@ class ServerTestCase(unittest.TestCase):
         self.server.start(30)
         self.assertEqual(self.server.run_command('serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
 
-    def test_require_api_version(self):
+    def test_require_api_version_auth(self):
+        server = Server(self.mongod, {}, require_api_version="1", login='luke', password='ekul')
+        server.start()
+        server_params = server.connection.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
+
+    def test_require_api_version_noauth(self):
         server = Server(self.mongod, {}, require_api_version="1")
         server.start()
         server_params = server.connection.admin.command("getParameter", "*")
