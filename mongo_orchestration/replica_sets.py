@@ -132,7 +132,7 @@ class ReplicaSet(BaseModel):
             raise ReplicaSetError("No primary was ever elected.")
 
         if self._require_api_version:
-            for host in self.members():
+            for host in self._members:
                 if host.get('rsParams', {}).get('arbiterOnly'):
                     continue
                 client = self.connection(host['host'])
