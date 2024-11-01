@@ -135,7 +135,7 @@ class ReplicaSet(BaseModel):
             for host in self._members:
                 if host.get('rsParams', {}).get('arbiterOnly'):
                     continue
-                client = self.connection(host['host'])
+                client = self.connection(host['name'])
                 client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
     def restart_with_auth(self, cluster_auth_mode=None):
