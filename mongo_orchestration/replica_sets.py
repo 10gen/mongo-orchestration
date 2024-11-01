@@ -36,6 +36,7 @@ from mongo_orchestration.servers import Servers
 logger = logging.getLogger(__name__)
 Servers()
 
+ARBITER_STATE = 7
 
 class ReplicaSet(BaseModel):
     """class represents ReplicaSet"""
@@ -132,10 +133,10 @@ class ReplicaSet(BaseModel):
             raise ReplicaSetError("No primary was ever elected.")
 
         if self._require_api_version:
-            for host in self._members:
-                if host.get('rsParams', {}).get('arbiterOnly'):
+            for host in self.members():
+                if host['state'] == ARBITER_STATE:
                     continue
-                client = self.connection(host['name'])
+                client = self.connection(host['host'])
                 client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
     def restart_with_auth(self, cluster_auth_mode=None):
@@ -498,7 +499,7 @@ class ReplicaSet(BaseModel):
                 "host": member,
                 "server_id": self._servers.host_to_server_id(member)
             }
-            for member in self.get_members_in_state(7)
+            for member in self.get_members_in_state(ARBITER_STATE)
         ]
 
     def hidden(self):
