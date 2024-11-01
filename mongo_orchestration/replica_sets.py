@@ -36,6 +36,8 @@ from mongo_orchestration.servers import Servers
 logger = logging.getLogger(__name__)
 Servers()
 
+PRIMARY_STATE = 1
+SECONDARY_STATE = 2
 ARBITER_STATE = 7
 
 class ReplicaSet(BaseModel):
@@ -488,7 +490,7 @@ class ReplicaSet(BaseModel):
                 "host": member,
                 "server_id": self._servers.host_to_server_id(member)
             }
-            for member in self.get_members_in_state(2)
+            for member in self.get_members_in_state(SECONDARY_STATE)
         ]
 
     def arbiters(self):
