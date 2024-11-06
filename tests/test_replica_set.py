@@ -325,6 +325,7 @@ class ReplicaSetTestCase(unittest.TestCase):
         client = self.repl.connection()
         server_params = client.admin.command("getParameter", "*")
         assert server_params['requireApiVersion'] is True
+        client.test.test.insert_one({})
 
 
 class ReplicaSetSSLTestCase(SSLTestCase):

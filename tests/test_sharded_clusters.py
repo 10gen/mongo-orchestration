@@ -642,6 +642,7 @@ class ShardTestCase(unittest.TestCase):
         })
         client = self.sh.connection()
         server_params = client.admin.command("getParameter", "*")
+        client.test.test.insert_one({})
         assert server_params['requireApiVersion'] is True
 
     def test_require_api_version_noauth(self):
@@ -653,6 +654,7 @@ class ShardTestCase(unittest.TestCase):
         })
         client = self.sh.connection()
         server_params = client.admin.command("getParameter", "*")
+        client.test.test.insert_one({})
         assert server_params['requireApiVersion'] is True
 
 class ShardSSLTestCase(SSLTestCase):

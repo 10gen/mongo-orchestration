@@ -306,13 +306,17 @@ class ServerTestCase(unittest.TestCase):
     def test_require_api_version_auth(self):
         server = Server(self.mongod, {}, require_api_version="1", login='luke', password='ekul')
         server.start()
-        server_params = server.connection.admin.command("getParameter", "*")
+        client = server.connection
+        client.test.test.insert_one({})
+        server_params = client.admin.command("getParameter", "*")
         assert server_params['requireApiVersion'] is True
 
     def test_require_api_version_noauth(self):
         server = Server(self.mongod, {}, require_api_version="1")
         server.start()
-        server_params = server.connection.admin.command("getParameter", "*")
+        client = server.connection
+        client.test.test.insert_one({})
+        server_params = client.admin.command("getParameter", "*")
         assert server_params['requireApiVersion'] is True
 
     def test_start(self):
