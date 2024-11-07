@@ -138,6 +138,8 @@ class ReplicaSet(BaseModel):
             for host in self.members():
                 if host['state'] != PRIMARY_STATE:
                     continue
+                # Add arbitrary sleep.
+                time.sleep(2)
                 client = self.connection(host['host'])
                 client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
