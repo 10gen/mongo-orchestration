@@ -304,64 +304,6 @@ class ReplicaSetTestCase(unittest.TestCase):
             config = conn.local.system.replset.find_one()
         self.assertEqual(config['settings']['heartbeatTimeoutSecs'], 20)
 
-    def test_require_api_version_auth(self):
-        self.repl_cfg = {
-            'members': [{}, {}, {}], 
-            'requireApiVersion': '1', 
-            'login': 'luke',
-            'password': 'ekul',
-        } 
-        self.repl = ReplicaSet(self.repl_cfg)
-        client = self.repl.connection()
-        server_params = client.admin.command("getParameter", "*")
-        assert server_params['requireApiVersion'] is True
-
-    def test_require_api_version_noauth(self):
-        self.repl_cfg = {
-            'members': [{
-      "procParams": {
-        "ipv6": True,
-        "bind_ip": "127.0.0.1,::1",
-        "oplogSize": 500
-      },
-      "rsParams": {
-        "tags": {
-          "ordinal": "one",
-          "dc": "ny"
-        }
-      }
-    },
-    {
-      "procParams": {
-        "ipv6": True,
-        "bind_ip": "127.0.0.1,::1",
-        "oplogSize": 500
-      },
-      "rsParams": {
-        "tags": {
-          "ordinal": "two",
-          "dc": "pa"
-        }
-      }
-    },
-    {
-      "procParams": {
-        "ipv6": True,
-        "bind_ip": "127.0.0.1,::1"
-      },
-      "rsParams": {
-        "arbiterOnly": True
-      }
-    }], 
-            'requireApiVersion': '1', 
-        } 
-        self.repl = ReplicaSet(self.repl_cfg)
-        client = self.repl.connection(self.repl.primary())
-        server_params = client.admin.command("getParameter", "*")
-        assert server_params['requireApiVersion'] is True
-        client.test.test.insert_one({})
-        client.test.test.create_index("hello")
-
 
 class ReplicaSetSSLTestCase(SSLTestCase):
 

@@ -61,6 +61,8 @@ class ReplicaSet(BaseModel):
         self.repl_id = rs_params.get('id', None) or str(uuid4())
         self._version = rs_params.get('version')
         self._require_api_version = rs_params.get('requireApiVersion', '')
+        if self._require_api_version:
+            raise RuntimeError("requireApiVersion is not supported for replica sets, see SERVER-97010")
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
@@ -133,15 +135,6 @@ class ReplicaSet(BaseModel):
             time.sleep(0.1)
         else:
             raise ReplicaSetError("No primary was ever elected.")
-
-        if self._require_api_version:
-            for host in self.members():
-                if host['state'] != PRIMARY_STATE:
-                    continue
-                # Add arbitrary sleep.
-                time.sleep(2)
-                client = self.connection(host['host'])
-                client.admin.command("setParameter", 1, requireApiVersion=int(self._require_api_version))
 
     def restart_with_auth(self, cluster_auth_mode=None):
         for server in self.server_instances():

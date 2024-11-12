@@ -364,19 +364,6 @@ class ReplicaSetsTestCase(unittest.TestCase):
         self.assertEqual(len(self.rs.hidden(repl_id)), 0)
         self.assertFalse(self.rs.member_info(repl_id, hidden['_id'])['rsInfo'].get('hidden', False))
 
-    def test_require_api_version_auth(self):
-        repl_id = self.rs.create({'login': 'admin', 'password': 'admin',
-            'members': [{}, {}, {}], 'requireApiVersion': '1'})
-        client = self.rs[repl_id].connection()
-        server_params = client.admin.command("getParameter", "*")
-        assert server_params['requireApiVersion'] is True
-
-    def test_require_api_version_noauth(self):
-        repl_id = self.rs.create({
-            'members': [{}, {}, {}], 'requireApiVersion': '1'})
-        client = self.rs[repl_id].connection()
-        server_params = client.admin.command("getParameter", "*")
-        assert server_params['requireApiVersion'] is True
 
 if __name__ == '__main__':
     unittest.main()
