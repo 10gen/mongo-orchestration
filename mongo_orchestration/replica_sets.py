@@ -23,6 +23,7 @@ from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor
 
 import pymongo
+from pymongo.server_api import ServerApi
 
 from mongo_orchestration.common import (
     BaseModel, connected, DEFAULT_SUBJECT, DEFAULT_SSL_OPTIONS,
@@ -35,6 +36,9 @@ from mongo_orchestration.servers import Servers
 logger = logging.getLogger(__name__)
 Servers()
 
+PRIMARY_STATE = 1
+SECONDARY_STATE = 2
+ARBITER_STATE = 7
 
 class ReplicaSet(BaseModel):
     """class represents ReplicaSet"""
@@ -56,6 +60,9 @@ class ReplicaSet(BaseModel):
         self.admin_added = False
         self.repl_id = rs_params.get('id', None) or str(uuid4())
         self._version = rs_params.get('version')
+        self._require_api_version = rs_params.get('requireApiVersion', '')
+        if self._require_api_version:
+            raise RuntimeError("requireApiVersion is not supported for replica sets, see SERVER-97010")
 
         self.sslParams = rs_params.get('sslParams', {})
         self.kwargs = {}
@@ -92,7 +99,6 @@ class ReplicaSet(BaseModel):
         if not self.waiting_config_state():
             raise ReplicaSetError(
                 "Could not actualize replica set configuration.")
-
         if self.login:
             # If the only authentication mechanism enabled is MONGODB-X509,
             # we'll need to add our own user using SSL certificates we already
@@ -116,6 +122,7 @@ class ReplicaSet(BaseModel):
                 version = (2, 4, 0)
 
             self._add_users(self.connection()[self.auth_source], version)
+
         if self.restart_required:
             self.restart_with_auth()
 
@@ -447,6 +454,8 @@ class ReplicaSet(BaseModel):
             else:
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
+        if self._require_api_version:
+            kwargs["server_api"] = ServerApi(self._require_api_version)
         if hostname is None:
             c = pymongo.MongoClient(
                 servers, replicaSet=self.repl_id,
@@ -476,7 +485,7 @@ class ReplicaSet(BaseModel):
                 "host": member,
                 "server_id": self._servers.host_to_server_id(member)
             }
-            for member in self.get_members_in_state(2)
+            for member in self.get_members_in_state(SECONDARY_STATE)
         ]
 
     def arbiters(self):
@@ -487,7 +496,7 @@ class ReplicaSet(BaseModel):
                 "host": member,
                 "server_id": self._servers.host_to_server_id(member)
             }
-            for member in self.get_members_in_state(7)
+            for member in self.get_members_in_state(ARBITER_STATE)
         ]
 
     def hidden(self):

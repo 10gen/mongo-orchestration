@@ -17,6 +17,7 @@
 import logging
 import operator
 import pymongo
+from pymongo.server_api import ServerApi
 import sys
 import time
 
@@ -26,7 +27,7 @@ from mongo_orchestration.common import (
     DEFAULT_SUBJECT, DEFAULT_CLIENT_CERT, connected)
 from mongo_orchestration.sharded_clusters import ShardedCluster, ShardedClusters
 from mongo_orchestration.replica_sets import ReplicaSets
-from mongo_orchestration.servers import Servers, Server
+from mongo_orchestration.servers import Servers
 from mongo_orchestration.process import PortPool
 from tests import (
     certificate, unittest, SkipTest,
@@ -287,6 +288,33 @@ class ShardsTestCase(unittest.TestCase):
         self.assertEqual(result['id'], 'test2')
         self.assertEqual(len(c.admin.command("listShards")['shards']), 2)
 
+
+    def test_require_api_version_auth(self):
+        port = PortPool().port(check=True)
+        config = {
+            'login': 'luke', 'password': 'ekul',
+            'routers': [{'port': port}],
+            "requireApiVersion": "1"
+        }
+        self.sh.create(config)
+        host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
+        client = pymongo.MongoClient(host, server_api=ServerApi("1"))
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
+        self.sh.cleanup()
+
+    def test_require_api_version_noauth(self):
+        port = PortPool().port(check=True)
+        config = {
+            'routers': [{'port': port}],
+            "requireApiVersion": "1"
+        }
+        self.sh.create(config)
+        host = "{hostname}:{port}".format(hostname=HOSTNAME, port=port)
+        client = pymongo.MongoClient(host, server_api=ServerApi("1"))
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
+        self.sh.cleanup()
 
 class ShardTestCase(unittest.TestCase):
 
@@ -605,6 +633,29 @@ class ShardTestCase(unittest.TestCase):
         })
         self.assertIsNotNone(self.sh.key_file)
 
+    def test_require_api_version_auth(self):
+        self.sh = ShardedCluster({
+            'login': 'luke', 'password': 'ekul',
+            'routers': [{}],
+            'shards': [create_shard()],
+            "requireApiVersion": "1"
+        })
+        client = self.sh.connection()
+        server_params = client.admin.command("getParameter", "*")
+        client.test.test.insert_one({})
+        assert server_params['requireApiVersion'] is True
+
+    def test_require_api_version_noauth(self):
+        self.sh = ShardedCluster({
+            'login': 'luke', 'password': 'ekul',
+            'routers': [{}],
+            'shards': [create_shard()],
+            "requireApiVersion": "1"
+        })
+        client = self.sh.connection()
+        server_params = client.admin.command("getParameter", "*")
+        client.test.test.insert_one({})
+        assert server_params['requireApiVersion'] is True
 
 class ShardSSLTestCase(SSLTestCase):
 

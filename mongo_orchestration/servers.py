@@ -21,12 +21,12 @@ import platform
 import re
 import subprocess
 import tempfile
-import time
 
 from uuid import uuid4
 
 import pymongo
 from pymongo.errors import ConnectionFailure, PyMongoError
+from pymongo.server_api import ServerApi
 
 from mongo_orchestration import process
 from mongo_orchestration.common import (
@@ -168,13 +168,15 @@ class Server(BaseModel):
         return process.write_config(cfg), cfg
 
     def __init__(self, name, procParams, sslParams={}, auth_key=None,
-                 login='', password='', auth_source='admin'):
+                 login='', password='', auth_source='admin', require_api_version=None):
         """Args:
             name - name of process (mongod or mongos)
             procParams - dictionary with params for mongo process
             auth_key - authorization key
             login - username for the  admin collection
             password - password
+            auth_source - the auth source database
+            require_api_version - whether to require a stable api version
         """
         logger.debug("Server.__init__({name}, {procParams}, {sslParams}, {auth_key}, {login}, {password})".format(**locals()))
         self.name = name  # name of process
@@ -190,6 +192,7 @@ class Server(BaseModel):
         self.kwargs = {}
         self.ssl_params = sslParams
         self.restart_required = self.login or self.auth_key
+        self.require_api_version = require_api_version
         self.__version = None
 
         if self.ssl_params:
@@ -221,10 +224,14 @@ class Server(BaseModel):
             else:
                 kwargs["username"] = self.login
                 kwargs["password"] = self.password
+        if self.require_api_version:
+            kwargs["server_api"] = ServerApi(self.require_api_version)
         c = pymongo.MongoClient(
             self.hostname, fsync=True, directConnection=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
         connected(c)
+        if self.require_api_version:
+            c.admin.command("setParameter", 1, requireApiVersion=int(self.require_api_version))
         return c
 
     @property
@@ -418,6 +425,9 @@ class Server(BaseModel):
             return
         logger.info("Attempting to connect to %s", self.hostname)
         client = self.connection
+        # If we have set requireApiVersion, disable it.
+        if self.require_api_version:
+            client.admin.command("setParameter", 1, requireApiVersion=0)
         # Attempt the shutdown command twice, the first attempt might fail due
         # to an election.
         attempts = 2
@@ -508,7 +518,7 @@ class Servers(Singleton, Container):
     def create(self, name, procParams, sslParams={},
                auth_key=None, login=None, password=None,
                auth_source='admin', timeout=300, autostart=True,
-               server_id=None, version=None):
+               server_id=None, version=None, require_api_version=None):
         """create new server
         Args:
            name - process name or path
@@ -518,6 +528,9 @@ class Servers(Singleton, Container):
            password - password
            timeout -  specify how long, in seconds, a command can take before times out.
            autostart - (default: True), autostart instance
+           server_id - the server_id to use, defaults to a new uuid
+           version - the version of the server to use use
+           require_api_version - the stable api version to require
         Return server_id
            where server_id - id which can use to take the server from servers collection
         """
@@ -529,7 +542,7 @@ class Servers(Singleton, Container):
 
         bin_path = self.bin_path(version)
         server = Server(os.path.join(bin_path, name), procParams, sslParams,
-                        auth_key, login, password, auth_source)
+                        auth_key, login, password, auth_source, require_api_version=require_api_version)
         if autostart:
             server.start(timeout)
         self[server_id] = server

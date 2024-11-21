@@ -205,6 +205,10 @@ class ServersTestCase(unittest.TestCase):
         self.servers.command(h_id, 'start', 10)
         self.assertEqual(self.servers.db_command(h_id, 'serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
 
+    def test_require_api_version(self):
+        h_id = self.servers.create('mongod', {}, require_api_version="1", autostart=True)
+        self.assertEqual(self.servers.is_alive(h_id), True)
+
     def test_id_specified(self):
         id = 'xyzzy'
         h_id = self.servers.create('mongod', {}, autostart=False, server_id=id)
@@ -299,6 +303,22 @@ class ServerTestCase(unittest.TestCase):
         self.server.start(30)
         self.assertEqual(self.server.run_command('serverStatus', arg=None, is_eval=False).get('ok', -1), 1)
 
+    def test_require_api_version_auth(self):
+        server = Server(self.mongod, {}, require_api_version="1", login='luke', password='ekul')
+        server.start()
+        client = server.connection
+        client.test.test.insert_one({})
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
+
+    def test_require_api_version_noauth(self):
+        server = Server(self.mongod, {}, require_api_version="1")
+        server.start()
+        client = server.connection
+        client.test.test.insert_one({})
+        server_params = client.admin.command("getParameter", "*")
+        assert server_params['requireApiVersion'] is True
+
     def test_start(self):
         self.assertNotIn('pid', self.server.info()['procInfo'])
         self.assertTrue(self.server.start(30))
@@ -372,7 +392,6 @@ class ServerTestCase(unittest.TestCase):
         self.server.reset()
         # No ConnectionFailure.
         connected(pymongo.MongoClient(self.server.hostname))
-
 
 class ServerSSLTestCase(SSLTestCase):
 

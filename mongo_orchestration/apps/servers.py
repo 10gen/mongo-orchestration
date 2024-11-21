@@ -49,7 +49,8 @@ def _host_create(params):
                                params.get('timeout', 300),
                                params.get('autostart', True),
                                host_id,
-                               params.get('version', ''))
+                               params.get('version', ''),
+                               params.get('requireApiVersion', ''))
     result = Servers().info(host_id)
     server_id = result['id']
     result['links'] = all_server_links(server_id)

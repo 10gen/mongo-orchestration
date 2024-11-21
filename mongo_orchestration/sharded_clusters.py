@@ -31,6 +31,7 @@ from mongo_orchestration.servers import Servers, Server
 from mongo_orchestration.replica_sets import ReplicaSet, ReplicaSets
 from mongo_orchestration.singleton import Singleton
 from pymongo import MongoClient, write_concern
+from pymongo.server_api import ServerApi
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class ShardedCluster(BaseModel):
         self.auth_key = params.get('auth_key', None)
         self.auth_source = params.get('authSource', 'admin')
         self._version = params.get('version')
+        self._require_api_version = params.get('requireApiVersion', '')
         self._configsvrs = []
         self._routers = []
         self._shards = {}
@@ -225,6 +227,11 @@ class ShardedCluster(BaseModel):
 
                 self.restart_required = False
 
+        if self._require_api_version:
+            for router in self.routers:
+                client = self.create_connection(router['hostname'])
+                client[self.auth_source].command("setParameter", 1, requireApiVersion=int(self._require_api_version))
+
     def __init_configrs(self, rs_cfg):
         """Create and start a config replica set."""
         # Use 'rs_id' to set the id for consistency, but need to rename
@@ -324,6 +331,8 @@ class ShardedCluster(BaseModel):
             kwargs["authSource"] = self.auth_source
             kwargs["username"] = self.login
             kwargs["password"] = self.password
+        if self._require_api_version:
+            kwargs["server_api"] = ServerApi(self._require_api_version)
         c = MongoClient(
             host, w='majority', fsync=True,
             socketTimeoutMS=self.socket_timeout, **kwargs)
