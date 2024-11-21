@@ -239,6 +239,19 @@ Run a single test example for debugging with verbose and immediate stdout output
 Changelog
 ---------
 
+Changes in Version 0.10.0 (2024-11-21)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add support for requireApiVersion for standalone clusters and replica sets.
+- Drop support for Python 3.8 and add support for Python 3.13.
+
+Changes in Version 0.9.0 (2043-09-04)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Fix handling of ``enableMajorityReadConcern``.
+- Remove 'journal' options for newer mongod ``(>=6.1)``.
+- Switch to Hatch build backend.
+
 Changes in Version 0.8.0 (2023-05-16)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
