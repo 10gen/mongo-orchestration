@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# coding=utf-8
 import argparse
+import json
 import logging
 import os.path
 import signal
@@ -8,14 +8,7 @@ import socket
 import sys
 import time
 import traceback
-
-try:
-    # Need simplejson for the object_pairs_hook option in Python 2.6.
-    import simplejson as json
-except ImportError:
-    # Python 2.7+.
-    import json
-
+    
 from bson import SON
 
 from mongo_orchestration import __version__
@@ -33,7 +26,7 @@ CONNECT_ATTEMPTS = 5
 CONNECT_TIMEOUT = 5
 
 
-def read_env():
+def read_env(argv=None):
     """return command-line arguments"""
     parser = argparse.ArgumentParser(description='mongo-orchestration server')
     parser.add_argument('-f', '--config',
@@ -63,7 +56,7 @@ def read_env():
     parser.add_argument('--pidfile', action='store', type=str, dest='pidfile',
                         default=PID_FILE)
 
-    cli_args = parser.parse_args()
+    cli_args = parser.parse_args(argv)
 
     if cli_args.env and not cli_args.config:
         print("Specified release '%s' without a config file" % cli_args.env)
@@ -153,8 +146,8 @@ def await_connection(host, port):
     return False
 
 
-def main():
-    args = read_env()
+def main(argv=None):
+    args = read_env(argv)
     Server.enable_majority_read_concern = args.enable_majority_read_concern
     # Log both to STDOUT and the log file.
     logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,
