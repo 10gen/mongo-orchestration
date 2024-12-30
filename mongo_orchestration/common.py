@@ -47,7 +47,7 @@ DEFAULT_CLIENT_CERT = os.path.join(
 )
 DEFAULT_SSL_OPTIONS = {
     'ssl': True,
-    'tlsCertificateKeyFile': DEFAULT_CLIENT_CERT,
+    'tlsCertificateKeyFile': os.environ.get('MONGO_ORCHESTRATION_CLIENT_CERT', DEFAULT_CLIENT_CERT),
     'tlsAllowInvalidCertificates': True
 }
 
