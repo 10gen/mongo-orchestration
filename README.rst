@@ -81,10 +81,16 @@ Arguments:
 -  **start/stop/restart**: start, stop, or restart the server,
    respectively
 
-In addition, Mongo Orchestration can be influenced by the
-``MONGO_ORCHESTRATION_HOME`` environment variable, which informs the
-server where to find the "configurations" directory for presets as well
-as where to put the log and pid files.
+In addition, Mongo Orchestration can be influenced by the following environment variables:
+
+- ``MONGO_ORCHESTRATION_HOME`` - informs the
+  server where to find the "configurations" directory for presets as well
+  as where to put the log and pid files.
+- ``MONGO_ORCHESTRATION_TMP`` - the temporary folder root location.
+- ``MO_HOST`` - the server host (``localhost`` by default)
+- ``MO_PORT`` - the server port (8889 by default)
+- ``MONGO_ORCHESTRATION_CLIENT_CERT`` -  set the client certificate file 
+  to be used by ``mongo-orchestration``.
 
 Examples
 ~~~~~~~~
@@ -238,6 +244,13 @@ Run a single test example for debugging with verbose and immediate stdout output
 
 Changelog
 ---------
+
+Changes in Version 0.11.0 (2024-12-30)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Allow server daemon to be run as a library in addition to as a cli.
+- Add support for ``MONGO_ORCHESTRATION_CLIENT_CERT`` environment variable to set the client certificate file 
+  to be used by ``mongo-orchestration``.
 
 Changes in Version 0.10.0 (2024-11-21)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
